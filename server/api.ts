@@ -8,10 +8,10 @@ import {
     generateCapacityBuildingProgram, 
     generateVisionFramework, 
     generateStakeholderPlan, 
-    generateMethodology,
-    getChallengeSuggestions,
-    getScaleSuggestions
-} from './gemini.ts';
+    generateMethodology, 
+    getChallengeSuggestions, 
+    getScaleSuggestions 
+} from './gemini.js';
 
 const router = Router();
 
