@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tanmyaa | Urban Planning Platform</title>
+    
+    <!-- Cache-Control Headers -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+
+    <style>
+    :root {
+      /* New User Specified Palette */
+      --color-primary-dark: #1B3C53;
+      --color-primary-medium: #456882;
+      --color-accent-light: #D2C1B6;
+      --color-accent-cream: #F9F3EF;
+
+      /* Legacy names for wider app compatibility, mapped to new palette */
+      --tan-deep-blue: #1B3C53;
+      --tan-bright-blue: #456882;
+      --tan-cyan: #456882;
+      
+      --tan-bg: #050508;
+    }
+
+    @font-face {
+      font-family: 'Manrope';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url(https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRqAU.woff2) format('woff2');
+      unicode-range: U+0000-00FF;
+    }
+    @font-face {
+      font-family: 'Manrope';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url(https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRqAU.woff2) format('woff2');
+      unicode-range: U+0000-00FF;
+    }
+    @font-face {
+      font-family: 'Manrope';
+      font-style: normal;
+      font-weight: 800;
+      font-display: swap;
+      src: url(https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRqAU.woff2) format('woff2');
+      unicode-range: U+0000-00FF;
+    }
+    </style>
+    <style>
+      body {
+        font-family: 'Manrope', sans-serif;
+        background-color: var(--tan-bg);
+        color: #e5e7eb;
+        overflow-x: hidden;
+      }
+      
+      @keyframes ios-reveal {
+        0% { opacity: 0; transform: translateY(30px) scale(0.98); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .animate-ios-reveal {
+        animation: ios-reveal 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+      }
+
+      @keyframes slide-in-from-right {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(0); }
+      }
+      .animate-slide-in-from-right {
+        animation: slide-in-from-right 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+      }
+
+      @keyframes slide-out-to-right {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(100%); }
+      }
+      .animate-slide-out-to-right {
+        animation: slide-out-to-right 0.5s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+      }
+
+      @keyframes fade-in-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes scale-in {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .tanmyaa-gradient-text {
+        background: linear-gradient(135deg, #1B3C53 0%, #456882 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      
+      .thumbnail-scrollbar::-webkit-scrollbar { height: 4px; }
+      .thumbnail-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+      .thumbnail-scrollbar::-webkit-scrollbar-thumb { background: #1B3C53; border-radius: 2px; }
+      
+      .content-scrollbar::-webkit-scrollbar { width: 4px; }
+      .content-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+      .content-scrollbar::-webkit-scrollbar-thumb { background: #456882; border-radius: 2px; }
+
+      [contentEditable=true]:focus {
+        outline: 2px solid #456882;
+        outline-offset: 4px;
+        background: rgba(69, 104, 130, 0.05);
+      }
+    </style>
+
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
