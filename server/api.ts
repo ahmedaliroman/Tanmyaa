@@ -1,172 +1,108 @@
 import { Router } from 'express';
-import { 
-    generateImage, 
-    generatePresentation, 
-    refinePresentation, 
-    generatePolicyReport, 
-    generateRFP, 
-    generateCapacityBuildingProgram, 
-    generateVisionFramework, 
-    generateStakeholderPlan, 
-    generateMethodology, 
-    getChallengeSuggestions, 
-    getScaleSuggestions 
-} from './gemini';
+import { createClient } from '@supabase/supabase-js';
 
 const router = Router();
 
-router.post('/generate-image', async (req, res) => {
+// Initialize Supabase client for backend operations
+const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+router.post('/deduct-credits', async (req, res) => {
     try {
-        const { prompt } = req.body;
-        if (!prompt) {
-            return res.status(400).json({ error: 'Prompt is required.' });
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Authorization header is required.' });
         }
-        const imageUrl = await generateImage(prompt);
-        res.json({ imageUrl });
+
+        const token = authHeader.split(' ')[1];
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Invalid or expired token.' });
+        }
+
+        const { amount } = req.body;
+        if (!amount || typeof amount !== 'number') {
+            return res.status(400).json({ error: 'Invalid credit amount.' });
+        }
+
+        // Fetch current credits
+        const { data: profile, error: fetchError } = await supabase
+            .from('profiles')
+            .select('credits')
+            .eq('id', user.id)
+            .single();
+
+        if (fetchError || !profile) {
+            return res.status(500).json({ error: 'Failed to fetch user profile.' });
+        }
+
+        if (profile.credits < amount) {
+            return res.status(403).json({ error: 'Insufficient credits.' });
+        }
+
+        // Deduct credits
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ credits: profile.credits - amount })
+            .eq('id', user.id);
+
+        if (updateError) {
+            return res.status(500).json({ error: 'Failed to deduct credits.' });
+        }
+
+        res.json({ success: true, remainingCredits: profile.credits - amount });
     } catch (error) {
-        console.error('Failed to generate image:', error);
-        res.status(500).json({ error: 'Failed to generate image.' });
+        console.error('Failed to deduct credits:', error);
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
-router.post('/generate-presentation', async (req, res) => {
+router.post('/paypal/capture-order', async (req, res) => {
     try {
-        const { projectInfo, files, companyProfile } = req.body;
-        if (!projectInfo) {
-            return res.status(400).json({ error: 'Project info is required.' });
-        }
-        const presentation = await generatePresentation(projectInfo, files || [], companyProfile);
-        res.json({ presentation });
-    } catch (error) {
-        console.error('Failed to generate presentation:', error);
-        res.status(500).json({ error: 'Failed to generate presentation.' });
-    }
-});
-
-router.post('/refine-presentation', async (req, res) => {
-    try {
-        const { currentSlides, userRequest, activeSlideIndex } = req.body;
-        if (!currentSlides || !userRequest || activeSlideIndex === undefined) {
+        const { orderID, plan, userId } = req.body;
+        
+        if (!orderID || !plan || !userId) {
             return res.status(400).json({ error: 'Missing required parameters.' });
         }
-        const presentation = await refinePresentation(currentSlides, userRequest, activeSlideIndex);
-        res.json({ presentation });
-    } catch (error) {
-        console.error('Failed to refine presentation:', error);
-        res.status(500).json({ error: 'Failed to refine presentation.' });
-    }
-});
 
-router.post('/generate-policy-report', async (req, res) => {
-    try {
-        const { brief, files, companyProfile } = req.body;
-        if (!brief) {
-            return res.status(400).json({ error: 'Brief is required.' });
-        }
-        const report = await generatePolicyReport(brief, files || [], companyProfile);
-        res.json({ report });
-    } catch (error) {
-        console.error('Failed to generate policy report:', error);
-        res.status(500).json({ error: 'Failed to generate policy report.' });
-    }
-});
+        // In a real app, you would verify the order with PayPal here using their SDK or REST API
+        // For this implementation, we assume the client-side capture was successful
+        
+        let creditsToAdd = 0;
+        if (plan === 'Pro') creditsToAdd = 1000;
+        else if (plan === 'Business') creditsToAdd = 5000;
+        else if (plan === 'Trial') creditsToAdd = 100;
 
-router.post('/generate-rfp', async (req, res) => {
-    try {
-        const { taskDescription, pageRange, files } = req.body;
-        if (!taskDescription || !pageRange) {
-            return res.status(400).json({ error: 'Task description and page range are required.' });
-        }
-        const rfp = await generateRFP(taskDescription, pageRange, files || []);
-        res.json({ rfp });
-    } catch (error) {
-        console.error('Failed to generate RFP:', error);
-        res.status(500).json({ error: 'Failed to generate RFP.' });
-    }
-});
+        // Fetch current credits
+        const { data: profile, error: fetchError } = await supabase
+            .from('profiles')
+            .select('credits')
+            .eq('id', userId)
+            .single();
 
-router.post('/generate-capacity-building-program', async (req, res) => {
-    try {
-        const { audience } = req.body;
-        if (!audience) {
-            return res.status(400).json({ error: 'Audience is required.' });
+        if (fetchError || !profile) {
+            return res.status(500).json({ error: 'Failed to fetch user profile.' });
         }
-        const program = await generateCapacityBuildingProgram(audience);
-        res.json({ program });
-    } catch (error) {
-        console.error('Failed to generate capacity building program:', error);
-        res.status(500).json({ error: 'Failed to generate capacity building program.' });
-    }
-});
 
-router.post('/generate-vision-framework', async (req, res) => {
-    try {
-        const { city, aspirations, timeframe, companyProfile } = req.body;
-        if (!city || !aspirations || !timeframe) {
-            return res.status(400).json({ error: 'City, aspirations, and timeframe are required.' });
-        }
-        const framework = await generateVisionFramework(city, aspirations, timeframe, companyProfile);
-        res.json({ framework });
-    } catch (error) {
-        console.error('Failed to generate vision framework:', error);
-        res.status(500).json({ error: 'Failed to generate vision framework.' });
-    }
-});
+        // Update credits
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ credits: profile.credits + creditsToAdd })
+            .eq('id', userId);
 
-router.post('/generate-stakeholder-plan', async (req, res) => {
-    try {
-        const { context, goals, companyProfile } = req.body;
-        if (!context || !goals) {
-            return res.status(400).json({ error: 'Context and goals are required.' });
+        if (updateError) {
+            return res.status(500).json({ error: 'Failed to update credits after payment.' });
         }
-        const plan = await generateStakeholderPlan(context, goals, companyProfile);
-        res.json({ plan });
-    } catch (error) {
-        console.error('Failed to generate stakeholder plan:', error);
-        res.status(500).json({ error: 'Failed to generate stakeholder plan.' });
-    }
-});
 
-router.post('/generate-methodology', async (req, res) => {
-    try {
-        const { task, companyProfile } = req.body;
-        if (!task) {
-            return res.status(400).json({ error: 'Task is required.' });
-        }
-        const methodology = await generateMethodology(task, companyProfile);
-        res.json({ methodology });
+        res.json({ success: true, newCredits: profile.credits + creditsToAdd });
     } catch (error) {
-        console.error('Failed to generate methodology:', error);
-        res.status(500).json({ error: 'Failed to generate methodology.' });
-    }
-});
-
-router.post('/get-challenge-suggestions', async (req, res) => {
-    try {
-        const { location, scale } = req.body;
-        if (!location || !scale) {
-            return res.status(400).json({ error: 'Location and scale are required.' });
-        }
-        const suggestions = await getChallengeSuggestions(location, scale);
-        res.json({ suggestions });
-    } catch (error) {
-        console.error('Failed to get challenge suggestions:', error);
-        res.status(500).json({ error: 'Failed to get challenge suggestions.' });
-    }
-});
-
-router.post('/get-scale-suggestions', async (req, res) => {
-    try {
-        const { location } = req.body;
-        if (!location) {
-            return res.status(400).json({ error: 'Location is required.' });
-        }
-        const suggestions = await getScaleSuggestions(location);
-        res.json({ suggestions });
-    } catch (error) {
-        console.error('Failed to get scale suggestions:', error);
-        res.status(500).json({ error: 'Failed to get scale suggestions.' });
+        console.error('Failed to capture PayPal order:', error);
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
 export default router;
+

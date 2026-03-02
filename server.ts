@@ -25,8 +25,12 @@ async function startServer() {
         app.use(vite.middlewares);
 
         // Explicit fallback for SPA routing in development
-        app.use('*', async (req, res, next) => {
+        app.use(async (req, res, next) => {
             const url = req.originalUrl;
+            // Skip API routes
+            if (url.startsWith('/api')) {
+                return next();
+            }
             try {
                 let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8');
                 template = await vite.transformIndexHtml(url, template);
@@ -39,7 +43,7 @@ async function startServer() {
       } else {
         // In production, serve the static files
         app.use(express.static(path.resolve(__dirname, 'dist')));
-        app.get('*', (req, res) => {
+        app.get('(.*)', (req, res) => {
             res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
         });
       }

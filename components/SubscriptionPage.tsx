@@ -117,19 +117,29 @@ const SubscriptionTier: React.FC<{
 
     const buttonClasses = `w-full font-bold py-3 px-4 rounded-xl mt-auto transition-all duration-300 disabled:cursor-not-allowed ${isFeatured ? 'bg-blue-500/20 backdrop-blur-md border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 disabled:bg-blue-500/10 disabled:text-blue-500/50' : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400'}`;
 
+    const { user } = useAuth();
+
     const handleCaptureOrder = async (orderID: string) => {
+        if (!user) {
+            alert('Please sign in to complete the purchase.');
+            return;
+        }
         try {
             const response = await fetch('/api/paypal/capture-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderID, plan: title })
+                body: JSON.stringify({ orderID, plan: title, userId: user.id })
             });
             if (response.ok) {
                 alert(`Payment successful! Your credits have been updated for the ${title} plan.`);
                 window.location.reload();
+            } else {
+                const error = await response.json();
+                alert(`Payment failed: ${error.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Failed to capture order:', error);
+            alert('An unexpected error occurred during payment capture.');
         }
     };
 

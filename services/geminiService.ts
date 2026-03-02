@@ -1,5 +1,4 @@
-// Fix: Corrected the import path to use "@google/genai" as per coding guidelines.
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
 import type { 
     PresentationSlide,
     UrbanPlanningProjectInfo,
@@ -11,205 +10,309 @@ import type {
     Methodology
 } from '../types';
 
-const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
-        contents: prompt,
-        config: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING }
-            }
-        }
-    });
+const getAi = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: string): T => {
+    const rawText = response.text || '';
     try {
-        return JSON.parse(response.text || '[]');
-    } catch (e) {
-        console.error("Failed to parse input suggestions:", e);
-        return [];
+        const text = rawText.trim().replace(/^```json\s*/, '').replace(/```$/, '');
+        if (!text) {
+            throw new Error(`Received empty JSON response from AI for ${generatorName}.`);
+        }
+        
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.warn(`Initial JSON.parse failed for ${generatorName}. Attempting to extract valid JSON. Error: ${e}`);
+
+            const firstOpenBracket = text.indexOf('[');
+            const firstOpenBrace = text.indexOf('{');
+            
+            let startIndex = -1;
+            if (firstOpenBracket === -1) startIndex = firstOpenBrace;
+            else if (firstOpenBrace === -1) startIndex = firstOpenBracket;
+            else startIndex = Math.min(firstOpenBracket, firstOpenBrace);
+
+            if (startIndex === -1) throw e;
+
+            const openChar = text[startIndex];
+            const closeChar = openChar === '{' ? '}' : ']';
+            
+            let depth = 1;
+            let inString = false;
+            let endIndex = -1;
+
+            for (let i = startIndex + 1; i < text.length; i++) {
+                const char = text[i];
+                const prevChar = text[i-1];
+
+                if (char === '"' && prevChar !== '\\') {
+                    inString = !inString;
+                }
+                
+                if (!inString) {
+                    if (char === openChar) {
+                        depth++;
+                    } else if (char === closeChar) {
+                        depth--;
+                    }
+                }
+
+                if (depth === 0) {
+                    endIndex = i;
+                    break; 
+                }
+            }
+
+            if (endIndex !== -1) {
+                const potentialJson = text.substring(startIndex, endIndex + 1);
+                return JSON.parse(potentialJson);
+            }
+            
+            throw e; // If we couldn't fix it, re-throw the original error
+        }
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error(`Failed to parse ${generatorName} JSON from AI. Raw text:`, rawText);
+        throw new Error(`The AI returned an invalid structure for the ${generatorName}. Please try again. (Details: ${errorMessage})`);
+    }
+};
+
+const deductCredits = async (amount: number) => {
+    const response = await fetch('/api/deduct-credits', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await (await import('../lib/supabase')).supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({ amount }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to deduct credits.');
     }
 };
 
 export const generateImage = async (prompt: string): Promise<string> => {
-    const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
+    await deductCredits(5);
+    const ai = getAi();
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}` }] },
+        config: { imageConfig: { aspectRatio: "16:9" } }
     });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate image.');
+    for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
     }
-
-    const data = await response.json();
-    return data.imageUrl;
+    throw new Error("Image failed.");
 };
 
-export const generatePresentation = async (projectInfo: UrbanPlanningProjectInfo, files: File[], companyProfile?: string): Promise<PresentationSlide[]> => {
-    const formData = new FormData();
-    formData.append('projectInfo', JSON.stringify(projectInfo));
-    if (companyProfile) {
-        formData.append('companyProfile', companyProfile);
-    }
-    files.forEach(file => {
-        formData.append('files', file);
+export const generatePresentation = async (
+    projectInfo: UrbanPlanningProjectInfo, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _files: File[], 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _companyProfile?: string
+): Promise<PresentationSlide[]> => {
+    await deductCredits(20);
+    const ai = getAi();
+    const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy. Your output is a complete, technically defensible, and institutionally aware strategic doctrine. You are creating a decision architecture, not just a presentation. The tone must be analytical, quantitative, and grounded in policy and financial reality. The final presentation must be robust enough to withstand technical review by planning authorities, finance ministries, and infrastructure investment panels.`;
+
+    const prompt = `
+    Project Info:
+    Location: ${projectInfo.location}
+    Scale: ${projectInfo.scale}
+    Core Challenge: ${projectInfo.mainChallenge}
+    Policy Context: ${projectInfo.policyContext}
+    Target Users: ${projectInfo.targetUsers}
+    Specific Focus: ${projectInfo.specificFocus}
+    
+    Generate a presentation based on these details, following all instructions and STRICT limits precisely.
+    `;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: { parts: [{ text: prompt }] },
+        config: { systemInstruction, responseMimeType: 'application/json' },
     });
 
-    const response = await fetch('/api/generate-presentation', {
-        method: 'POST',
-        body: formData,
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate presentation.');
-    }
-
-    const data = await response.json();
-    return data.presentation;
+    return parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
 };
-
 
 export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number): Promise<PresentationSlide[]> => {
-    const response = await fetch('/api/refine-presentation', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
+    await deductCredits(5);
+    const ai = getAi();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
+        config: { 
+            systemInstruction: `You are a Lead Strategist at Tanmyaa Global. Your task is to intelligently refine the provided JSON presentation structure based on the user's request, ensuring coherence. The slide structure is dynamic. IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`,
+            responseMimeType: 'application/json'
         },
-        body: JSON.stringify({ currentSlides, userRequest, activeSlideIndex }),
     });
+    return parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
+};
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to refine presentation.');
+export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string): Promise<PolicyBrief> => {
+    await deductCredits(10);
+    const ai = getAi();
+    const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief based on the user's prompt and any provided documents.
+    
+    Your entire output MUST be a single, valid JSON object following the required schema.
+    ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: { parts: [{ text: `Generate a structured policy brief based on: ${brief}` }] },
+        config: { 
+            systemInstruction,
+            responseMimeType: 'application/json',
+            tools: [{googleSearch: {}}]
+        }
+    });
+    
+    const briefResult = parseJsonResponse<PolicyBrief>(response, 'Policy Brief');
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (groundingChunks) {
+        const sources = (groundingChunks as unknown as Array<{ web?: { uri: string; title?: string } }>)
+            .filter(chunk => chunk.web && chunk.web.uri)
+            .map(chunk => ({
+                uri: chunk.web!.uri,
+                title: chunk.web!.title || "Untitled Source",
+            }));
+        (briefResult as PolicyBrief & { groundingSources: Array<{ uri: string; title: string }> }).groundingSources = sources;
     }
-
-    const data = await response.json();
-    return data.presentation;
+    return briefResult;
 };
 
-export const sendMessageToInstantChatStream = async (message: string) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    return ai.models.generateContentStream({
-        model: 'gemini-2.5-flash-lite',
-        contents: message,
-        config: { systemInstruction: "Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise." }
+export const generateRFP = async (
+    taskDescription: string, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _pageRange: string, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _files: File[]
+): Promise<RFPContent> => {
+    await deductCredits(10);
+    const ai = getAi();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: `Generate RFP: ${taskDescription}`,
+        config: { systemInstruction: `Procurement Specialist. Your entire output MUST be a single, valid JSON object.`, responseMimeType: 'application/json' }
     });
+    return parseJsonResponse<RFPContent>(response, 'RFP');
 };
 
-export const streamAssistantResponse = async <T extends object>(contextData: T, prompt: string) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    return ai.models.generateContentStream({
-        model: 'gemini-2.5-flash-lite',
-        contents: `CONTEXT: ${JSON.stringify(contextData)}\n\nREQUEST: ${prompt}`,
-        config: { systemInstruction: "Refinement assistant. Return updated JSON.", responseMimeType: 'application/json' }
+export const generateCapacityBuildingProgram = async (audience: string): Promise<CapacityBuildingProgram> => {
+    await deductCredits(10);
+    const ai = getAi();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: `Program for: ${audience}`,
+        config: { systemInstruction: `Planning Educator. Your entire output MUST be a single, valid JSON object.`, responseMimeType: 'application/json' }
     });
+    return parseJsonResponse<CapacityBuildingProgram>(response, 'Capacity Building Program');
 };
 
-export const generatePolicyReport = async (brief: string, files: File[], companyProfile?: string): Promise<PolicyBrief> => {
-    const formData = new FormData();
-    formData.append('brief', brief);
-    if (companyProfile) {
-        formData.append('companyProfile', companyProfile);
-    }
-    files.forEach(file => {
-        formData.append('files', file);
+export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string): Promise<VisionFramework> => {
+    await deductCredits(10);
+    const ai = getAi();
+    const systemInstruction = `You are a world-class Urban Futurist and Strategist. Your entire output MUST be a single, valid JSON object.
+    ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
+    
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"`,
+        config: { systemInstruction, responseMimeType: 'application/json' }
     });
-
-    const response = await fetch('/api/generate-policy-report', {
-        method: 'POST',
-        body: formData,
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate policy report.');
-    }
-
-    const data = await response.json();
-    return data.report;
+    return parseJsonResponse<VisionFramework>(response, 'Vision Framework');
 };
 
+export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string): Promise<StakeholderPlan> => {
+    await deductCredits(10);
+    const ai = getAi();
+    const systemInstruction = `You are a world-class public engagement strategist. Your entire output MUST be a single, valid JSON object.
+    ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
+    
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"`,
+        config: { systemInstruction, responseMimeType: 'application/json' }
+    });
+    return parseJsonResponse<StakeholderPlan>(response, 'Stakeholder Plan');
+};
 
+export const generateMethodology = async (task: string, companyProfile?: string): Promise<Methodology> => {
+    await deductCredits(10);
+    const ai = getAi();
+    const systemInstruction = `You are a Senior Project Manager. Your entire output MUST be a single, valid JSON object.
+    ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: `Generate a methodology for the following task: "${task}"`,
+        config: { systemInstruction, responseMimeType: 'application/json' }
+    });
+    return parseJsonResponse<Methodology>(response, 'Methodology');
+};
 
 export const getChallengeSuggestions = async (location: string, scale: string): Promise<string[]> => {
-    const response = await fetch('/api/get-challenge-suggestions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ location, scale }),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get challenge suggestions.');
-    }
-
-    const data = await response.json();
-    return data.suggestions;
+    const prompt = `For an urban planning project in '${location}' at a '${scale}' scale, suggest 3 specific and relevant main challenges to address. Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
 };
 
 export const getScaleSuggestions = async (location: string): Promise<string[]> => {
-    const prompt = `For an urban planning project in '${location}', suggest 3 relevant scales. Examples: 'City-wide', 'Downtown Core', 'Specific Neighborhood (e.g., Waterfront District)', 'Transportation Corridor'. Return a JSON array of strings.`;
+    const prompt = `For an urban planning project in '${location}', suggest 3 relevant scales. Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getSpecificFocusSuggestions = async (location: string, challenge: string): Promise<string[]> => {
-    const prompt = `For a project in '${location}' addressing '${challenge}', suggest 3 specific focus areas or questions to guide the study. Frame them as questions or 'Focus on...' statements. Return a JSON array of strings.`;
+    const prompt = `For a project in '${location}' addressing '${challenge}', suggest 3 specific focus areas. Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getAudienceSuggestions = async (location: string, challenge: string): Promise<string[]> => {
-    const prompt = `For an urban planning project in '${location}' about '${challenge}', suggest 3 distinct audiences for a presentation. Examples: 'Municipal Planning Commission', 'Private Real Estate Developers', 'Community Advocacy Groups'. Return a JSON array of strings.`;
+    const prompt = `For an urban planning project in '${location}' about '${challenge}', suggest 3 distinct audiences. Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getAuthorRoleSuggestions = async (): Promise<string[]> => {
-    const prompt = `For an urban planning project, suggest 3 professional roles the author might have. Examples: 'Lead Urban Strategist', 'Graduate Student Researcher', 'Public Sector Project Manager'. Return a JSON array of strings.`;
+    const prompt = `Suggest 3 professional roles for an urban planning author. Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getPolicyBriefRefinementSuggestions = async (brief: string): Promise<string[]> => {
-    const prompt = `You are an AI assistant for a senior urban planner. The user has written the following project brief for a policy report. Suggest 3 concise, actionable ways to improve it, focusing on specificity, measurable outcomes, and policy levers. Return a JSON array of strings. Brief: "${brief}"`;
+    const prompt = `Suggest 3 ways to improve this policy brief: "${brief}". Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getRFPRefinementSuggestions = async (task: string): Promise<string[]> => {
-    const prompt = `As an AI procurement expert, review the following task description for an RFP. Suggest 3 ways to make it clearer and more comprehensive for bidders, focusing on defining scope, deliverables, and evaluation criteria. Return a JSON array of strings. Task: "${task}"`;
+    const prompt = `Suggest 3 ways to improve this RFP task: "${task}". Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getCapacityBuildingRefinementSuggestions = async (audience: string, challenges: string): Promise<string[]> => {
-    const prompt = `You are an AI curriculum designer for urban planners. Based on the target audience ('${audience}') and the challenges they face ('${challenges}'), suggest 3 specific, hands-on workshop topics or training modules for a capacity-building program. Return a JSON array of strings.`;
+    const prompt = `Suggest 3 workshop topics for audience '${audience}' facing '${challenges}'. Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getVisionFrameworkRefinementSuggestions = async (city: string, aspirations: string): Promise<string[]> => {
-    const prompt = `As an AI urban strategist, review the following aspirations for a vision framework for '${city}'. Suggest 3 more evocative and strategic aspirations that link to measurable outcomes (e.g., instead of 'a green city', suggest 'a city with a 40% tree canopy cover by 2040'). Return a JSON array of strings. Aspirations: "${aspirations}"`;
+    const prompt = `Suggest 3 strategic aspirations for '${city}' based on: "${aspirations}". Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getStakeholderPlanRefinementSuggestions = async (context: string, goals: string): Promise<string[]> => {
-    const prompt = `You are a public engagement AI specialist. For a project with context '${context}' and goals '${goals}', suggest 3 specific, critical stakeholder groups that might be overlooked and a key engagement goal for each. Format each suggestion as "[Stakeholder Group]: [Engagement Goal]". Return a JSON array of strings.`;
+    const prompt = `Suggest 3 stakeholder groups for context '${context}' and goals '${goals}'. Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
 export const getMethodologyRefinementSuggestions = async (task: string): Promise<string[]> => {
-    const prompt = `As a senior project manager AI, review the following urban planning task. Suggest 3 key "Tools & Techniques" that should be included in its methodology to ensure a data-driven and robust process. Return a JSON array of strings. Task: "${task}"`;
+    const prompt = `Suggest 3 tools for this methodology task: "${task}". Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
-
 export const getRefinementSuggestions = async (prompt: string): Promise<string[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = getAi();
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-3.1-pro-preview',
         contents: prompt,
         config: { responseMimeType: 'application/json', responseSchema: { type: Type.ARRAY, items: { type: Type.STRING }} }
     });
@@ -222,146 +325,15 @@ export const getRefinementSuggestions = async (prompt: string): Promise<string[]
 };
 
 export const getPolicyContextSuggestions = async (location: string, challenge: string): Promise<string[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `
-    You are an expert urban planning policy analyst. For a project in '${location}' addressing the challenge of '${challenge}', suggest 3 relevant and REAL policy contexts. These should be actual, existing policies or widely recognized international frameworks.
-
-    For each suggestion, provide the official name of the policy or framework.
-
-    Examples of good suggestions:
-    - "The National Urban Development Strategy 2030"
-    - "[City Name]'s Climate Action Plan"
-    - "UN Sustainable Development Goal 11: Sustainable Cities and Communities"
-    - "The New Urban Agenda (Habitat III)"
-
-    Do not invent policies. The suggestions must be verifiable and authoritative.
-    `;
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
-        contents: prompt,
-        config: { responseMimeType: 'application/json', responseSchema: { type: Type.ARRAY, items: { type: Type.STRING }} }
-    });
-    try {
-        return JSON.parse(response.text || '[]');
-    } catch(e: unknown) {
-        console.error("Failed to parse policy context suggestions:", e);
-        return [];
-    }
+    const prompt = `Suggest 3 relevant policy contexts for '${location}' addressing '${challenge}'. Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
 };
-
-export const generateRFP = async (taskDescription: string, pageRange: string, files: File[]): Promise<RFPContent> => {
-    const formData = new FormData();
-    formData.append('taskDescription', taskDescription);
-    formData.append('pageRange', pageRange);
-    files.forEach(file => {
-        formData.append('files', file);
-    });
-
-    const response = await fetch('/api/generate-rfp', {
-        method: 'POST',
-        body: formData,
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate RFP.');
-    }
-
-    const data = await response.json();
-    return data.rfp;
-};
-
-export const generateCapacityBuildingProgram = async (audience: string): Promise<CapacityBuildingProgram> => {
-    const response = await fetch('/api/generate-capacity-building-program', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ audience }),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate capacity building program.');
-    }
-
-    const data = await response.json();
-    return data.program;
-};
-
-export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string): Promise<VisionFramework> => {
-    const response = await fetch('/api/generate-vision-framework', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ city, aspirations, timeframe, companyProfile }),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate vision framework.');
-    }
-
-    const data = await response.json();
-    return data.framework;
-};
-
-export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string): Promise<StakeholderPlan> => {
-    const response = await fetch('/api/generate-stakeholder-plan', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ context, goals, companyProfile }),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate stakeholder plan.');
-    }
-
-    const data = await response.json();
-    return data.plan;
-};
-
-export const generateMethodology = async (task: string, companyProfile?: string): Promise<Methodology> => {
-    const response = await fetch('/api/generate-methodology', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ task, companyProfile }),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate methodology.');
-    }
-
-    const data = await response.json();
-    return data.methodology;
-};
-
 
 export const getSlideRefinementSuggestions = async (slideContent: PresentationSlide): Promise<string[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `
-    You are an AI co-pilot for an urban planning presentation tool. A user is currently viewing a slide and has asked for refinement ideas.
-    Based on the JSON content of the current slide provided below, generate 3 concise, actionable refinement suggestions.
-    The suggestions should be phrased as commands or questions that the user could give to an AI.
-    
-    Examples:
-    - "Elaborate on the financial risks."
-    - "Rephrase the vision statement to be more impactful."
-    - "Add another key finding from a similar project in Asia."
-    - "Can you quantify the projected reduction in CO2 emissions?"
-
-    Current slide content:
-    ${JSON.stringify(slideContent, null, 2)}
-    `;
+    const ai = getAi();
+    const prompt = `Generate 3 refinement suggestions for this slide: ${JSON.stringify(slideContent)}. Return a JSON array of strings.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-3.1-pro-preview',
         contents: prompt,
         config: { 
             responseMimeType: 'application/json', 
@@ -371,7 +343,6 @@ export const getSlideRefinementSuggestions = async (slideContent: PresentationSl
             } 
         }
     });
-    
     try {
         return JSON.parse(response.text || '[]');
     } catch (e: unknown) {
@@ -379,3 +350,22 @@ export const getSlideRefinementSuggestions = async (slideContent: PresentationSl
         return [];
     }
 };
+
+export const sendMessageToInstantChatStream = async (message: string) => {
+    const ai = getAi();
+    return ai.models.generateContentStream({
+        model: 'gemini-3.1-pro-preview',
+        contents: message,
+        config: { systemInstruction: "Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise." }
+    });
+};
+
+export const streamAssistantResponse = async <T extends object>(contextData: T, prompt: string) => {
+    const ai = getAi();
+    return ai.models.generateContentStream({
+        model: 'gemini-3.1-pro-preview',
+        contents: `CONTEXT: ${JSON.stringify(contextData)}\n\nREQUEST: ${prompt}`,
+        config: { systemInstruction: "Refinement assistant. Return updated JSON.", responseMimeType: 'application/json' }
+    });
+};
+
