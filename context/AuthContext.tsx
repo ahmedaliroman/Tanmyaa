@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.email);
       } else {
         setLoading(false);
       }
@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.email);
       } else {
         setProfile(null);
         setLoading(false);
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, email?: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -65,11 +65,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        // If profile doesn't exist, maybe create one? Or just handle error.
-        // For now, we'll assume the trigger handles creation or we handle it on sign up.
+      if (error || !data) {
+        // If profile doesn't exist, create one with 100 credits
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([
+            { id: userId, email: email, credits: 100 }
+          ])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating profile:', createError);
+        } else {
+          setProfile(newProfile);
+        }
       } else {
+        // If profile exists but has 0 credits (assuming new user or empty), update to 100
+        if (data.credits === 0) {
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ credits: 100 })
+                .eq('id', userId);
+            
+            if (!updateError) {
+                data.credits = 100;
+            }
+        }
         setProfile(data);
       }
     } catch (error) {
@@ -81,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await fetchProfile(user.id, user.email);
     }
   };
 

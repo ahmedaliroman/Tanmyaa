@@ -81,6 +81,8 @@ export const generateImage = async (prompt: string): Promise<string> => {
 };
 
 export const generatePresentation = async (projectInfo: { authorRole?: string; location: string; scale: string; mainChallenge: string; policyContext: string; targetUsers: string; specificFocus: string }, _files: any[], _companyProfile?: string): Promise<any[]> => {
+    void _files;
+    void _companyProfile;
     const personaInstruction = projectInfo.authorRole 
       ? `The user creating this presentation has identified their role as: '${projectInfo.authorRole}'. Tailor the tone and complexity of your response appropriately (e.g., more explanatory for a 'Student', more technical for a 'Principal Planner').` 
       : '';
@@ -124,6 +126,7 @@ export const refinePresentation = async (currentSlides: any[], userRequest: stri
 };
 
 export const generatePolicyReport = async (brief: string, _files: any[], companyProfile?: string): Promise<any> => {
+    void _files;
     const parts: { text: string }[] = [{ text: `Generate a structured policy brief based on: ${brief}` }];
     // for (const file of files) parts.push(await fileToGenerativePart(file));
 
@@ -212,6 +215,8 @@ export const generatePolicyReport = async (brief: string, _files: any[], company
 };
 
 export const generateRFP = async (taskDescription: string, _pageRange: string, _files: any[]): Promise<any> => {
+    void _pageRange;
+    void _files;
     const parts: { text: string }[] = [{ text: `Generate RFP: ${taskDescription}` }];
     // for (const file of files) parts.push(await fileToGenerativePart(file));
     const response = await ai.models.generateContent({
