@@ -25,7 +25,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
 
     try {
       if (view === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -35,7 +35,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
           },
         });
         if (error) throw error;
-        // Show success message or auto-login if email confirmation is disabled
+        
+        if (data.session) {
+            // Auto-login successful (Email confirmation disabled)
+            onClose();
+        } else {
+            // Email confirmation required
+            alert('Sign up successful! Please check your email to confirm your account.');
+            onClose();
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,

@@ -77,6 +77,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (createError) {
           console.error('Error creating profile:', createError);
+          // Retry fetch if insert failed (might be race condition or trigger)
+          const { data: retryData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+            
+          if (retryData) {
+             // If we found it now, ensure it has credits
+             if (retryData.credits < 100) {
+                 await supabase.from('profiles').update({ credits: 100 }).eq('id', userId);
+                 retryData.credits = 100;
+             }
+             setProfile(retryData);
+          }
         } else {
           setProfile(newProfile);
         }
