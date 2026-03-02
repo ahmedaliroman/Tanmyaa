@@ -91,7 +91,7 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
   const [taskDescription, setTaskDescription] = useState<string>('');
   const [generatedContent, setGeneratedContent] = useState<Methodology | null>(null);
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, login } = useAuth();
+  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -212,8 +212,8 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
       error={error}
       result={generatedContent}
       onUpdateResult={(updatedResult) => setGeneratedContent(updatedResult)}
-      userEmail={profile?.email || null}
-      onLogin={login}
+      userEmail={user?.email || null}
+      onLogin={signInWithGoogle}
       onUpgrade={onUpgrade}
       renderInputForm={renderInput}
        renderExportControls={() => (

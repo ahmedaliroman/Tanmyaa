@@ -147,14 +147,14 @@ interface PolicyStrategyGeneratorProps {
   onUpgrade: () => void;
 }
 
-const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpgrade }) => {
+const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = () => {
   const [projectBrief, setProjectBrief] = useState<string>('');
   const [files, setFiles] = useState<File[]>([]);
   const [policyBrief, setPolicyBrief] = useState<PolicyBriefType | null>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, login } = useAuth();
+  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,7 +162,6 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpg
   const handleGenerate = useCallback(async () => {
     if (profile && profile.credits < 10) {
       setError("Insufficient credits. Please upgrade your plan.");
-      onUpgrade();
       return;
     }
 
@@ -191,7 +190,7 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpg
     } finally {
         setIsLoading(false);
     }
-  }, [projectBrief, files, companyProfile, deductCredits, profile, onUpgrade]);
+  }, [projectBrief, files, companyProfile, deductCredits, profile]);
 
   const handleExportPdf = async () => {
     const element = reportRef.current;
@@ -308,8 +307,8 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpg
       error={error}
       result={policyBrief}
       onUpdateResult={(updatedResult) => setPolicyBrief(updatedResult)}
-      userEmail={profile?.email || null}
-      onLogin={login}
+      userEmail={user?.email || null}
+      onLogin={signInWithGoogle}
       onUpgrade={onUpgrade}
       renderInputForm={renderInputForm}
       renderExportControls={() => (

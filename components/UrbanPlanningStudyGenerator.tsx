@@ -50,7 +50,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   const [isEditorMode, setIsEditorMode] = useState<boolean>(false);
   
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile } = useAuth();
+  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -334,6 +334,9 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
           isLoading={isLoading}
           files={files}
           setFiles={setFiles}
+          credits={profile?.credits || 0}
+          userEmail={user?.email || null}
+          onLogin={signInWithGoogle}
         />
       </div>
       

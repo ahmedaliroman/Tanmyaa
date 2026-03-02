@@ -82,7 +82,7 @@ const VisionFrameworkGenerator: React.FC<VisionFrameworkGeneratorProps> = ({ onU
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, login } = useAuth();
+  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -227,8 +227,8 @@ const VisionFrameworkGenerator: React.FC<VisionFrameworkGeneratorProps> = ({ onU
       error={error}
       result={framework}
       onUpdateResult={(updatedResult) => setFramework(updatedResult)}
-      userEmail={profile?.email || null}
-      onLogin={login}
+      userEmail={user?.email || null}
+      onLogin={signInWithGoogle}
       onUpgrade={onUpgrade}
       renderInputForm={renderInputForm}
       renderExportControls={() => (

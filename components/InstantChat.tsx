@@ -9,11 +9,7 @@ interface Message {
     text: string;
 }
 
-interface InstantChatProps {
-    onUpgrade: () => void;
-}
-
-const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
+const InstantChat: React.FC = () => {
     const { deductCredits, profile } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -41,7 +37,6 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
         if (profile && profile.credits < 5) {
             setMessages(prev => [...prev, { sender: 'user', text: input }, { sender: 'ai', text: "Insufficient credits. Please upgrade your plan." }]);
             setInput('');
-            onUpgrade();
             return;
         }
 
@@ -99,7 +94,7 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
         } finally {
             setIsLoading(false);
         }
-    }, [input, isLoading, deductCredits, profile, onUpgrade]);
+    }, [input, isLoading, deductCredits, profile]);
 
     return (
         <>

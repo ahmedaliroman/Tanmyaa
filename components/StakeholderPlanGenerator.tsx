@@ -188,7 +188,7 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, login } = useAuth();
+  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -319,8 +319,8 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
         error={error}
         result={plan}
         onUpdateResult={(updatedResult) => setPlan(updatedResult)}
-        userEmail={profile?.email || null}
-        onLogin={login}
+        userEmail={user?.email || null}
+        onLogin={signInWithGoogle}
         onUpgrade={onUpgrade}
         renderInputForm={renderInputForm}
         renderExportControls={() => (

@@ -12,7 +12,6 @@ interface Message {
 interface AIAssistantProps<T> {
   contextData: T;
   onRefine: (refinedJson: Partial<T>) => void;
-  onUpgrade: () => void;
 }
 
 const GenerateIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -21,7 +20,7 @@ const GenerateIcon: React.FC<{className?: string}> = ({ className }) => (
     </svg>
 );
 
-const AIAssistant = <T extends object>({ contextData, onRefine, onUpgrade }: AIAssistantProps<T>) => {
+const AIAssistant = <T extends object>({ contextData, onRefine }: AIAssistantProps<T>) => {
     const { deductCredits, profile } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
@@ -48,7 +47,6 @@ const AIAssistant = <T extends object>({ contextData, onRefine, onUpgrade }: AIA
         if (profile && profile.credits < 5) {
             setMessages(prev => [...prev, { sender: 'user', text: input }, { sender: 'ai', text: "Insufficient credits. Please upgrade your plan." }]);
             setInput('');
-            onUpgrade();
             return;
         }
 
@@ -124,7 +122,7 @@ const AIAssistant = <T extends object>({ contextData, onRefine, onUpgrade }: AIA
         } finally {
             setIsLoading(false);
         }
-    }, [contextData, input, isLoading, onRefine, deductCredits, profile, onUpgrade]);
+    }, [contextData, input, isLoading, onRefine, deductCredits, profile]);
 
     return (
         <>

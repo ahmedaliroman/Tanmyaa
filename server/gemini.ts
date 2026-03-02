@@ -80,14 +80,13 @@ export const generateImage = async (prompt: string): Promise<string> => {
     throw new Error("Image failed.");
 };
 
-export const generatePresentation = async (projectInfo: { authorRole?: string; location: string; scale: string; mainChallenge: string; policyContext: string; targetUsers: string; specificFocus: string }): Promise<unknown[]> => {
+export const generatePresentation = async (projectInfo: { authorRole?: string; location: string; scale: string; mainChallenge: string; policyContext: string; targetUsers: string; specificFocus: string }, _files: any[], _companyProfile?: string): Promise<any[]> => {
     const personaInstruction = projectInfo.authorRole 
       ? `The user creating this presentation has identified their role as: '${projectInfo.authorRole}'. Tailor the tone and complexity of your response appropriately (e.g., more explanatory for a 'Student', more technical for a 'Principal Planner').` 
       : '';
     const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy. Your output is a complete, technically defensible, and institutionally aware strategic doctrine. You are creating a decision architecture, not just a presentation. The tone must be analytical, quantitative, and grounded in policy and financial reality. The final presentation must be robust enough to withstand technical review by planning authorities, finance ministries, and infrastructure investment panels.`;
 
     const prompt = `
-    ${personaInstruction}
     Project Info:
     Location: ${projectInfo.location}
     Scale: ${projectInfo.scale}
@@ -99,7 +98,8 @@ export const generatePresentation = async (projectInfo: { authorRole?: string; l
     Generate a presentation based on these details, following all instructions and STRICT limits precisely.
     `;
 
-    const parts = [{ text: prompt }];
+    const parts: { text: string }[] = [{ text: prompt }];
+    // for (const file of files) parts.push(await fileToGenerativePart(file));
     
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
@@ -107,10 +107,10 @@ export const generatePresentation = async (projectInfo: { authorRole?: string; l
         config: { systemInstruction, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 32768 } },
     });
 
-    return parseJsonResponse<unknown[]>(response, 'Presentation');
+    return parseJsonResponse<any[]>(response, 'Presentation');
 };
 
-export const refinePresentation = async (currentSlides: unknown[], userRequest: string, activeSlideIndex: number): Promise<unknown[]> => {
+export const refinePresentation = async (currentSlides: any[], userRequest: string, activeSlideIndex: number): Promise<any[]> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
@@ -120,11 +120,12 @@ export const refinePresentation = async (currentSlides: unknown[], userRequest: 
             thinkingConfig: { thinkingBudget: 32768 } 
         },
     });
-    return parseJsonResponse<unknown[]>(response, 'Presentation Refinement');
+    return parseJsonResponse<any[]>(response, 'Presentation Refinement');
 };
 
-export const generatePolicyReport = async (brief: string, companyProfile?: string): Promise<Record<string, unknown>> => {
-    const parts = [{ text: `Generate a structured policy brief based on: ${brief}` }];
+export const generatePolicyReport = async (brief: string, _files: any[], companyProfile?: string): Promise<any> => {
+    const parts: { text: string }[] = [{ text: `Generate a structured policy brief based on: ${brief}` }];
+    // for (const file of files) parts.push(await fileToGenerativePart(file));
 
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief based on the user's prompt and any provided documents.
 
@@ -195,13 +196,13 @@ export const generatePolicyReport = async (brief: string, companyProfile?: strin
         }
     });
     
-    const briefResult = parseJsonResponse<Record<string, unknown>>(response, 'Policy Brief');
+    const briefResult = parseJsonResponse<any>(response, 'Policy Brief');
 
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     if (groundingChunks) {
-        briefResult.groundingSources = groundingChunks
-            .filter((chunk: { web?: { uri: string; title?: string } }) => chunk.web && chunk.web.uri)
-            .map((chunk: { web: { uri: string; title?: string } }) => ({
+        (briefResult as any).groundingSources = groundingChunks
+            .filter((chunk: any) => chunk.web && chunk.web.uri)
+            .map((chunk: any) => ({
                 uri: chunk.web.uri,
                 title: chunk.web.title || "Untitled Source",
             }));
@@ -210,26 +211,27 @@ export const generatePolicyReport = async (brief: string, companyProfile?: strin
     return briefResult;
 };
 
-export const generateRFP = async (taskDescription: string): Promise<unknown> => {
-    const parts = [{ text: `Generate RFP: ${taskDescription}` }];
+export const generateRFP = async (taskDescription: string, _pageRange: string, _files: any[]): Promise<any> => {
+    const parts: { text: string }[] = [{ text: `Generate RFP: ${taskDescription}` }];
+    // for (const file of files) parts.push(await fileToGenerativePart(file));
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: { parts },
         config: { systemInstruction: `Procurement Specialist. Your entire output MUST be a single, valid JSON object.`, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 32768 } }
     });
-    return parseJsonResponse<unknown>(response, 'RFP');
+    return parseJsonResponse<any>(response, 'RFP');
 };
 
-export const generateCapacityBuildingProgram = async (audience: string): Promise<unknown> => {
+export const generateCapacityBuildingProgram = async (audience: string): Promise<any> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: `Program for: ${audience}`,
         config: { systemInstruction: `Planning Educator. Your entire output MUST be a single, valid JSON object.`, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 32768 } }
     });
-    return parseJsonResponse<unknown>(response, 'Capacity Building Program');
+    return parseJsonResponse<any>(response, 'Capacity Building Program');
 };
 
-export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string): Promise<unknown> => {
+export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string): Promise<any> => {
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. Your task is to generate a compelling Vision & Strategic Framework based on the user's input.
 
     Your entire output MUST be a single, valid JSON object that adheres strictly to the following schema.
@@ -263,10 +265,10 @@ export const generateVisionFramework = async (city: string, aspirations: string,
         contents: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"`,
         config: { systemInstruction, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 32768 } }
     });
-    return parseJsonResponse<unknown>(response, 'Vision Framework');
+    return parseJsonResponse<any>(response, 'Vision Framework');
 };
 
-export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string): Promise<unknown> => {
+export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string): Promise<any> => {
     const systemInstruction = `You are a world-class public engagement and stakeholder relations strategist. Your task is to generate a comprehensive Stakeholder Engagement Plan based on the provided project context and goals.
 
     Your entire output MUST be a single, valid JSON object that adheres strictly to the following schema.
@@ -311,10 +313,10 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
         contents: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"`,
         config: { systemInstruction, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 32768 } }
     });
-    return parseJsonResponse<unknown>(response, 'Stakeholder Plan');
+    return parseJsonResponse<any>(response, 'Stakeholder Plan');
 };
 
-export const generateMethodology = async (task: string, companyProfile?: string): Promise<unknown> => {
+export const generateMethodology = async (task: string, companyProfile?: string): Promise<any> => {
     const systemInstruction = `You are a Senior Project Manager at a world-class urban planning consultancy. Your task is to generate a detailed, actionable, and professional methodology for a given urban planning task. The output MUST be a single, valid JSON object adhering strictly to the provided schema. The methodology should be broken down into logical phases and steps, with clear deliverables and recommended tools for each step.
 
     **JSON SCHEMA (STRICT ADHERENCE REQUIRED):**
@@ -346,7 +348,7 @@ export const generateMethodology = async (task: string, companyProfile?: string)
         contents: `Generate a methodology for the following task: "${task}"`,
         config: { systemInstruction, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 32768 } }
     });
-    return parseJsonResponse<unknown>(response, 'Methodology');
+    return parseJsonResponse<any>(response, 'Methodology');
 };
 
 const generateInputSuggestions = async (prompt: string): Promise<string[]> => {

@@ -11,7 +11,7 @@ import {
     generateMethodology, 
     getChallengeSuggestions, 
     getScaleSuggestions 
-} from './gemini.js';
+} from './gemini';
 
 const router = Router();
 

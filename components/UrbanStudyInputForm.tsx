@@ -10,7 +10,7 @@ interface InputFormProps {
   isLoading: boolean;
   files: File[];
   setFiles: (files: File[] | ((prevFiles: File[]) => File[])) => void;
-  generationCount: number;
+  credits: number;
   userEmail: string | null;
   onLogin: () => void;
 }
@@ -61,7 +61,7 @@ type SuggestionState = {
     }
 }
 
-const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onSubmit, isLoading, files, setFiles, generationCount, userEmail, onLogin }) => {
+const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onSubmit, isLoading, files, setFiles, credits, userEmail, onLogin }) => {
   const [projectInfo, setProjectInfo] = useState<UrbanPlanningProjectInfo>(initialProjectInfo);
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -270,11 +270,11 @@ const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onS
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-sm text-gray-400">
-            {20 - generationCount} generations remaining.
+            {credits} credits remaining.
           </div>
           <button
             onClick={handleNext}
-            disabled={isLoading || !isCurrentStepValid() || (isLastStep && generationCount >= 20)}
+            disabled={isLoading || !isCurrentStepValid() || (isLastStep && credits < 20)}
             className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
           >
             {isLoading && isLastStep ? 'Generating...' : (isLastStep ? 'Generate Study' : 'Next')}
