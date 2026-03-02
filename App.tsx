@@ -11,6 +11,7 @@ import VisionFrameworkGenerator from './components/VisionFrameworkGenerator';
 import StakeholderPlanGenerator from './components/StakeholderPlanGenerator';
 import SubscriptionPage from './components/SubscriptionPage';
 import MethodologyGenerator from './components/MethodologyGenerator';
+import AuthCallback from './components/AuthCallback';
 import { AuthProvider } from './context/AuthContext';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 
@@ -117,6 +118,9 @@ const App: React.FC = () => {
   return (
     <PayPalScriptProvider options={initialOptions}>
       <AuthProvider>
+        {window.location.pathname.startsWith('/auth/callback') ? (
+            <AuthCallback />
+        ) : (
         <div className="min-h-screen bg-transparent text-gray-200">
           {!hasApiKey && window.aistudio && (
               <div className="bg-blue-600 text-white py-2 px-4 text-center text-sm font-bold animate-fade-in flex items-center justify-center gap-4 sticky top-0 z-[60]">
@@ -140,6 +144,7 @@ const App: React.FC = () => {
           </main>
           <InstantChat onUpgrade={() => handleNavigate('subscription')} />
         </div>
+        )}
       </AuthProvider>
     </PayPalScriptProvider>
   );
