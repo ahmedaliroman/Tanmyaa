@@ -81,8 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(newProfile);
         }
       } else {
-        // If profile exists but has 0 credits (assuming new user or empty), update to 100
-        if (data.credits === 0) {
+        // Ensure every user has at least 100 credits (Welcome Bonus / Free Tier)
+        // This covers both new users who might have been created with 0, and existing users.
+        if (data.credits < 100) {
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({ credits: 100 })

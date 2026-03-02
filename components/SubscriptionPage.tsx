@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
 import { PayPalButtons } from "@paypal/react-paypal-js";
+import { useAuth } from '../context/AuthContext';
 
 const CheckIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-blue-400" }) => (
     <svg className={className} fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -14,6 +15,77 @@ const MinusIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
     </svg>
 );
+
+const PromoCodeSection: React.FC = () => {
+    const [code, setCode] = useState('');
+    const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+    const { addCredits } = useAuth();
+    const [isRedeeming, setIsRedeeming] = useState(false);
+
+    const handleRedeem = async () => {
+        if (!code.trim()) return;
+        
+        setIsRedeeming(true);
+        setMessage(null);
+        const normalizedCode = code.trim().toUpperCase();
+        
+        let creditsToAdd = 0;
+        let planName = '';
+
+        // Dev promo codes
+        if (normalizedCode === 'PRODEV2026') {
+            creditsToAdd = 400;
+            planName = 'Pro';
+        } else if (normalizedCode === 'BIZDEV2026') {
+            creditsToAdd = 3000;
+            planName = 'Business';
+        } else {
+            setMessage({ text: 'Invalid promo code.', type: 'error' });
+            setIsRedeeming(false);
+            return;
+        }
+
+        try {
+            await addCredits(creditsToAdd);
+            setMessage({ text: `Success! ${creditsToAdd} credits added for ${planName} plan.`, type: 'success' });
+            setCode('');
+        } catch (error) {
+            console.error(error);
+            setMessage({ text: 'Failed to redeem code. Please try again.', type: 'error' });
+        } finally {
+            setIsRedeeming(false);
+        }
+    };
+
+    return (
+        <div className="max-w-md mx-auto mt-12 p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
+            <h3 className="text-xl font-bold text-white mb-4 text-center">Have a Promo Code?</h3>
+            <div className="flex gap-2">
+                <input 
+                    type="text" 
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Enter code"
+                    className="flex-1 bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    disabled={isRedeeming}
+                />
+                <button 
+                    onClick={handleRedeem}
+                    disabled={!code || isRedeeming}
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                >
+                    {isRedeeming ? '...' : 'Redeem'}
+                </button>
+            </div>
+            {message && (
+                <p className={`mt-3 text-sm text-center ${message.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                    {message.text}
+                </p>
+            )}
+        </div>
+    );
+};
+
 
 
 const SubscriptionTier: React.FC<{ 
@@ -225,6 +297,8 @@ const SubscriptionPage: React.FC = () => {
             <div className="px-4 md:px-8 lg:px-12">
                 <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mt-20"></div>
             </div>
+
+            <PromoCodeSection />
 
             <FeatureComparisonTable />
 
