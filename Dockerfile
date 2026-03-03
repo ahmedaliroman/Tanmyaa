@@ -20,5 +20,8 @@ COPY . .
 # Build the app.
 RUN npm run build
 
+# Set production environment
+ENV NODE_ENV=production
+
 # Run the web service on container startup.
 CMD [ "npm", "start" ]
