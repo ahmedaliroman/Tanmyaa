@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef } from 'react';
-import { generatePolicyReport } from '../services/geminiService';
+import { generatePolicyReport, getPolicyBriefSuggestions } from '../services/geminiService';
 import type { PolicyBrief as PolicyBriefType } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
@@ -9,6 +9,7 @@ import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
 import FileUpload from './FileUpload';
+import AISuggestionButton from './AISuggestionButton';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -158,6 +159,20 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+
+  const handleGetSuggestions = async () => {
+    setIsSuggestionsLoading(true);
+    try {
+      const results = await getPolicyBriefSuggestions();
+      setSuggestions(results);
+    } catch (err) {
+      console.error("Failed to get suggestions:", err);
+    } finally {
+      setIsSuggestionsLoading(false);
+    }
+  };
 
   const handleGenerate = useCallback(async () => {
     if (profile && profile.credits < 10) {
@@ -253,9 +268,15 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = () => {
     <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
       <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
         <div className="border-b border-gray-800 p-4">
-          <label htmlFor="project-brief" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-            Project Brief
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="project-brief" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Project Brief
+            </label>
+            <AISuggestionButton 
+              onClick={handleGetSuggestions} 
+              isLoading={isSuggestionsLoading} 
+            />
+          </div>
           <p className="text-gray-400 text-sm mb-3">
               Describe the policy issue or project requiring analysis. Example: &quot;Analyze policy options for increasing affordable housing supply in the North District.&quot;
           </p>
@@ -268,6 +289,19 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = () => {
             className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
             disabled={isLoading}
           />
+          {suggestions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => setProjectBrief(s)}
+                  className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="p-4">
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">

@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import { generateRFP } from '../services/geminiService';
+import { generateRFP, getRFPSuggestions } from '../services/geminiService';
 import { exportRFPToDocx } from '../services/docxGenerator';
 import { useBranding } from '../hooks/useBranding';
 import type { RFPContent } from '../types';
@@ -9,6 +9,7 @@ import GeneratorShell from './GeneratorShell';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
+import AISuggestionButton from './AISuggestionButton';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -86,6 +87,20 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+
+  const handleGetSuggestions = async () => {
+    setIsSuggestionsLoading(true);
+    try {
+      const results = await getRFPSuggestions();
+      setSuggestions(results);
+    } catch (err) {
+      console.error("Failed to get suggestions:", err);
+    } finally {
+      setIsSuggestionsLoading(false);
+    }
+  };
 
   const handleGenerate = useCallback(async () => {
     if (profile && profile.credits < 10) {
@@ -134,7 +149,13 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = () => {
      <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
         <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
             <div className="border-b border-gray-800 p-4">
-                <label htmlFor="task-description" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Describe the Task</label>
+                <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="task-description" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Describe the Task</label>
+                    <AISuggestionButton 
+                        onClick={handleGetSuggestions} 
+                        isLoading={isSuggestionsLoading} 
+                    />
+                </div>
                  <p className="text-gray-400 text-sm mb-3">Provide a clear description of the project or services you need an RFP/ToR for.</p>
                 <textarea
                     id="task-description"
@@ -145,6 +166,19 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = () => {
                     className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
                     disabled={isLoading}
                 />
+                {suggestions.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {suggestions.map((s, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setTaskDescription(s)}
+                                className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="border-b border-gray-800 p-4">

@@ -21,6 +21,17 @@ const getSupabase = () => {
     return supabase;
 };
 
+router.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        env: {
+            hasSupabaseUrl: !!process.env.SUPABASE_URL,
+            hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+            nodeEnv: process.env.NODE_ENV
+        }
+    });
+});
+
 router.post('/deduct-credits', async (req, res) => {
     try {
         const client = getSupabase();

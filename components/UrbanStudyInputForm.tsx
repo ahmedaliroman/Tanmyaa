@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import type { UrbanPlanningProjectInfo } from '../types';
 import FileUpload from './FileUpload';
-import { getChallengeSuggestions, getScaleSuggestions, getPolicyContextSuggestions, getSpecificFocusSuggestions, getAudienceSuggestions, getAuthorRoleSuggestions } from '../services/geminiService';
+import { getSceneSuggestions, getLocationSuggestions, getChallengeSuggestions, getScaleSuggestions, getPolicyContextSuggestions, getSpecificFocusSuggestions, getAudienceSuggestions, getAuthorRoleSuggestions } from '../services/geminiService';
+import AISuggestionButton from './AISuggestionButton';
 
 interface InputFormProps {
   initialProjectInfo: UrbanPlanningProjectInfo;
@@ -14,12 +15,6 @@ interface InputFormProps {
   userEmail: string | null;
   onLogin: () => void;
 }
-
-const SparklesIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
-        <path fillRule="evenodd" d="M10 2.5a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM8.345 4.345a.75.75 0 011.06 0l.354.354a.75.75 0 01-1.06 1.06l-.354-.354a.75.75 0 010-1.06zm3.31 0a.75.75 0 011.06 0l.354.354a.75.75 0 11-1.06 1.06l-.354-.354a.75.75 0 010-1.06zM2.5 10a.75.75 0 01.75-.75h.5a.75.75 0 010 1.5h-.5a.75.75 0 01-.75-.75zm13.5 0a.75.75 0 01.75-.75h.5a.75.75 0 010 1.5h-.5a.75.75 0 01-.75-.75zM4.345 11.655a.75.75 0 011.06 0l.354.354a.75.75 0 01-1.06 1.06l-.354-.354a.75.75 0 010-1.06zm10.31 0a.75.75 0 011.06 0l.354.354a.75.75 0 11-1.06 1.06l-.354-.354a.75.75 0 010-1.06zM10 16.5a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM8.345 15.655a.75.75 0 011.06 0l.354.354a.75.75 0 01-1.06 1.06l-.354-.354a.75.75 0 010-1.06zm3.31 0a.75.75 0 011.06 0l.354.354a.75.75 0 11-1.06 1.06l-.354-.354a.75.75 0 010-1.06z" clipRule="evenodd" />
-    </svg>
-);
 
 const steps = [
     { 
@@ -66,6 +61,8 @@ const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onS
   const [currentStep, setCurrentStep] = useState(0);
 
   const [suggestionState, setSuggestionState] = useState<SuggestionState>({
+    scene: { suggestions: [], isLoading: false },
+    location: { suggestions: [], isLoading: false },
     scale: { suggestions: [], isLoading: false },
     mainChallenge: { suggestions: [], isLoading: false },
     policyContext: { suggestions: [], isLoading: false },
@@ -115,6 +112,12 @@ const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onS
     try {
         let suggestions: string[] = [];
         switch(fieldId) {
+            case 'scene':
+                suggestions = await getSceneSuggestions();
+                break;
+            case 'location':
+                suggestions = await getLocationSuggestions();
+                break;
             case 'scale':
                 if (projectInfo.location) suggestions = await getScaleSuggestions(projectInfo.location);
                 break;
@@ -197,6 +200,9 @@ const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onS
 
                     const canSuggest = () => {
                         switch(key) {
+                            case 'scene':
+                            case 'location':
+                                return true;
                             case 'scale': return !!projectInfo.location;
                             case 'mainChallenge': return !!projectInfo.location && !!projectInfo.scale;
                             case 'policyContext': 
@@ -212,15 +218,11 @@ const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onS
                              <div className="flex items-center justify-between mb-1">
                                 <label htmlFor={fieldId} className="block text-xs font-bold text-gray-400 uppercase tracking-wider">{fieldConfig[key].label}</label>
                                 {suggestionState[key] && (
-                                     <button
-                                        type="button"
+                                     <AISuggestionButton
                                         onClick={() => handleGetSuggestions(key)}
-                                        disabled={isSuggestionsLoading || !canSuggest()}
-                                        className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 disabled:text-gray-500 disabled:cursor-not-allowed transition"
-                                    >
-                                        <SparklesIcon className="w-4 h-4" />
-                                        Suggest
-                                    </button>
+                                        isLoading={isSuggestionsLoading}
+                                        disabled={!canSuggest()}
+                                    />
                                 )}
                             </div>
                             <textarea

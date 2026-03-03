@@ -294,6 +294,16 @@ const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
     }
 };
 
+export const getSceneSuggestions = async (): Promise<string[]> => {
+    const prompt = `Suggest 3 diverse urban planning scenes or project types (e.g., waterfront redevelopment, informal settlement upgrading, transit-oriented development). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getLocationSuggestions = async (): Promise<string[]> => {
+    const prompt = `Suggest 3 diverse global cities or regions known for interesting urban planning challenges (e.g., Cairo, Egypt; Medellin, Colombia; Singapore). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
 export const getChallengeSuggestions = async (location: string, scale: string): Promise<string[]> => {
     const prompt = `For an urban planning project in '${location}' at a '${scale}' scale, suggest 3 specific and relevant main challenges to address. Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
@@ -319,6 +329,16 @@ export const getAuthorRoleSuggestions = async (): Promise<string[]> => {
     return generateInputSuggestions(prompt);
 };
 
+export const getPolicyBriefSuggestions = async (): Promise<string[]> => {
+    const prompt = `Suggest 3 diverse and relevant urban policy topics for a policy brief (e.g., affordable housing, sustainable transport, heritage preservation). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getRFPSuggestions = async (): Promise<string[]> => {
+    const prompt = `Suggest 3 common urban planning tasks that require an RFP or ToR (e.g., masterplan development, environmental impact assessment, public engagement strategy). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
 export const getPolicyBriefRefinementSuggestions = async (brief: string): Promise<string[]> => {
     const prompt = `Suggest 3 ways to improve this policy brief: "${brief}". Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
@@ -329,8 +349,18 @@ export const getRFPRefinementSuggestions = async (task: string): Promise<string[
     return generateInputSuggestions(prompt);
 };
 
+export const getCapacityBuildingSuggestions = async (): Promise<string[]> => {
+    const prompt = `Suggest 3 diverse target audiences for an urban planning capacity building program (e.g., junior planners, community leaders, GIS technicians). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
 export const getCapacityBuildingRefinementSuggestions = async (audience: string, challenges: string): Promise<string[]> => {
     const prompt = `Suggest 3 workshop topics for audience '${audience}' facing '${challenges}'. Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getVisionAspirationSuggestions = async (city: string): Promise<string[]> => {
+    const prompt = `Suggest 3 strategic aspirations for the future of '${city}' (e.g., carbon-neutral district, innovation hub, walkable neighborhood). Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
@@ -339,8 +369,18 @@ export const getVisionFrameworkRefinementSuggestions = async (city: string, aspi
     return generateInputSuggestions(prompt);
 };
 
+export const getStakeholderContextSuggestions = async (): Promise<string[]> => {
+    const prompt = `Suggest 3 diverse urban project contexts that require stakeholder engagement (e.g., new park development, industrial zone rezoning, smart city sensor deployment). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
 export const getStakeholderPlanRefinementSuggestions = async (context: string, goals: string): Promise<string[]> => {
     const prompt = `Suggest 3 stakeholder groups for context '${context}' and goals '${goals}'. Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getMethodologySuggestions = async (): Promise<string[]> => {
+    const prompt = `Suggest 3 complex urban planning tasks that require a detailed methodology (e.g., climate adaptation strategy, transit-oriented development plan, heritage conservation framework). Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 

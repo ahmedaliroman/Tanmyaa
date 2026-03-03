@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef } from 'react';
-import { generateCapacityBuildingProgram } from '../services/geminiService';
+import { generateCapacityBuildingProgram, getCapacityBuildingSuggestions } from '../services/geminiService';
 import type { CapacityBuildingProgram } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
@@ -8,6 +8,7 @@ import { toPng } from 'html-to-image';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
+import AISuggestionButton from './AISuggestionButton';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -118,6 +119,20 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+
+  const handleGetSuggestions = async () => {
+    setIsSuggestionsLoading(true);
+    try {
+      const results = await getCapacityBuildingSuggestions();
+      setSuggestions(results);
+    } catch (err) {
+      console.error("Failed to get suggestions:", err);
+    } finally {
+      setIsSuggestionsLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -196,7 +211,13 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
     <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
         <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
             <div className="border-b border-gray-800 p-4">
-                <label htmlFor="audience" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Target Audience</label>
+                <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="audience" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Target Audience</label>
+                    <AISuggestionButton 
+                        onClick={handleGetSuggestions} 
+                        isLoading={isSuggestionsLoading} 
+                    />
+                </div>
                 <textarea
                     id="audience"
                     value={inputs.audience}
@@ -206,6 +227,19 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
                     className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
                     disabled={isLoading}
                 />
+                {suggestions.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {suggestions.map((s, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setInputs(prev => ({ ...prev, audience: s }))}
+                                className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
             <div className="border-b border-gray-800 p-4">
                 <label htmlFor="skillLevel" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Current Skill Level</label>

@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef } from 'react';
-import { generateVisionFramework } from '../services/geminiService';
+import { generateVisionFramework, getVisionAspirationSuggestions } from '../services/geminiService';
 import type { VisionFramework } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
@@ -8,6 +8,7 @@ import { toPng } from 'html-to-image';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
+import AISuggestionButton from './AISuggestionButton';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -86,6 +87,21 @@ const VisionFrameworkGenerator: React.FC<VisionFrameworkGeneratorProps> = ({ onU
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+
+  const handleGetSuggestions = async () => {
+    if (!inputs.city.trim()) return;
+    setIsSuggestionsLoading(true);
+    try {
+      const results = await getVisionAspirationSuggestions(inputs.city);
+      setSuggestions(results);
+    } catch (err) {
+      console.error("Failed to get suggestions:", err);
+    } finally {
+      setIsSuggestionsLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -173,7 +189,14 @@ const VisionFrameworkGenerator: React.FC<VisionFrameworkGeneratorProps> = ({ onU
           />
         </div>
         <div className="border-b border-gray-800 p-4">
-          <label htmlFor="aspirations" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Key Aspirations</label>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="aspirations" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Key Aspirations</label>
+            <AISuggestionButton 
+              onClick={handleGetSuggestions} 
+              isLoading={isSuggestionsLoading} 
+              disabled={!inputs.city.trim()}
+            />
+          </div>
           <textarea
             id="aspirations"
             value={inputs.aspirations}
@@ -183,6 +206,19 @@ const VisionFrameworkGenerator: React.FC<VisionFrameworkGeneratorProps> = ({ onU
             rows={3}
             className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
           />
+          {suggestions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInputs(prev => ({ ...prev, aspirations: s }))}
+                  className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="p-4">
           <label htmlFor="timeframe" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Timeframe</label>

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { getRemainingCredits } from './middleware';
@@ -8,6 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.set('trust proxy', true);
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', time: new Date().toISOString() });
+});
 
 // API endpoint to get remaining credits
 app.get('/api/credits', getRemainingCredits);

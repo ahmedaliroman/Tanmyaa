@@ -5,7 +5,11 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/(.*)",
+      "source": "/health",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/((?!api/|health|assets/|favicon.ico).*)",
       "destination": "/index.html"
     }
   ]
