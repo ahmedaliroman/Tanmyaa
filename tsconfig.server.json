@@ -7,5 +7,5 @@
     "outDir": "dist",
     "allowImportingTsExtensions": false
   },
-  "include": ["server.ts", "supabaseAdmin.ts", "supabaseClient.ts", "middleware", "services", "types.ts"]
+  "include": ["server.ts", "server/**/*.ts", "services/**/*.ts", "types.ts"]
 }
