@@ -15,17 +15,16 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// API endpoint to get remaining credits
+app.use('/api', apiRouter);
 app.get('/api/credits', getRemainingCredits);
 
-app.use('/api', apiRouter);
-
-// Global error handler for API routes to ensure JSON response
+// Global error handler for all routes
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use('/api', (err: Error & { status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error('API Error:', err);
+app.use((err: Error & { status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error('SERVER ERROR:', err);
     res.status(err.status || 500).json({
         error: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
 

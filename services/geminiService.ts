@@ -13,6 +13,7 @@ import type {
 const getAi = () => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
+        console.error('CRITICAL: Gemini API key is not configured in the frontend bundle.');
         throw new Error('Gemini API key is not configured. Please check your environment variables.');
     }
     return new GoogleGenAI({ apiKey });

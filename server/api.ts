@@ -16,7 +16,12 @@ const getSupabase = () => {
             throw new Error('Server configuration error: Missing database credentials.');
         }
         
-        supabase = createClient(url, key);
+        try {
+            supabase = createClient(url, key);
+        } catch (e) {
+            console.error('Failed to initialize Supabase client:', e);
+            throw new Error('Database connection error.');
+        }
     }
     return supabase;
 };
@@ -27,6 +32,7 @@ router.get('/health', (req, res) => {
         env: {
             hasSupabaseUrl: !!process.env.SUPABASE_URL,
             hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+            hasGeminiKey: !!process.env.GEMINI_API_KEY,
             nodeEnv: process.env.NODE_ENV
         }
     });
@@ -41,6 +47,10 @@ router.post('/deduct-credits', async (req, res) => {
         }
 
         const token = authHeader.split(' ')[1];
+        if (!token || token === 'undefined' || token === 'null') {
+            return res.status(401).json({ error: 'Invalid or missing authentication token.' });
+        }
+        
         const { data: { user }, error: authError } = await client.auth.getUser(token);
 
         if (authError || !user) {
