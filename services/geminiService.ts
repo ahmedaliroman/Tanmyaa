@@ -10,7 +10,13 @@ import type {
     Methodology
 } from '../types';
 
-const getAi = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAi = () => {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    if (!apiKey) {
+        throw new Error('Gemini API key is not configured. Please check your environment variables.');
+    }
+    return new GoogleGenAI({ apiKey });
+};
 
 const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: string): T => {
     const rawText = response.text || '';
@@ -87,9 +93,22 @@ const deductCredits = async (amount: number) => {
         },
         body: JSON.stringify({ amount }),
     });
+    
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to deduct credits.');
+        let errorMessage = 'Failed to deduct credits.';
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const error = await response.json();
+            errorMessage = error.error || errorMessage;
+        } else {
+            const text = await response.text();
+            if (text.includes('Missing database credentials')) {
+                errorMessage = 'Server is not configured with database credentials (SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY).';
+            } else {
+                errorMessage = `Server error (${response.status}): ${text.substring(0, 100)}...`;
+            }
+        }
+        throw new Error(errorMessage);
     }
 };
 
@@ -252,6 +271,27 @@ export const generateMethodology = async (task: string, companyProfile?: string)
         config: { systemInstruction, responseMimeType: 'application/json' }
     });
     return parseJsonResponse<Methodology>(response, 'Methodology');
+};
+
+const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
+    const ai = getAi();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: prompt,
+        config: { 
+            responseMimeType: 'application/json', 
+            responseSchema: { 
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+            } 
+        }
+    });
+    try {
+        return JSON.parse(response.text || '[]');
+    } catch (e: unknown) {
+        console.error("Failed to parse suggestions:", e);
+        return [];
+    }
 };
 
 export const getChallengeSuggestions = async (location: string, scale: string): Promise<string[]> => {

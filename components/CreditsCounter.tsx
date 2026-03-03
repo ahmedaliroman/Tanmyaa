@@ -10,6 +10,9 @@ const CreditsCounter: React.FC = () => {
                 if (response.ok) {
                     const data = await response.json();
                     setRemaining(data.remaining);
+                } else {
+                    const text = await response.text();
+                    console.warn(`Failed to fetch credits (${response.status}): ${text.substring(0, 50)}`);
                 }
             } catch (error) {
                 console.error('Failed to fetch credits:', error);
