@@ -63,15 +63,33 @@ router.post('/deduct-credits', async (req, res) => {
         }
 
         // Fetch current credits
-        const { data: profile, error: fetchError } = await client
+        const { data: initialProfile, error: fetchError } = await client
             .from('profiles')
             .select('credits')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
+        
+        let profile = initialProfile;
 
-        if (fetchError || !profile) {
+        if (fetchError) {
             console.error('Failed to fetch profile for user:', user.id, fetchError);
             return res.status(500).json({ error: 'Failed to fetch user profile.' });
+        }
+
+        // If profile doesn't exist, create it (safety net for trigger)
+        if (!profile) {
+            console.log(`Profile missing for user ${user.id}, creating one...`);
+            const { data: newProfile, error: insertError } = await client
+                .from('profiles')
+                .insert({ id: user.id, email: user.email, credits: 100 })
+                .select('credits')
+                .single();
+            
+            if (insertError) {
+                console.error('Failed to create missing profile:', insertError);
+                return res.status(500).json({ error: 'Failed to create user profile.' });
+            }
+            profile = newProfile;
         }
 
         if (profile.credits < amount) {
@@ -114,15 +132,33 @@ router.post('/paypal/capture-order', async (req, res) => {
         else if (plan === 'Trial') creditsToAdd = 100;
 
         // Fetch current credits
-        const { data: profile, error: fetchError } = await client
+        const { data: initialProfile, error: fetchError } = await client
             .from('profiles')
             .select('credits')
             .eq('id', userId)
-            .single();
+            .maybeSingle();
+        
+        let profile = initialProfile;
 
-        if (fetchError || !profile) {
+        if (fetchError) {
             console.error('Failed to fetch profile for user during payment:', userId, fetchError);
             return res.status(500).json({ error: 'Failed to fetch user profile.' });
+        }
+
+        // If profile doesn't exist, create it
+        if (!profile) {
+            console.log(`Profile missing for user ${userId} during payment, creating one...`);
+            const { data: newProfile, error: insertError } = await client
+                .from('profiles')
+                .insert({ id: userId, credits: 0 }) // Start with 0, will add credits below
+                .select('credits')
+                .single();
+            
+            if (insertError) {
+                console.error('Failed to create missing profile during payment:', insertError);
+                return res.status(500).json({ error: 'Failed to create user profile.' });
+            }
+            profile = newProfile;
         }
 
         // Update credits
