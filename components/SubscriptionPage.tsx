@@ -19,11 +19,16 @@ const MinusIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text
 const PromoCodeSection: React.FC = () => {
     const [code, setCode] = useState('');
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-    const { addCredits } = useAuth();
+    const { addCredits, user } = useAuth();
     const [isRedeeming, setIsRedeeming] = useState(false);
 
     const handleRedeem = async () => {
         if (!code.trim()) return;
+        
+        if (!user) {
+            setMessage({ text: 'Please sign in to redeem promo codes.', type: 'error' });
+            return;
+        }
         
         setIsRedeeming(true);
         setMessage(null);
@@ -46,7 +51,7 @@ const PromoCodeSection: React.FC = () => {
         }
 
         try {
-            await addCredits(creditsToAdd);
+            await addCredits(creditsToAdd, planName);
             setMessage({ text: `Success! ${creditsToAdd} credits added for ${planName} plan.`, type: 'success' });
             setCode('');
         } catch (error) {

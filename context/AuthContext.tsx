@@ -8,6 +8,7 @@ interface Profile {
   full_name?: string;
   avatar_url?: string;
   credits: number;
+  plan: string;
 }
 
 interface AuthContextType {
@@ -19,7 +20,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   deductCredits: (amount: number) => Promise<boolean>;
-  addCredits: (amount: number) => Promise<void>;
+  addCredits: (amount: number, planName?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -142,19 +143,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
-  const addCredits = async (amount: number): Promise<void> => {
-    if (!user || !profile) return;
+  const addCredits = async (amount: number, planName?: string): Promise<void> => {
+    if (!user || !profile) {
+      throw new Error('You must be signed in to add credits.');
+    }
+
+    const updates: { credits: number; plan?: string } = { 
+      credits: profile.credits + amount 
+    };
+    
+    if (planName) {
+      updates.plan = planName;
+    }
 
     const { error } = await supabase
       .from('profiles')
-      .update({ credits: profile.credits + amount })
+      .update(updates)
       .eq('id', user.id);
 
     if (error) {
       console.error('Error adding credits:', error);
+      throw error;
     } else {
         // Optimistic update
-        setProfile(prev => prev ? { ...prev, credits: prev.credits + amount } : null);
+        setProfile(prev => prev ? { 
+          ...prev, 
+          credits: prev.credits + amount,
+          plan: planName || prev.plan
+        } : null);
     }
   };
 

@@ -87,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
                   <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl overflow-hidden animate-fade-in z-50">
                     <div className="p-3 border-b border-white/5">
                       <p className="text-sm font-medium text-white truncate">{user.email}</p>
-                      <p className="text-xs text-gray-500">Free Plan</p>
+                      <p className="text-xs text-gray-500">{profile?.plan || 'Free'} Plan</p>
                     </div>
                     <button 
                       onClick={() => onNavigate('subscription')}
