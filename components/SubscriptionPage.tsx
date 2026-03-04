@@ -39,7 +39,7 @@ const PromoCodeSection: React.FC = () => {
 
         // Dev promo codes
         if (normalizedCode === 'PRODEV2026') {
-            creditsToAdd = 400;
+            creditsToAdd = 600;
             planName = 'Pro';
         } else if (normalizedCode === 'BIZDEV2026') {
             creditsToAdd = 3000;
@@ -277,7 +277,7 @@ const SubscriptionPage: React.FC = () => {
                     priceSubtext="/ month"
                     description="For individual planners who need consistent access."
                     features={[
-                        '400 Credits / month',
+                        '600 Credits / month',
                         'Enhanced Models',
                         'PDF Export',
                         'Priority Support',

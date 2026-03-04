@@ -6,9 +6,13 @@ interface Profile {
   id: string;
   email: string;
   full_name?: string;
-  avatar_url?: string;
   credits: number;
   plan: string;
+  paypal_subscription_id?: string;
+  subscription_status?: string;
+  subscription_start_date?: string;
+  subscription_end_date?: string;
+  total_credits_used?: number;
 }
 
 interface AuthContextType {
@@ -130,7 +134,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { error } = await supabase
       .from('profiles')
-      .update({ credits: profile.credits - amount })
+      .update({ 
+        credits: profile.credits - amount,
+        total_credits_used: (profile.total_credits_used || 0) + amount
+      })
       .eq('id', user.id);
 
     if (error) {
@@ -139,7 +146,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     // Optimistic update
-    setProfile(prev => prev ? { ...prev, credits: prev.credits - amount } : null);
+    setProfile(prev => prev ? { 
+      ...prev, 
+      credits: prev.credits - amount,
+      total_credits_used: (prev.total_credits_used || 0) + amount
+    } : null);
     return true;
   };
 

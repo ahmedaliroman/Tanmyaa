@@ -62,10 +62,10 @@ router.post('/deduct-credits', async (req, res) => {
             return res.status(400).json({ error: 'Invalid credit amount.' });
         }
 
-        // Fetch current credits
+        // Fetch current credits and total_credits_used
         const { data: initialProfile, error: fetchError } = await client
             .from('profiles')
-            .select('credits')
+            .select('credits, total_credits_used')
             .eq('id', user.id)
             .maybeSingle();
         
@@ -81,8 +81,8 @@ router.post('/deduct-credits', async (req, res) => {
             console.log(`Profile missing for user ${user.id}, creating one...`);
             const { data: newProfile, error: insertError } = await client
                 .from('profiles')
-                .insert({ id: user.id, email: user.email, credits: 100 })
-                .select('credits')
+                .insert({ id: user.id, email: user.email, credits: 100, total_credits_used: 0 })
+                .select('credits, total_credits_used')
                 .single();
             
             if (insertError) {
@@ -96,10 +96,13 @@ router.post('/deduct-credits', async (req, res) => {
             return res.status(403).json({ error: 'Insufficient credits.' });
         }
 
-        // Deduct credits
+        // Deduct credits and increment total_credits_used
         const { error: updateError } = await client
             .from('profiles')
-            .update({ credits: profile.credits - amount })
+            .update({ 
+                credits: profile.credits - amount,
+                total_credits_used: (profile.total_credits_used || 0) + amount
+            })
             .eq('id', user.id);
 
         if (updateError) {
@@ -127,8 +130,8 @@ router.post('/paypal/capture-order', async (req, res) => {
         // For this implementation, we assume the client-side capture was successful
         
         let creditsToAdd = 0;
-        if (plan === 'Pro') creditsToAdd = 1000;
-        else if (plan === 'Business') creditsToAdd = 5000;
+        if (plan === 'Pro') creditsToAdd = 600;
+        else if (plan === 'Business') creditsToAdd = 3000;
         else if (plan === 'Trial') creditsToAdd = 100;
 
         // Fetch current credits

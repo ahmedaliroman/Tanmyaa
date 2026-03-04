@@ -3,9 +3,13 @@ create table if not exists public.profiles (
   id uuid references auth.users on delete cascade not null primary key,
   email text,
   full_name text,
-  avatar_url text,
   credits integer default 100,
   plan text default 'Free',
+  paypal_subscription_id text,
+  subscription_status text default 'active',
+  subscription_start_date timestamp with time zone,
+  subscription_end_date timestamp with time zone,
+  total_credits_used integer default 0,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
@@ -33,12 +37,14 @@ create policy "Users can insert own profile"
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, full_name, credits)
+  insert into public.profiles (id, email, full_name, credits, plan, total_credits_used)
   values (
     new.id, 
     new.email, 
     new.raw_user_meta_data->>'full_name', 
-    100
+    100,
+    'Free',
+    0
   );
   return new;
 end;
@@ -54,8 +60,8 @@ create trigger on_auth_user_created
 -- 5. (Optional) Backfill existing users who might be missing a profile
 -- Uncomment and run this block if you have existing users without profiles
 /*
-insert into public.profiles (id, email, credits)
-select id, email, 100
+insert into public.profiles (id, email, credits, plan, total_credits_used)
+select id, email, 100, 'Free', 0
 from auth.users
 where id not in (select id from public.profiles);
 */
