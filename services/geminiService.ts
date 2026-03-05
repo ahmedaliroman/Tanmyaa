@@ -101,6 +101,9 @@ const deductCredits = async (amount: number) => {
         if (contentType && contentType.includes('application/json')) {
             const error = await response.json();
             errorMessage = error.error || errorMessage;
+            if (error.hint) {
+                errorMessage += ` Hint: ${error.hint}`;
+            }
         } else {
             const text = await response.text();
             if (text.includes('Missing database credentials')) {
@@ -136,18 +139,44 @@ export const generatePresentation = async (
 ): Promise<PresentationSlide[]> => {
     await deductCredits(20);
     const ai = getAi();
-    const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy. Your output is a complete, technically defensible, and institutionally aware strategic doctrine. You are creating a decision architecture, not just a presentation. The tone must be analytical, quantitative, and grounded in policy and financial reality. The final presentation must be robust enough to withstand technical review by planning authorities, finance ministries, and infrastructure investment panels.`;
+    const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy (like McKinsey, Arup, or Foster + Partners). 
+    Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
+    You are creating a decision architecture, not just a presentation. 
+    The tone must be analytical, quantitative, and grounded in policy and financial reality. 
+    
+    CRITICAL RULES:
+    1. NEVER use placeholders like "[Insert Data Here]", "TBD", or "To be determined". 
+    2. If you lack specific data for a location, use your vast internal knowledge to provide realistic, technically sound estimates and benchmarks.
+    3. Every field in the JSON must be filled with high-quality, professional content.
+    4. The output MUST be a JSON array of slide objects.
+    5. Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Closing.
+    
+    SCHEMA GUIDANCE:
+    - Cover: { layout: "Cover", title, subtitle, project_code, year }
+    - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
+    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}] }
+    - SWOT: { layout: "SWOT", strengths: [{title, description}], weaknesses, opportunities, threats, analytic_reflection }
+    - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, image_prompt, analytic_reflection }
+    - Vision: { layout: "Vision", title, vision_statement, image_prompt }
+    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}], image_prompt }
+    - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
+    - Roadmap: { layout: "Roadmap", phases: [{title, timeline, action_steps: [{action, kpi}], outcome}] }
+    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}] }
+    - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
+    - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
+    `;
 
     const prompt = `
-    Project Info:
+    Generate a 12-15 slide strategic urban planning doctrine for:
     Location: ${projectInfo.location}
     Scale: ${projectInfo.scale}
     Core Challenge: ${projectInfo.mainChallenge}
     Policy Context: ${projectInfo.policyContext}
     Target Users: ${projectInfo.targetUsers}
     Specific Focus: ${projectInfo.specificFocus}
+    Author Role: ${projectInfo.authorRole || 'Senior Consultant'}
     
-    Generate a presentation based on these details, following all instructions and STRICT limits precisely.
+    Ensure the content is deeply relevant to ${projectInfo.location} and addresses ${projectInfo.mainChallenge} with specific, actionable strategies.
     `;
 
     const response = await ai.models.generateContent({
@@ -176,7 +205,9 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
 export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string): Promise<PolicyBrief> => {
     await deductCredits(10);
     const ai = getAi();
-    const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief based on the user's prompt and any provided documents.
+    const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
+    
+    CRITICAL: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
     
     Your entire output MUST be a single, valid JSON object following the required schema.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
@@ -214,10 +245,17 @@ export const generateRFP = async (
 ): Promise<RFPContent> => {
     await deductCredits(10);
     const ai = getAi();
+    const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
+    Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
+    
+    CRITICAL: NEVER use placeholders. Provide specific, technically sound requirements, evaluation criteria, and scope of work based on your expertise.
+    
+    Your entire output MUST be a single, valid JSON object.`;
+    
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
-        contents: `Generate RFP: ${taskDescription}`,
-        config: { systemInstruction: `Procurement Specialist. Your entire output MUST be a single, valid JSON object.`, responseMimeType: 'application/json' }
+        contents: `Generate a detailed RFP for: ${taskDescription}`,
+        config: { systemInstruction, responseMimeType: 'application/json' }
     });
     return parseJsonResponse<RFPContent>(response, 'RFP');
 };
@@ -225,10 +263,17 @@ export const generateRFP = async (
 export const generateCapacityBuildingProgram = async (audience: string): Promise<CapacityBuildingProgram> => {
     await deductCredits(10);
     const ai = getAi();
+    const systemInstruction = `You are a world-class Urban Planning Educator. 
+    Your task is to generate a comprehensive Capacity Building Program.
+    
+    CRITICAL: NEVER use placeholders. Provide specific learning objectives, detailed module content, and a clear evaluation plan.
+    
+    Your entire output MUST be a single, valid JSON object.`;
+    
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
-        contents: `Program for: ${audience}`,
-        config: { systemInstruction: `Planning Educator. Your entire output MUST be a single, valid JSON object.`, responseMimeType: 'application/json' }
+        contents: `Generate a capacity building program for: ${audience}`,
+        config: { systemInstruction, responseMimeType: 'application/json' }
     });
     return parseJsonResponse<CapacityBuildingProgram>(response, 'Capacity Building Program');
 };
@@ -236,7 +281,12 @@ export const generateCapacityBuildingProgram = async (audience: string): Promise
 export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string): Promise<VisionFramework> => {
     await deductCredits(10);
     const ai = getAi();
-    const systemInstruction = `You are a world-class Urban Futurist and Strategist. Your entire output MUST be a single, valid JSON object.
+    const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
+    Your task is to generate a cohesive and inspiring Vision Framework.
+    
+    CRITICAL: NEVER use placeholders. Provide a specific, inspiring vision statement, a memorable tagline, and detailed strategic pillars with actionable initiatives.
+    
+    Your entire output MUST be a single, valid JSON object.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const response = await ai.models.generateContent({
@@ -250,7 +300,12 @@ export const generateVisionFramework = async (city: string, aspirations: string,
 export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string): Promise<StakeholderPlan> => {
     await deductCredits(10);
     const ai = getAi();
-    const systemInstruction = `You are a world-class public engagement strategist. Your entire output MUST be a single, valid JSON object.
+    const systemInstruction = `You are a world-class public engagement strategist. 
+    Your task is to generate a detailed Stakeholder Engagement Plan.
+    
+    CRITICAL: NEVER use placeholders. Identify specific stakeholder groups, define clear engagement goals, and provide a detailed timeline with concrete activities.
+    
+    Your entire output MUST be a single, valid JSON object.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const response = await ai.models.generateContent({
@@ -264,7 +319,12 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
 export const generateMethodology = async (task: string, companyProfile?: string): Promise<Methodology> => {
     await deductCredits(10);
     const ai = getAi();
-    const systemInstruction = `You are a Senior Project Manager. Your entire output MUST be a single, valid JSON object.
+    const systemInstruction = `You are a Senior Urban Project Manager. 
+    Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
+    
+    CRITICAL: NEVER use placeholders. Provide a clear introduction, detailed phases with specific steps, concrete deliverables, and relevant tools/techniques.
+    
+    Your entire output MUST be a single, valid JSON object.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
@@ -280,6 +340,7 @@ const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
         model: 'gemini-3.1-pro-preview',
         contents: prompt,
         config: { 
+            systemInstruction: "You are a professional urban planning assistant. Provide highly relevant, specific, and creative suggestions. Avoid generic answers. Return ONLY a JSON array of strings.",
             responseMimeType: 'application/json', 
             responseSchema: { 
                 type: Type.ARRAY,
@@ -306,7 +367,9 @@ export const getLocationSuggestions = async (): Promise<string[]> => {
 };
 
 export const getChallengeSuggestions = async (location: string, scale: string): Promise<string[]> => {
-    const prompt = `For an urban planning project in '${location}' at a '${scale}' scale, suggest 3 specific and relevant main challenges to address. Return a JSON array of strings.`;
+    const prompt = `As a Senior Urban Planner, suggest 3-4 specific, technically sound, and highly relevant main challenges for a project in '${location}' at a '${scale}' scale. 
+    Focus on contemporary urban issues like climate resilience, social equity, or digital transformation. 
+    Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
@@ -316,7 +379,9 @@ export const getScaleSuggestions = async (location: string): Promise<string[]> =
 };
 
 export const getSpecificFocusSuggestions = async (location: string, challenge: string): Promise<string[]> => {
-    const prompt = `For a project in '${location}' addressing '${challenge}', suggest 3 specific focus areas. Return a JSON array of strings.`;
+    const prompt = `For an urban planning project in '${location}' addressing the challenge of '${challenge}', suggest 3-4 specific and professional focus areas. 
+    The suggestions should be actionable and technically precise. 
+    Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 
@@ -361,7 +426,9 @@ export const getCapacityBuildingRefinementSuggestions = async (audience: string,
 };
 
 export const getVisionAspirationSuggestions = async (city: string): Promise<string[]> => {
-    const prompt = `Suggest 3 strategic aspirations for the future of '${city}' (e.g., carbon-neutral district, innovation hub, walkable neighborhood). Return a JSON array of strings.`;
+    const prompt = `As an Urban Futurist, suggest 3-4 inspiring and specific strategic aspirations for the future of '${city}'. 
+    Consider its unique geography, culture, and potential for sustainable growth. 
+    Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
 };
 

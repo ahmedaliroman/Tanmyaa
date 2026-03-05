@@ -20,6 +20,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  authError: string | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -34,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     // Get initial session
@@ -63,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const fetchProfile = async (userId: string, email?: string) => {
+    setAuthError(null);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -71,17 +74,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (error || !data) {
+        if (error) {
+            console.error('Error fetching profile:', error);
+            setAuthError(`Failed to fetch profile: ${error.message}. Ensure the "profiles" table exists.`);
+        }
         // If profile doesn't exist, create one with 100 credits
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert([
-            { id: userId, email: email, credits: 100 }
-          ])
+          .upsert([
+            { id: userId, email: email, credits: 100, plan: 'Free' }
+          ], { onConflict: 'id' })
           .select()
           .single();
 
         if (createError) {
           console.error('Error creating profile:', createError);
+          setAuthError(`Failed to create profile: ${createError.message}. Ensure the "profiles" table exists and RLS is configured.`);
           // Retry fetch if insert failed (might be race condition or trigger)
           const { data: retryData } = await supabase
             .from('profiles')
@@ -223,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signInWithGoogle, signOut, refreshProfile, deductCredits, addCredits }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, authError, signInWithGoogle, signOut, refreshProfile, deductCredits, addCredits }}>
       {children}
     </AuthContext.Provider>
   );

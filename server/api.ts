@@ -73,7 +73,11 @@ router.post('/deduct-credits', async (req, res) => {
 
         if (fetchError) {
             console.error('Failed to fetch profile for user:', user.id, fetchError);
-            return res.status(500).json({ error: 'Failed to fetch user profile.' });
+            return res.status(500).json({ 
+                error: 'Failed to fetch user profile.',
+                details: fetchError.message,
+                hint: 'Ensure the "profiles" table exists in your Supabase database. Run the SQL in supabase/schema.sql.'
+            });
         }
 
         // If profile doesn't exist, create it (safety net for trigger)
@@ -81,13 +85,24 @@ router.post('/deduct-credits', async (req, res) => {
             console.log(`Profile missing for user ${user.id}, creating one...`);
             const { data: newProfile, error: insertError } = await client
                 .from('profiles')
-                .insert({ id: user.id, email: user.email, credits: 100, total_credits_used: 0 })
+                .upsert({ 
+                    id: user.id, 
+                    email: user.email, 
+                    credits: 100, 
+                    total_credits_used: 0,
+                    plan: 'Free'
+                }, { onConflict: 'id' })
                 .select('credits, total_credits_used')
                 .single();
             
             if (insertError) {
-                console.error('Failed to create missing profile:', insertError);
-                return res.status(500).json({ error: 'Failed to create user profile.' });
+                console.error('Failed to create/upsert profile:', insertError);
+                return res.status(500).json({ 
+                    error: 'Failed to create user profile.',
+                    details: insertError.message,
+                    code: insertError.code,
+                    hint: 'If this is an RLS error, ensure you are using the SERVICE_ROLE_KEY on the server.'
+                });
             }
             profile = newProfile;
         }

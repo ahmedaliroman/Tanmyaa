@@ -157,10 +157,12 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     try {
         const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile);
         await refreshProfile();
-        if (generatedSlides) {
+        if (generatedSlides && generatedSlides.length > 0) {
             setSlides(generatedSlides);
             setCurrentIndex(0);
             setIsEditorMode(true);
+        } else {
+            throw new Error("The AI failed to generate any slides. Please try again with more detailed parameters.");
         }
     } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "An unexpected error occurred.");
