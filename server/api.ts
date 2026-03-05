@@ -165,10 +165,11 @@ router.post('/paypal/capture-order', async (req, res) => {
         }
 
         // Update credits and plan
+        const currentCredits = Number(profile.credits) || 0;
         const { error: updateError } = await client
             .from('profiles')
             .update({ 
-                credits: profile.credits + creditsToAdd,
+                credits: currentCredits + creditsToAdd,
                 plan: plan 
             })
             .eq('id', userId);

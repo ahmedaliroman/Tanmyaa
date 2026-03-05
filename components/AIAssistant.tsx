@@ -12,6 +12,7 @@ interface Message {
 interface AIAssistantProps<T> {
   contextData: T;
   onRefine: (refinedJson: Partial<T>) => void;
+  onUpgrade: () => void;
 }
 
 const GenerateIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -20,8 +21,8 @@ const GenerateIcon: React.FC<{className?: string}> = ({ className }) => (
     </svg>
 );
 
-const AIAssistant = <T extends object>({ contextData, onRefine }: AIAssistantProps<T>) => {
-    const { deductCredits, profile } = useAuth();
+const AIAssistant = <T extends object>({ contextData, onRefine, onUpgrade }: AIAssistantProps<T>) => {
+    const { refreshProfile, deductCredits, profile } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { sender: 'ai', text: "How can I refine this document for you?" }
@@ -46,6 +47,7 @@ const AIAssistant = <T extends object>({ contextData, onRefine }: AIAssistantPro
 
         if (profile && profile.credits < 5) {
             setMessages(prev => [...prev, { sender: 'user', text: input }, { sender: 'ai', text: "Insufficient credits. Please upgrade your plan." }]);
+            onUpgrade();
             setInput('');
             return;
         }
@@ -59,6 +61,7 @@ const AIAssistant = <T extends object>({ contextData, onRefine }: AIAssistantPro
         let accumulatedJsonString = '';
         try {
             const success = await deductCredits(5);
+            await refreshProfile();
             if (!success) {
                 throw new Error("Failed to deduct credits.");
             }
@@ -122,7 +125,7 @@ const AIAssistant = <T extends object>({ contextData, onRefine }: AIAssistantPro
         } finally {
             setIsLoading(false);
         }
-    }, [contextData, input, isLoading, onRefine, deductCredits, profile]);
+    }, [contextData, input, isLoading, onRefine, deductCredits, profile, refreshProfile, onUpgrade]);
 
     return (
         <>

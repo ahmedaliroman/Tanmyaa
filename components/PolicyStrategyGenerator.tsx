@@ -148,14 +148,14 @@ interface PolicyStrategyGeneratorProps {
   onUpgrade: () => void;
 }
 
-const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = () => {
+const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpgrade }) => {
   const [projectBrief, setProjectBrief] = useState<string>('');
   const [files, setFiles] = useState<File[]>([]);
   const [policyBrief, setPolicyBrief] = useState<PolicyBriefType | null>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
+  const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +177,7 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = () => {
   const handleGenerate = useCallback(async () => {
     if (profile && profile.credits < 10) {
       setError("Insufficient credits. Please upgrade your plan.");
+      onUpgrade();
       return;
     }
 
@@ -190,12 +191,8 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = () => {
     setPolicyBrief(null);
     
     try {
-        const success = await deductCredits(10);
-        if (!success) {
-            throw new Error("Failed to deduct credits.");
-        }
-
         const generatedBrief = await generatePolicyReport(projectBrief, files, companyProfile);
+        await refreshProfile();
         if (generatedBrief) {
           setPolicyBrief(generatedBrief);
         }
@@ -205,7 +202,7 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [projectBrief, files, companyProfile, deductCredits, profile]);
+  }, [projectBrief, files, companyProfile, profile, refreshProfile, onUpgrade]);
 
   const handleExportPdf = async () => {
     const element = reportRef.current;

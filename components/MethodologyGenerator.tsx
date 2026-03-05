@@ -92,7 +92,7 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
   const [taskDescription, setTaskDescription] = useState<string>('');
   const [generatedContent, setGeneratedContent] = useState<Methodology | null>(null);
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
+  const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -129,12 +129,8 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
     setGeneratedContent(null);
     
     try {
-        const success = await deductCredits(10);
-        if (!success) {
-            throw new Error("Failed to deduct credits.");
-        }
-
         const result = await generateMethodology(taskDescription, companyProfile);
+        await refreshProfile();
         if (result) {
             setGeneratedContent(result);
         }
@@ -144,7 +140,7 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
     } finally {
         setIsLoading(false);
     }
-  }, [taskDescription, companyProfile, deductCredits, profile, onUpgrade]);
+  }, [taskDescription, companyProfile, profile, onUpgrade, refreshProfile]);
   
    const handleExportPdf = async () => {
     const element = reportRef.current;

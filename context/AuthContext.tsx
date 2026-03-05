@@ -103,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         // Ensure every user has at least 100 credits (Welcome Bonus / Free Tier)
         // This covers both new users who might have been created with 0, and existing users.
-        if (data.credits < 100) {
+        if (data.credits < 100 && data.plan !== 'Pro' && data.plan !== 'Business') {
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({ credits: 100 })
@@ -111,6 +111,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             if (!updateError) {
                 data.credits = 100;
+            }
+        }
+
+        // ONE-TIME FIX: If a user has a Pro/Business plan but 0 credits and hasn't used any, they encountered the NaN bug.
+        if (data.plan === 'Pro' && (data.credits === 0 || data.credits == null) && (data.total_credits_used === 0 || data.total_credits_used == null)) {
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ credits: 600 })
+                .eq('id', userId);
+            
+            if (!updateError) {
+                data.credits = 600;
+            }
+        } else if (data.plan === 'Business' && (data.credits === 0 || data.credits == null) && (data.total_credits_used === 0 || data.total_credits_used == null)) {
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ credits: 3000 })
+                .eq('id', userId);
+            
+            if (!updateError) {
+                data.credits = 3000;
             }
         }
         setProfile(data);
@@ -159,8 +180,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('You must be signed in to add credits.');
     }
 
+    const currentCredits = Number(profile.credits) || 0;
     const updates: { credits: number; plan?: string } = { 
-      credits: profile.credits + amount 
+      credits: currentCredits + amount 
     };
     
     if (planName) {
@@ -179,7 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Optimistic update
         setProfile(prev => prev ? { 
           ...prev, 
-          credits: prev.credits + amount,
+          credits: (Number(prev.credits) || 0) + amount,
           plan: planName || prev.plan
         } : null);
     }

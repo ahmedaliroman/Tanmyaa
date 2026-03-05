@@ -189,7 +189,7 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
+  const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -230,12 +230,8 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
     setPlan(null);
     
     try {
-        const success = await deductCredits(10);
-        if (!success) {
-            throw new Error("Failed to deduct credits.");
-        }
-
         const generatedPlan = await generateStakeholderPlan(inputs.projectContext, inputs.projectGoals, companyProfile);
+        await refreshProfile();
         if (generatedPlan) {
             setPlan(generatedPlan);
         }
@@ -245,7 +241,7 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
     } finally {
         setIsLoading(false);
     }
-  }, [inputs, companyProfile, deductCredits, profile, onUpgrade]);
+  }, [inputs, companyProfile, profile, onUpgrade, refreshProfile]);
   
   const handleExportPdf = async () => {
     const element = reportRef.current;

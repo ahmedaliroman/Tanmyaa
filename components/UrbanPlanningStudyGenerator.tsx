@@ -50,7 +50,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   const [isEditorMode, setIsEditorMode] = useState<boolean>(false);
   
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
+  const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,12 +155,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     setChatMessages([{sender: 'ai', text: "Strategic deck generated. I can refine any slide or add technical depth upon request."}]);
 
     try {
-        const success = await deductCredits(20);
-        if (!success) {
-            throw new Error("Failed to deduct credits. Please try again.");
-        }
-
         const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile);
+        await refreshProfile();
         if (generatedSlides) {
             setSlides(generatedSlides);
             setCurrentIndex(0);
@@ -171,11 +167,17 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     } finally {
         setIsLoading(false);
     }
-  }, [files, companyProfile, deductCredits, profile, onUpgrade]);
+  }, [files, companyProfile, profile, onUpgrade, refreshProfile]);
   
   const handleChatSend = useCallback(async (message?: string) => {
     const messageToSend = message || chatInput;
     if (!messageToSend.trim() || !slides) return;
+
+    if (profile && profile.credits < 5) {
+        setChatMessages(prev => [...prev, { sender: 'user', text: messageToSend }, { sender: 'ai', text: "Insufficient credits. Please upgrade your plan." }]);
+        onUpgrade();
+        return;
+    }
 
     const userMessage: ChatMessage = { sender: 'user', text: messageToSend };
     setChatMessages(prev => [...prev, userMessage]);
@@ -185,6 +187,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
 
     try {
         const newSlides = await refinePresentation(slides, messageToSend, currentIndex, companyProfile);
+        await refreshProfile();
         setSlides(newSlides);
         setChatMessages(prev => [...prev, { sender: 'ai', text: "Technical updates processed." }]);
     } catch {
@@ -192,7 +195,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     } finally {
         setIsChatLoading(false);
     }
-  }, [chatInput, slides, currentIndex, companyProfile]);
+  }, [chatInput, slides, currentIndex, companyProfile, refreshProfile, profile, onUpgrade]);
 
   const fetchSuggestions = useCallback(async () => {
     if (isChatOpen && slides && slides[currentIndex]) {

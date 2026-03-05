@@ -76,14 +76,14 @@ interface RFPGeneratorProps {
   onUpgrade: () => void;
 }
 
-const RFPGenerator: React.FC<RFPGeneratorProps> = () => {
+const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
   const [taskDescription, setTaskDescription] = useState<string>('');
   const [pageRange, setPageRange] = useState<string>('5-10');
   const [files, setFiles] = useState<File[]>([]);
   const [generatedContent, setGeneratedContent] = useState<RFPContent | null>(null);
   const { logo } = useBranding();
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
+  const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +105,7 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = () => {
   const handleGenerate = useCallback(async () => {
     if (profile && profile.credits < 10) {
       setError("Insufficient credits. Please upgrade your plan.");
+      onUpgrade();
       return;
     }
 
@@ -122,12 +123,8 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = () => {
     setGeneratedContent(null);
     
     try {
-        const success = await deductCredits(10);
-        if (!success) {
-            throw new Error("Failed to deduct credits.");
-        }
-
         const result = await generateRFP(taskDescription, pageRange, files, companyProfile);
+        await refreshProfile();
         if (result) {
             setGeneratedContent(result);
         }
@@ -137,7 +134,7 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = () => {
     } finally {
         setIsLoading(false);
     }
-  }, [taskDescription, pageRange, files, companyProfile, deductCredits, profile]);
+  }, [taskDescription, pageRange, files, companyProfile, profile, refreshProfile, onUpgrade]);
   
   const handleDownload = () => {
     if (generatedContent) {

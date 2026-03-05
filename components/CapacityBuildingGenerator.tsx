@@ -115,7 +115,7 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const { companyProfile } = useCompanyProfile();
-  const { deductCredits, profile, user, signInWithGoogle } = useAuth();
+  const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,12 +156,8 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
     setProgram(null);
     
     try {
-        const success = await deductCredits(10);
-        if (!success) {
-            throw new Error("Failed to deduct credits.");
-        }
-
         const generatedProgram = await generateCapacityBuildingProgram(inputs.audience, inputs.skillLevel, inputs.challenges, companyProfile);
+        await refreshProfile();
         if (generatedProgram) {
             setProgram(generatedProgram);
         }
@@ -171,7 +167,7 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
     } finally {
         setIsLoading(false);
     }
-  }, [inputs, companyProfile, deductCredits, profile, onUpgrade]);
+  }, [inputs, companyProfile, profile, onUpgrade, refreshProfile]);
   
   const handleExportPdf = async () => {
     const element = reportRef.current;
