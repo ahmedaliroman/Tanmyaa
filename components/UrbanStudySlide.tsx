@@ -356,20 +356,24 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
                 <div style={impactsAnimation}>
                     <h3 className="font-bold text-lg text-[var(--color-accent-light)] border-b border-white/20 pb-2 mb-4">Distributional Impacts</h3>
                     <div className="space-y-4">
-                        {(slide.distributional_impacts || []).map((item, i) => (
+                        {(slide.distributional_impacts || []).length > 0 ? (slide.distributional_impacts || []).map((item, i) => (
                             <div key={i} className="bg-white/5 p-4 rounded-lg">
                                 <Editable as="p" value={item.group} onUpdate={v => onUpdate(`distributional_impacts[${i}].group`, v)} className="font-semibold text-white text-sm" />
                                 <Editable as="p" value={item.impact} onUpdate={v => onUpdate(`distributional_impacts[${i}].impact`, v)} className="text-xs text-white/70 mt-1" />
                             </div>
-                        ))}
+                        )) : (
+                            <p className="text-white/40 italic text-sm">No distributional impacts identified.</p>
+                        )}
                     </div>
                 </div>
                 <div style={strategiesAnimation}>
                     <h3 className="font-bold text-lg text-[var(--color-accent-light)] border-b border-white/20 pb-2 mb-4">Mitigation Strategies</h3>
                      <ul className="list-disc list-inside space-y-2 mt-2 text-base text-white/90">
-                        {(slide.mitigation_strategies || []).map((strat, i) => (
+                        {(slide.mitigation_strategies || []).length > 0 ? (slide.mitigation_strategies || []).map((strat, i) => (
                             <li key={i}><Editable as="span" value={strat} onUpdate={v => onUpdate(`mitigation_strategies[${i}]`, v)} className="text-sm" /></li>
-                        ))}
+                        )) : (
+                            <p className="text-white/40 italic text-sm list-none">No mitigation strategies defined.</p>
+                        )}
                     </ul>
                 </div>
             </div>
@@ -422,8 +426,8 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                                 <MetricValueDisplay
                                     value={metric.value}
                                     isActive={isActive}
-                                    numberClass="text-6xl text-[var(--color-accent-cream)]"
-                                    suffixClass="text-4xl"
+                                    numberClass="text-5xl text-[var(--color-accent-cream)]"
+                                    suffixClass="text-3xl"
                                 />
                                 <Editable as="p" value={metric.label} onUpdate={v => onUpdate(`metrics[${i}].label`, v)} className="text-sm text-white/60 uppercase tracking-widest mt-1" />
                             </div>
@@ -684,8 +688,8 @@ const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpda
                                     <MetricValueDisplay 
                                         value={baselineValue}
                                         isActive={isActive}
-                                        numberClass="text-4xl text-white/70"
-                                        suffixClass="text-2xl" 
+                                        numberClass="text-3xl text-white/70"
+                                        suffixClass="text-xl" 
                                     />
                                     {baselineDescription && <p className="text-base font-bold text-white/70 mt-1">{baselineDescription}</p>}
                                 </div>
@@ -695,8 +699,8 @@ const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpda
                                     <MetricValueDisplay 
                                         value={projectedValue}
                                         isActive={isActive}
-                                        numberClass="text-5xl text-[var(--color-accent-cream)]"
-                                        suffixClass="text-3xl"
+                                        numberClass="text-4xl text-[var(--color-accent-cream)]"
+                                        suffixClass="text-2xl"
                                     />
                                     {projectedDescription && <p className="text-base font-bold text-white/80 mt-1">{projectedDescription}</p>}
                                 </div>
@@ -733,7 +737,7 @@ const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpda
                     <span>Recovery Mechanism</span>
                 </div>
                 <div className="divide-y divide-white/10">
-                    {(slide.cost_items || []).map((item, i) => {
+                    {(slide.cost_items || []).length > 0 ? (slide.cost_items || []).map((item, i) => {
                         const itemAnimation = getAnimationStyles(isActive, 350 + i * 100);
                         return (
                             <div key={i} className="grid grid-cols-5 gap-4 p-4 items-center text-sm transition-all duration-200 hover:bg-white/10" style={itemAnimation}>
@@ -744,7 +748,11 @@ const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpda
                                 <Editable as="p" value={item.recovery_mechanism} onUpdate={v => onUpdate(`cost_items[${i}].recovery_mechanism`, v)} className="text-white/80 text-xs" />
                             </div>
                         )
-                    })}
+                    }) : (
+                        <div className="p-12 text-center text-white/40 italic">
+                            No fiscal framework items defined.
+                        </div>
+                    )}
                 </div>
             </div>
              <div className="mt-6 flex-shrink-0">
@@ -761,7 +769,7 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
         <SlideWrapper className="p-16 flex flex-col">
             <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]">Required Policy Levers</h1></div>
             <div className="space-y-6 flex-grow overflow-y-auto content-scrollbar pr-4">
-                {(slide.recommendations || []).map((rec, i) => {
+                {(slide.recommendations || []).length > 0 ? (slide.recommendations || []).map((rec, i) => {
                     const recommendationAnimation = getAnimationStyles(isActive, 350 + i * 150);
                     return (
                         <div key={i} className="bg-[var(--color-accent-cream)]/10 p-6 rounded-lg border border-white/10" style={recommendationAnimation}>
@@ -779,7 +787,11 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
                             </div>
                         </div>
                     )
-                })}
+                }) : (
+                    <div className="flex items-center justify-center h-full text-white/40 italic">
+                        No policy recommendations generated.
+                    </div>
+                )}
             </div>
         </SlideWrapper>
     );
@@ -809,14 +821,16 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
                      <div className="bg-white/5 p-4 rounded-lg" style={regulatoryChangesAnimation}>
                         <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-2">Regulatory Changes</h3>
                          <ul className="list-disc list-inside space-y-1 text-sm text-white/90">
-                            {(slide.regulatory_changes || []).map((change, i) => <li key={i}><Editable as="span" value={change} onUpdate={v => onUpdate(`regulatory_changes[${i}]`, v)} /></li>)}
+                            {(slide.regulatory_changes || []).length > 0 ? (slide.regulatory_changes || []).map((change, i) => <li key={i}><Editable as="span" value={change} onUpdate={v => onUpdate(`regulatory_changes[${i}]`, v)} /></li>) : (
+                                <p className="text-white/40 italic list-none">No regulatory changes identified.</p>
+                            )}
                         </ul>
                     </div>
                 </div>
                  <div className="flex flex-col min-h-0">
                     <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-2 flex-shrink-0" style={stakeholderRolesAnimation}>Key Stakeholder Roles</h3>
                     <div className="space-y-2 overflow-y-auto content-scrollbar pr-2 flex-grow">
-                        {(slide.stakeholders || []).map((s, i) => {
+                        {(slide.stakeholders || []).length > 0 ? (slide.stakeholders || []).map((s, i) => {
                             const stakeholderAnimation = getAnimationStyles(isActive, 500 + i * 75);
                             return (
                                 <div key={i} className="flex items-start text-sm border-b border-white/10 py-2" style={stakeholderAnimation}>
@@ -824,9 +838,42 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
                                     <Editable as="p" value={s.role} onUpdate={v => onUpdate(`stakeholders[${i}].role`, v)} className="w-2/3 text-white/70" />
                                 </div>
                             )
-                        })}
+                        }) : (
+                            <p className="text-white/40 italic">No stakeholder roles defined.</p>
+                        )}
                     </div>
                 </div>
+            </div>
+        </SlideWrapper>
+    );
+};
+
+const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: string, val: string | {step_number: number, title: string, description: string}[]) => void, isActive: boolean }> = ({ slide, onUpdate, isActive }) => {
+    const titleAnimation = getAnimationStyles(isActive, 200);
+    const reflectionAnimation = getAnimationStyles(isActive, 900);
+
+    return (
+        <SlideWrapper className="p-16 flex flex-col">
+            <div style={titleAnimation}>
+                <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-2 text-[var(--color-accent-light)]" />
+                <Editable as="p" value={slide.subtitle} onUpdate={v => onUpdate('subtitle', v)} className="text-white/60 mb-10" />
+            </div>
+            <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {(slide.steps || []).map((step, i) => {
+                    const stepAnimation = getAnimationStyles(isActive, 350 + i * 150);
+                    return (
+                        <div key={i} className="relative bg-white/5 p-6 rounded-lg border border-white/10 flex flex-col" style={stepAnimation}>
+                            <div className="absolute -top-4 -left-4 w-10 h-10 bg-[var(--color-primary-medium)] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                                {step.step_number || i + 1}
+                            </div>
+                            <Editable as="h3" value={step.title} onUpdate={v => onUpdate(`steps[${i}].title`, v)} className="font-bold text-lg text-white mb-3 mt-2" />
+                            <Editable as="p" value={step.description} onUpdate={v => onUpdate(`steps[${i}].description`, v)} className="text-sm text-white/70" />
+                        </div>
+                    )
+                })}
+            </div>
+            <div className="mt-10">
+                <AnalyticReflection text={slide.analytic_reflection} onUpdate={v => onUpdate('analytic_reflection', v)} animationStyle={reflectionAnimation} />
             </div>
         </SlideWrapper>
     );
@@ -871,6 +918,7 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide; imageUrls?: Record<s
         'FiscalFramework': FiscalFrameworkSlideLayout,
         'PolicyLevers': PolicyLeversSlideLayout,
         'GovernanceFramework': GovernanceFrameworkSlideLayout,
+        'Process': ProcessSlideLayout,
         'Closing': ClosingSlideLayout,
     };
 

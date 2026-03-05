@@ -149,7 +149,7 @@ export const generatePresentation = async (
     2. If you lack specific data for a location, use your vast internal knowledge to provide realistic, technically sound estimates and benchmarks.
     3. Every field in the JSON must be filled with high-quality, professional content.
     4. The output MUST be a JSON array of slide objects.
-    5. Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Closing.
+    5. Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
     
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year }
@@ -164,6 +164,7 @@ export const generatePresentation = async (
     - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}] }
     - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
     - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
+    - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], analytic_reflection }
     `;
 
     const prompt = `
@@ -188,14 +189,24 @@ export const generatePresentation = async (
     return parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
 };
 
-export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number): Promise<PresentationSlide[]> => {
+export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string): Promise<PresentationSlide[]> => {
     await deductCredits(5);
     const ai = getAi();
+    const systemInstruction = `You are a Lead Strategist at Tanmyaa Global. Your task is to intelligently refine the provided JSON presentation structure based on the user's request, ensuring technical coherence and strategic depth.
+    
+    CRITICAL: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
+    
+    Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
+    
+    ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
+    
+    IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
+
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
         config: { 
-            systemInstruction: `You are a Lead Strategist at Tanmyaa Global. Your task is to intelligently refine the provided JSON presentation structure based on the user's request, ensuring coherence. The slide structure is dynamic. IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`,
+            systemInstruction,
             responseMimeType: 'application/json'
         },
     });

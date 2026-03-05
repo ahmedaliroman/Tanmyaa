@@ -237,6 +237,18 @@ export interface ClosingSlide {
     credits: string;
 }
 
+export interface ProcessSlide {
+    layout: 'Process';
+    title: string;
+    subtitle: string;
+    steps: {
+        step_number: number;
+        title: string;
+        description: string;
+    }[];
+    analytic_reflection: string;
+}
+
 // Union type for all possible slides in the new structure
 export type PresentationSlide = 
     | CoverSlide 
@@ -257,6 +269,7 @@ export type PresentationSlide =
     | FiscalFrameworkSlide
     | PolicyLeversSlide
     | GovernanceFrameworkSlide
+    | ProcessSlide
     | ReferencesSlide
     | ClosingSlide;
 
