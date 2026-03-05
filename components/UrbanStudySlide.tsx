@@ -243,14 +243,22 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
     return (
         <SlideWrapper className="p-16 flex flex-col">
             <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">SWOT Analysis</h1></div>
-            <div className="flex-grow grid grid-cols-2 gap-x-12 min-h-0">
-                <div className="space-y-8 flex flex-col justify-between">
-                    <SWOTCategory title="Strengths" items={slide.strengths} onUpdate={onUpdate} type="strengths" animationStyle={strengthsAnimation} />
-                    <SWOTCategory title="Opportunities" items={slide.opportunities} onUpdate={onUpdate} type="opportunities" animationStyle={opportunitiesAnimation} />
+            <div className="flex-grow grid grid-cols-2 gap-x-12 min-h-0 overflow-hidden">
+                <div className="space-y-6 flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto content-scrollbar pr-2">
+                        <SWOTCategory title="Strengths" items={slide.strengths} onUpdate={onUpdate} type="strengths" animationStyle={strengthsAnimation} />
+                    </div>
+                    <div className="flex-1 overflow-y-auto content-scrollbar pr-2">
+                        <SWOTCategory title="Opportunities" items={slide.opportunities} onUpdate={onUpdate} type="opportunities" animationStyle={opportunitiesAnimation} />
+                    </div>
                 </div>
-                <div className="space-y-8 flex flex-col justify-between">
-                    <SWOTCategory title="Weaknesses" items={slide.weaknesses} onUpdate={onUpdate} type="weaknesses" animationStyle={weaknessesAnimation} />
-                    <SWOTCategory title="Threats" items={slide.threats} onUpdate={onUpdate} type="threats" animationStyle={threatsAnimation} />
+                <div className="space-y-6 flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto content-scrollbar pr-2">
+                        <SWOTCategory title="Weaknesses" items={slide.weaknesses} onUpdate={onUpdate} type="weaknesses" animationStyle={weaknessesAnimation} />
+                    </div>
+                    <div className="flex-1 overflow-y-auto content-scrollbar pr-2">
+                        <SWOTCategory title="Threats" items={slide.threats} onUpdate={onUpdate} type="threats" animationStyle={threatsAnimation} />
+                    </div>
                 </div>
             </div>
              <div className="mt-6 flex-shrink-0">
@@ -305,9 +313,9 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
         <SlideWrapper className="justify-center items-center text-center p-16">
             <div className="absolute inset-0 bg-black/75 z-10"></div>
             <img src={imageUrls[slide.image_prompt] || ''} className="absolute inset-0 w-full h-full object-cover" alt="Vision background"/>
-            <div className="relative z-20">
+            <div className="relative z-20 w-full max-w-6xl">
                 <div style={titleAnimation}><Editable as="h2" value={slide.title} className="text-xl font-bold text-white/50 uppercase tracking-[0.3em]" onUpdate={v => onUpdate('title', v)} /></div>
-                <div style={statementAnimation}><Editable as="p" value={slide.vision_statement.replace(/\n/g, '<br/>')} onUpdate={v => onUpdate('vision_statement', v)} className="text-6xl font-extrabold my-8 max-w-5xl leading-tight tracking-tighter whitespace-pre-line" /></div>
+                <div style={statementAnimation}><Editable as="p" value={slide.vision_statement.replace(/\n/g, '<br/>')} onUpdate={v => onUpdate('vision_statement', v)} className="text-4xl md:text-5xl lg:text-6xl font-extrabold my-8 leading-tight tracking-tighter whitespace-pre-line" /></div>
             </div>
         </SlideWrapper>
     );
@@ -488,7 +496,7 @@ const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate
     return (
         <SlideWrapper className="p-16 flex flex-col">
             <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">{slide.title}</h1></div>
-            <div className="flex-grow space-y-4">
+            <div className="flex-grow space-y-4 overflow-y-auto content-scrollbar pr-2">
                 {(slide.risks || []).map((risk, i) => {
                     const riskAnimation = getAnimationStyles(isActive, 350 + i * 100);
                     return (
@@ -858,11 +866,11 @@ const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: stri
                 <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-2 text-[var(--color-accent-light)]" />
                 <Editable as="p" value={slide.subtitle} onUpdate={v => onUpdate('subtitle', v)} className="text-white/60 mb-10" />
             </div>
-            <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-y-auto content-scrollbar pr-2">
                 {(slide.steps || []).map((step, i) => {
                     const stepAnimation = getAnimationStyles(isActive, 350 + i * 150);
                     return (
-                        <div key={i} className="relative bg-white/5 p-6 rounded-lg border border-white/10 flex flex-col" style={stepAnimation}>
+                        <div key={i} className="relative bg-white/5 p-6 rounded-lg border border-white/10 flex flex-col min-h-[200px]" style={stepAnimation}>
                             <div className="absolute -top-4 -left-4 w-10 h-10 bg-[var(--color-primary-medium)] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                                 {step.step_number || i + 1}
                             </div>
@@ -872,7 +880,7 @@ const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: stri
                     )
                 })}
             </div>
-            <div className="mt-10">
+            <div className="mt-10 flex-shrink-0">
                 <AnalyticReflection text={slide.analytic_reflection} onUpdate={v => onUpdate('analytic_reflection', v)} animationStyle={reflectionAnimation} />
             </div>
         </SlideWrapper>
