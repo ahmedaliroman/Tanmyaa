@@ -150,6 +150,8 @@ export const generatePresentation = async (
     3. Every field in the JSON must be filled with high-quality, professional content.
     4. The output MUST be a JSON array of slide objects.
     5. Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
+    6. TECHNICAL DEPTH: Provide rigorous, data-driven analysis. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
+    7. NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year }
@@ -219,6 +221,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
     
     CRITICAL: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
+    TECHNICAL DEPTH: Ensure the analysis is rigorous, using professional terminology and providing concrete, quantified evidence where possible.
     
     SCHEMA GUIDANCE:
     {
@@ -353,6 +356,7 @@ export const generateRFP = async (
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
     
     CRITICAL: NEVER use placeholders. Provide specific, technically sound requirements, evaluation criteria, and scope of work based on your expertise.
+    TECHNICAL DEPTH: The RFP must be ready for institutional use, with detailed technical specifications and rigorous evaluation frameworks.
     
     SCHEMA GUIDANCE:
     {
@@ -419,6 +423,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     CRITICAL: NEVER use placeholders like "[Insert Data Here]", "TBD", or "[Company Name]". 
     Provide specific learning objectives, detailed module content, concrete methodologies, and a clear evaluation plan.
     The content must be technically rigorous and directly address the specific challenges and skill levels provided.
+    TECHNICAL DEPTH: Use advanced pedagogical frameworks and industry-standard technical tools in the curriculum.
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
 
@@ -487,6 +492,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     Your task is to generate a cohesive and inspiring Vision Framework.
     
     CRITICAL: NEVER use placeholders. Provide a specific, inspiring vision statement, a memorable tagline, and detailed strategic pillars with actionable initiatives.
+    TECHNICAL DEPTH: Ground the vision in urban planning theory and future-proofing strategies (e.g., circular economy, 15-minute city).
     
     SCHEMA GUIDANCE:
     {
@@ -542,6 +548,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     Your task is to generate a detailed Stakeholder Engagement Plan.
     
     CRITICAL: NEVER use placeholders. Identify specific stakeholder groups, define clear engagement goals, and provide a detailed timeline with concrete activities.
+    TECHNICAL DEPTH: Use sophisticated engagement methodologies (e.g., Delphi method, participatory budgeting, digital twin consultation).
     
     SCHEMA GUIDANCE:
     {
@@ -622,6 +629,7 @@ export const generateMethodology = async (task: string, companyProfile?: string)
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
     
     CRITICAL: NEVER use placeholders. Provide a clear introduction, detailed phases with specific steps, concrete deliverables, and relevant tools/techniques.
+    TECHNICAL DEPTH: The methodology should reflect a high-level professional workflow, incorporating advanced analytical tools and quality assurance processes.
     
     SCHEMA GUIDANCE:
     {

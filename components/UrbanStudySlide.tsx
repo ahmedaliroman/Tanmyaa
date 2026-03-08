@@ -81,7 +81,14 @@ const AnimatedNumber: React.FC<{ value: string; isActive: boolean, duration?: nu
     const { number, prefix, suffix, precision } = parseNumericValue(value);
     const count = useCountUp(number, duration, isActive);
     
-    return <span>{prefix}{count.toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision })}{suffix}</span>;
+    const isYear = precision === 0 && number >= 1900 && number <= 2100;
+    const formatOptions = { 
+        minimumFractionDigits: precision, 
+        maximumFractionDigits: precision,
+        useGrouping: !isYear
+    };
+    
+    return <span>{prefix}{count.toLocaleString(undefined, formatOptions)}{suffix}</span>;
 };
 
 
@@ -396,9 +403,16 @@ const MetricValueDisplay: React.FC<{ value: string; isActive: boolean; numberCla
     const { number, prefix, suffix, precision } = parseNumericValue(value);
     const count = useCountUp(number, 2000, isActive);
     
+    const isYear = precision === 0 && number >= 1900 && number <= 2100;
+    const formatOptions = { 
+        minimumFractionDigits: precision, 
+        maximumFractionDigits: precision,
+        useGrouping: !isYear
+    };
+
     const numberPart = isActive
-        ? count.toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision })
-        : number.toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision });
+        ? count.toLocaleString(undefined, formatOptions)
+        : number.toLocaleString(undefined, formatOptions);
     
     const fullValue = `${prefix}${numberPart}${suffix}`;
     const isLong = fullValue.length > 10;
@@ -424,8 +438,8 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
 
     return (
         <SlideWrapper className="p-0 text-center flex flex-col">
-            <div className="w-1/2 h-full absolute left-0 top-0"><img src={imageUrls[slide.before_image_prompt] || ''} className="w-full h-full object-cover" alt="Before" /><div className="absolute inset-0 bg-black/50"></div><div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">BEFORE</div></div>
-            <div className="w-1/2 h-full absolute right-0 top-0"><img src={imageUrls[slide.after_image_prompt] || ''} className="w-full h-full object-cover" alt="After" /><div className="absolute inset-0 bg-black/20"></div><div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">AFTER</div></div>
+            <div className="w-1/2 h-full absolute left-0 top-0"><img src={imageUrls[slide.before_image_prompt] || ''} className="w-full h-full object-cover" alt="Before" /><div className="absolute inset-0 bg-black/80"></div><div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">BEFORE</div></div>
+            <div className="w-1/2 h-full absolute right-0 top-0"><img src={imageUrls[slide.after_image_prompt] || ''} className="w-full h-full object-cover" alt="After" /><div className="absolute inset-0 bg-black/75"></div><div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">AFTER</div></div>
             <div className="relative z-20 flex-grow flex flex-col justify-between p-12">
                 <div style={titleAnimation}>
                     <Editable as="h2" value={slide.title} className="text-5xl font-extrabold tracking-tighter" onUpdate={v => onUpdate('title', v)} />
@@ -571,21 +585,47 @@ const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: stri
 };
 
 const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, onUpdate: (field: string, val: string | number | {name: string, start_quarter: string, end_quarter: string, kpi: string}[]) => void, isActive: boolean }> = ({ slide, onUpdate, isActive }) => {
-    const startYear = slide.timeline_start_year;
-    const endYear = slide.timeline_end_year;
+    const parseYear = (val: string | number | undefined | null): number => {
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string') {
+            const match = val.match(/\d{4}/);
+            return match ? parseInt(match[0]) : 0;
+        }
+        return 0;
+    };
+    const startYear = parseYear(slide.timeline_start_year);
+    const endYear = parseYear(slide.timeline_end_year);
     if (!startYear || !endYear || endYear < startYear) {
-        return <SlideWrapper className="p-12 items-center justify-center text-white/50">Invalid or missing timeline data.</SlideWrapper>;
+        return (
+            <SlideWrapper className="p-12 items-center justify-center text-white/50" style={{background: 'linear-gradient(to bottom, #1B3C53, #102434)'}}>
+                <div className="text-center">
+                    <p className="mb-4">Invalid or missing timeline data.</p>
+                    <div className="flex items-center justify-center space-x-4 bg-white/5 p-4 rounded-lg">
+                        <div className="flex flex-col items-start">
+                            <span className="text-[10px] uppercase opacity-50">Start Year</span>
+                            <Editable value={String(slide.timeline_start_year || 2024)} onUpdate={v => onUpdate('timeline_start_year', parseInt(v) || 2024)} className="text-white font-bold" />
+                        </div>
+                        <div className="flex flex-col items-start">
+                            <span className="text-[10px] uppercase opacity-50">End Year</span>
+                            <Editable value={String(slide.timeline_end_year || 2026)} onUpdate={v => onUpdate('timeline_end_year', parseInt(v) || 2026)} className="text-white font-bold" />
+                        </div>
+                    </div>
+                </div>
+            </SlideWrapper>
+        );
     }
     const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
     const totalQuarters = years.length * 4;
 
     const parseQuarter = (quarterStr: string): number => {
         if (!quarterStr || !quarterStr.includes(' ')) return -1;
-        const [quarter, year] = quarterStr.split(' ');
+        const parts = quarterStr.split(' ');
+        const quarter = parts[0];
+        const year = parts[parts.length - 1]; // Handle cases like "Q1 2025" or "Q1 - 2025"
         const yearInt = parseInt(year);
         if (isNaN(yearInt)) return -1;
         const yearIndex = yearInt - startYear;
-        const quarterIndex = parseInt(quarter.substring(1)) - 1;
+        const quarterIndex = parseInt(quarter.replace(/\D/g, '')) - 1;
         if (isNaN(quarterIndex) || quarterIndex < 0 || quarterIndex > 3) return -1;
         return yearIndex * 4 + quarterIndex;
     };
@@ -595,7 +635,14 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
 
     return (
         <SlideWrapper className="p-12 flex flex-col" style={{background: 'linear-gradient(to bottom, #1B3C53, #102434)'}}>
-            <div style={titleAnimation}><Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tight mb-8 text-[var(--color-accent-light)]" /></div>
+            <div style={titleAnimation} className="flex items-baseline justify-between mb-8">
+                <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tight text-[var(--color-accent-light)]" />
+                <div className="flex items-center space-x-2 text-white/40 text-sm font-mono bg-white/5 px-3 py-1 rounded-full">
+                    <Editable value={String(startYear)} onUpdate={v => onUpdate('timeline_start_year', parseInt(v) || startYear)} className="hover:text-white transition-colors" />
+                    <span className="opacity-30">&mdash;</span>
+                    <Editable value={String(endYear)} onUpdate={v => onUpdate('timeline_end_year', parseInt(v) || endYear)} className="hover:text-white transition-colors" />
+                </div>
+            </div>
             
             <div className="flex-grow flex flex-col">
                 {/* Timeline Header */}
