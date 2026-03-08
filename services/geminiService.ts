@@ -220,6 +220,41 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     
     CRITICAL: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
     
+    SCHEMA GUIDANCE:
+    {
+        "title": "string",
+        "executiveSummary": "string",
+        "policyProblem": {
+            "definition": "string",
+            "affectedParties": "string",
+            "urgency": "string"
+        },
+        "evidenceAndFindings": {
+            "summary": "string",
+            "findings": ["string"]
+        },
+        "policyOptions": [
+            {
+                "description": "string",
+                "benefits": "string",
+                "risks": "string",
+                "feasibility": "string"
+            }
+        ],
+        "recommendedAction": {
+            "option": "string",
+            "justification": "string",
+            "impacts": "string"
+        },
+        "implementationConsiderations": {
+            "responsibility": "string",
+            "capacity": "string",
+            "timeline": "string",
+            "risks": "string"
+        },
+        "keyTakeaways": ["string"]
+    }
+    
     Your entire output MUST be a single, valid JSON object following the required schema.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
@@ -229,7 +264,65 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
         config: { 
             systemInstruction,
             responseMimeType: 'application/json',
-            tools: [{googleSearch: {}}]
+            tools: [{googleSearch: {}}],
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    title: { type: Type.STRING },
+                    executiveSummary: { type: Type.STRING },
+                    policyProblem: {
+                        type: Type.OBJECT,
+                        properties: {
+                            definition: { type: Type.STRING },
+                            affectedParties: { type: Type.STRING },
+                            urgency: { type: Type.STRING }
+                        },
+                        required: ["definition", "affectedParties", "urgency"]
+                    },
+                    evidenceAndFindings: {
+                        type: Type.OBJECT,
+                        properties: {
+                            summary: { type: Type.STRING },
+                            findings: { type: Type.ARRAY, items: { type: Type.STRING } }
+                        },
+                        required: ["summary", "findings"]
+                    },
+                    policyOptions: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                description: { type: Type.STRING },
+                                benefits: { type: Type.STRING },
+                                risks: { type: Type.STRING },
+                                feasibility: { type: Type.STRING }
+                            },
+                            required: ["description", "benefits", "risks", "feasibility"]
+                        }
+                    },
+                    recommendedAction: {
+                        type: Type.OBJECT,
+                        properties: {
+                            option: { type: Type.STRING },
+                            justification: { type: Type.STRING },
+                            impacts: { type: Type.STRING }
+                        },
+                        required: ["option", "justification", "impacts"]
+                    },
+                    implementationConsiderations: {
+                        type: Type.OBJECT,
+                        properties: {
+                            responsibility: { type: Type.STRING },
+                            capacity: { type: Type.STRING },
+                            timeline: { type: Type.STRING },
+                            risks: { type: Type.STRING }
+                        },
+                        required: ["responsibility", "capacity", "timeline", "risks"]
+                    },
+                    keyTakeaways: { type: Type.ARRAY, items: { type: Type.STRING } }
+                },
+                required: ["title", "executiveSummary", "policyProblem", "evidenceAndFindings", "policyOptions", "recommendedAction", "implementationConsiderations", "keyTakeaways"]
+            }
         }
     });
     
@@ -261,30 +354,128 @@ export const generateRFP = async (
     
     CRITICAL: NEVER use placeholders. Provide specific, technically sound requirements, evaluation criteria, and scope of work based on your expertise.
     
-    Your entire output MUST be a single, valid JSON object.`;
+    SCHEMA GUIDANCE:
+    {
+        "title": "string",
+        "sections": [
+            {
+                "title": "string",
+                "content": [
+                    {
+                        "paragraph": "string (optional)",
+                        "list": ["string (optional)"]
+                    }
+                ]
+            }
+        ]
+    }
+    
+    Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: `Generate a detailed RFP for: ${taskDescription}`,
-        config: { systemInstruction, responseMimeType: 'application/json' }
+        config: { 
+            systemInstruction, 
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    title: { type: Type.STRING },
+                    sections: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                title: { type: Type.STRING },
+                                content: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            paragraph: { type: Type.STRING },
+                                            list: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                        }
+                                    }
+                                }
+                            },
+                            required: ["title", "content"]
+                        }
+                    }
+                },
+                required: ["title", "sections"]
+            }
+        }
     });
     return parseJsonResponse<RFPContent>(response, 'RFP');
 };
 
-export const generateCapacityBuildingProgram = async (audience: string): Promise<CapacityBuildingProgram> => {
+export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, companyProfile?: string): Promise<CapacityBuildingProgram> => {
     await deductCredits(10);
     const ai = getAi();
-    const systemInstruction = `You are a world-class Urban Planning Educator. 
-    Your task is to generate a comprehensive Capacity Building Program.
+    const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
+    Your task is to generate a comprehensive, tailored Capacity Building Program.
     
-    CRITICAL: NEVER use placeholders. Provide specific learning objectives, detailed module content, and a clear evaluation plan.
+    CRITICAL: NEVER use placeholders like "[Insert Data Here]", "TBD", or "[Company Name]". 
+    Provide specific learning objectives, detailed module content, concrete methodologies, and a clear evaluation plan.
+    The content must be technically rigorous and directly address the specific challenges and skill levels provided.
     
-    Your entire output MUST be a single, valid JSON object.`;
+    ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
+
+    SCHEMA GUIDANCE:
+    {
+        "programTitle": "string",
+        "targetAudience": "string",
+        "learningObjectives": ["string"],
+        "modules": [
+            {
+                "title": "string",
+                "objective": "string",
+                "topics": ["string"],
+                "methodology": "string",
+                "outcome": "string"
+            }
+        ],
+        "deliveryMethod": "string",
+        "evaluationPlan": "string"
+    }
+    
+    Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
-        contents: `Generate a capacity building program for: ${audience}`,
-        config: { systemInstruction, responseMimeType: 'application/json' }
+        contents: `Generate a capacity building program for: ${audience}. 
+        Skill Level: ${skillLevel}. 
+        Challenges to address: ${challenges}.`,
+        config: { 
+            systemInstruction, 
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    programTitle: { type: Type.STRING },
+                    targetAudience: { type: Type.STRING },
+                    learningObjectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    modules: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                title: { type: Type.STRING },
+                                objective: { type: Type.STRING },
+                                topics: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                methodology: { type: Type.STRING },
+                                outcome: { type: Type.STRING }
+                            },
+                            required: ["title", "objective", "topics", "methodology", "outcome"]
+                        }
+                    },
+                    deliveryMethod: { type: Type.STRING },
+                    evaluationPlan: { type: Type.STRING }
+                },
+                required: ["programTitle", "targetAudience", "learningObjectives", "modules", "deliveryMethod", "evaluationPlan"]
+            }
+        }
     });
     return parseJsonResponse<CapacityBuildingProgram>(response, 'Capacity Building Program');
 };
@@ -297,13 +488,49 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     
     CRITICAL: NEVER use placeholders. Provide a specific, inspiring vision statement, a memorable tagline, and detailed strategic pillars with actionable initiatives.
     
-    Your entire output MUST be a single, valid JSON object.
+    SCHEMA GUIDANCE:
+    {
+        "visionStatement": "string",
+        "tagline": "string",
+        "strategicPillars": [
+            {
+                "title": "string",
+                "description": "string",
+                "keyInitiatives": ["string"]
+            }
+        ]
+    }
+    
+    Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"`,
-        config: { systemInstruction, responseMimeType: 'application/json' }
+        config: { 
+            systemInstruction, 
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    visionStatement: { type: Type.STRING },
+                    tagline: { type: Type.STRING },
+                    strategicPillars: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                title: { type: Type.STRING },
+                                description: { type: Type.STRING },
+                                keyInitiatives: { type: Type.ARRAY, items: { type: Type.STRING } }
+                            },
+                            required: ["title", "description", "keyInitiatives"]
+                        }
+                    }
+                },
+                required: ["visionStatement", "tagline", "strategicPillars"]
+            }
+        }
     });
     return parseJsonResponse<VisionFramework>(response, 'Vision Framework');
 };
@@ -316,13 +543,74 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     
     CRITICAL: NEVER use placeholders. Identify specific stakeholder groups, define clear engagement goals, and provide a detailed timeline with concrete activities.
     
-    Your entire output MUST be a single, valid JSON object.
+    SCHEMA GUIDANCE:
+    {
+        "planTitle": "string",
+        "engagementGoals": ["string"],
+        "stakeholderGroups": [
+            {
+                "name": "string",
+                "category": "Government" | "Community" | "Private Sector" | "Expert/NGO" | "Other",
+                "interest": "High" | "Medium" | "Low",
+                "influence": "High" | "Medium" | "Low",
+                "engagementStrategy": "string",
+                "communicationMethods": ["string"]
+            }
+        ],
+        "timeline": [
+            {
+                "phase": "string",
+                "duration": "string",
+                "activities": "string"
+            }
+        ]
+    }
+    
+    Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"`,
-        config: { systemInstruction, responseMimeType: 'application/json' }
+        config: { 
+            systemInstruction, 
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    planTitle: { type: Type.STRING },
+                    engagementGoals: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    stakeholderGroups: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                name: { type: Type.STRING },
+                                category: { type: Type.STRING, description: "Government, Community, Private Sector, Expert/NGO, or Other" },
+                                interest: { type: Type.STRING, description: "High, Medium, or Low" },
+                                influence: { type: Type.STRING, description: "High, Medium, or Low" },
+                                engagementStrategy: { type: Type.STRING },
+                                communicationMethods: { type: Type.ARRAY, items: { type: Type.STRING } }
+                            },
+                            required: ["name", "category", "interest", "influence", "engagementStrategy", "communicationMethods"]
+                        }
+                    },
+                    timeline: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                phase: { type: Type.STRING },
+                                duration: { type: Type.STRING },
+                                activities: { type: Type.STRING }
+                            },
+                            required: ["phase", "duration", "activities"]
+                        }
+                    }
+                },
+                required: ["planTitle", "engagementGoals", "stakeholderGroups", "timeline"]
+            }
+        }
     });
     return parseJsonResponse<StakeholderPlan>(response, 'Stakeholder Plan');
 };
@@ -335,12 +623,72 @@ export const generateMethodology = async (task: string, companyProfile?: string)
     
     CRITICAL: NEVER use placeholders. Provide a clear introduction, detailed phases with specific steps, concrete deliverables, and relevant tools/techniques.
     
-    Your entire output MUST be a single, valid JSON object.
+    SCHEMA GUIDANCE:
+    {
+        "title": "string",
+        "introduction": "string",
+        "phases": [
+            {
+                "phase_number": number,
+                "title": "string",
+                "description": "string",
+                "steps": [
+                    {
+                        "step_number": "string",
+                        "title": "string",
+                        "description": "string",
+                        "deliverable": "string",
+                        "tools_and_techniques": ["string"]
+                    }
+                ]
+            }
+        ],
+        "conclusion": "string"
+    }
+    
+    Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: `Generate a methodology for the following task: "${task}"`,
-        config: { systemInstruction, responseMimeType: 'application/json' }
+        config: { 
+            systemInstruction, 
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    title: { type: Type.STRING },
+                    introduction: { type: Type.STRING },
+                    phases: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                phase_number: { type: Type.INTEGER },
+                                title: { type: Type.STRING },
+                                description: { type: Type.STRING },
+                                steps: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            step_number: { type: Type.STRING },
+                                            title: { type: Type.STRING },
+                                            description: { type: Type.STRING },
+                                            deliverable: { type: Type.STRING },
+                                            tools_and_techniques: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                        },
+                                        required: ["step_number", "title", "description", "deliverable", "tools_and_techniques"]
+                                    }
+                                }
+                            },
+                            required: ["phase_number", "title", "description", "steps"]
+                        }
+                    }
+                },
+                required: ["title", "introduction", "phases"]
+            }
+        }
     });
     return parseJsonResponse<Methodology>(response, 'Methodology');
 };

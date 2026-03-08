@@ -130,7 +130,7 @@ const Editable: React.FC<{
 };
 
 const AnalyticReflection: React.FC<{ text: string, onUpdate: (newValue: string) => void, animationStyle: CSSProperties }> = ({ text, onUpdate, animationStyle }) => (
-    <div className="mt-auto text-center text-white/70 p-4 bg-white/5 rounded-lg" style={animationStyle}>
+    <div className="mt-auto text-center text-white/70 p-4 bg-white/5 rounded-lg max-h-32 overflow-y-auto content-scrollbar" style={animationStyle}>
         <h4 className="text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Analytic Reflection</h4>
         <Editable as="p" value={text} onUpdate={onUpdate} className="italic text-sm" />
     </div>
@@ -225,7 +225,7 @@ const SWOTCategory: React.FC<{ title: string; items: { title: string; descriptio
             {(items || []).map((item, i) => (
                 <div key={i}>
                     <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-semibold text-white text-sm" useMarkdown/>
-                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className="text-xs text-white/70 mt-1" />
+                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${item.description.length > 100 ? 'text-[10px]' : 'text-xs'} text-white/70 mt-1`} />
                 </div>
             ))}
         </div>
@@ -282,8 +282,8 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
                 <div style={titleAnimation}>
                     <Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter leading-tight max-w-3xl" onUpdate={v => onUpdate('title', v)} />
                 </div>
-                <div className="w-full flex justify-between items-end gap-8">
-                    <div className="w-2/3 bg-black/60 backdrop-blur-md p-6 rounded-lg border border-white/10" style={contentAnimation}>
+                <div className="w-full flex justify-between items-end gap-8 min-h-0 flex-grow mt-8">
+                    <div className="w-2/3 bg-black/60 backdrop-blur-md p-6 rounded-lg border border-white/10 overflow-y-auto content-scrollbar max-h-full" style={contentAnimation}>
                         <Editable as="p" value={slide.introduction} onUpdate={v => onUpdate('introduction', v)} className="text-base text-white/80 mb-4" useMarkdown />
                         <div className="border-t border-[var(--color-primary-medium)] pt-4">
                             <h3 className="font-bold text-xs uppercase tracking-wider text-white/60">Proven Application</h3>
@@ -400,13 +400,18 @@ const MetricValueDisplay: React.FC<{ value: string; isActive: boolean; numberCla
         ? count.toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision })
         : number.toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision });
     
+    const fullValue = `${prefix}${numberPart}${suffix}`;
+    const isLong = fullValue.length > 10;
+    const adjustedNumberClass = isLong ? numberClass.replace(/text-\d+xl/, 'text-2xl') : numberClass;
+    const adjustedSuffixClass = isLong ? suffixClass.replace(/text-\d+xl/, 'text-lg') : suffixClass;
+
     const trimmedSuffix = suffix.trim();
         
     return (
-        <p className={`font-extrabold leading-tight break-words ${numberClass}`}>
+        <p className={`font-extrabold leading-tight break-words ${adjustedNumberClass}`}>
             {prefix}{numberPart}
             {trimmedSuffix && (
-                <span className={suffixClass}> {trimmedSuffix}</span>
+                <span className={adjustedSuffixClass}> {trimmedSuffix}</span>
             )}
         </p>
     );
@@ -612,49 +617,51 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                 </div>
 
                 {/* Chart Body */}
-                <div className="flex-grow flex items-center mt-2 relative">
-                    {/* Vertical grid lines */}
-                    <div className="absolute top-0 left-[30%] w-[70%] h-full grid" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
-                        {Array.from({ length: totalQuarters }).map((_, i) => <div key={i} className={`h-full ${ (i + 1) % 4 === 0 ? 'border-r border-white/20' : 'border-r border-white/10'}`}></div>)}
-                    </div>
-
-                    {/* Labels and Bars */}
-                    <div className="w-full relative z-10 mt-2 space-y-1">
-                        {(slide.phases || []).map((phase, pIndex) => 
-                            (phase.deliverables || []).map((d, dIndex) => {
-                                const startIndex = parseQuarter(d.start_quarter);
-                                const endIndex = parseQuarter(d.end_quarter);
-                                if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) return null;
-                                
-                                const duration = endIndex - startIndex + 1;
-                                const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
-                                const deliverableAnimation = getAnimationStyles(isActive, 400 + (pIndex * (phase.deliverables.length) + dIndex) * 75);
-
-                                return (
-                                    <div key={`${pIndex}-${dIndex}`} className="flex items-center h-14 relative group" style={deliverableAnimation}>
-                                        <div className="w-[30%] flex-shrink-0 pr-4 text-right">
-                                            <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-sm font-semibold text-white/90 truncate" />
-                                            <div className="text-xs text-white/50 italic truncate flex justify-end items-center">
-                                                <span className="mr-1">KPI:</span>
-                                                <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} />
+                <div className="flex-grow flex flex-col mt-2 relative overflow-y-auto content-scrollbar pr-2">
+                    <div className="relative min-h-full flex items-center">
+                        {/* Vertical grid lines */}
+                        <div className="absolute top-0 left-[30%] w-[70%] h-full grid" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
+                            {Array.from({ length: totalQuarters }).map((_, i) => <div key={i} className={`h-full ${ (i + 1) % 4 === 0 ? 'border-r border-white/20' : 'border-r border-white/10'}`}></div>)}
+                        </div>
+    
+                        {/* Labels and Bars */}
+                        <div className="w-full relative z-10 mt-2 space-y-1">
+                            {(slide.phases || []).map((phase, pIndex) => 
+                                (phase.deliverables || []).map((d, dIndex) => {
+                                    const startIndex = parseQuarter(d.start_quarter);
+                                    const endIndex = parseQuarter(d.end_quarter);
+                                    if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) return null;
+                                    
+                                    const duration = endIndex - startIndex + 1;
+                                    const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
+                                    const deliverableAnimation = getAnimationStyles(isActive, 400 + (pIndex * (phase.deliverables.length) + dIndex) * 75);
+    
+                                    return (
+                                        <div key={`${pIndex}-${dIndex}`} className="flex items-center h-14 relative group" style={deliverableAnimation}>
+                                            <div className="w-[30%] flex-shrink-0 pr-4 text-right">
+                                                <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-sm font-semibold text-white/90 truncate" />
+                                                <div className="text-xs text-white/50 italic truncate flex justify-end items-center">
+                                                    <span className="mr-1">KPI:</span>
+                                                    <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} />
+                                                </div>
+                                            </div>
+                                            <div className="absolute h-5 transition-all duration-300 group-hover:h-6" style={{ 
+                                                left: `calc(30% + ${(startIndex / totalQuarters) * 70}%)`, 
+                                                width: `calc(${(duration / totalQuarters) * 70}%)`, 
+                                                top: '50%', 
+                                                transform: 'translateY(-50%)' 
+                                            }}>
+                                                <div className="h-full bg-[var(--color-primary-medium)] rounded-sm flex items-center justify-end px-1.5 shadow-lg transition-all duration-300 group-hover:brightness-125"
+                                                     style={{ background: 'linear-gradient(90deg, #456882, #60829d)' }}
+                                                >
+                                                    <div className="w-1.5 h-1.5 bg-white/80 rounded-full shadow-sm"></div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="absolute h-5 transition-all duration-300 group-hover:h-6" style={{ 
-                                            left: `calc(30% + ${(startIndex / totalQuarters) * 70}%)`, 
-                                            width: `calc(${(duration / totalQuarters) * 70}%)`, 
-                                            top: '50%', 
-                                            transform: 'translateY(-50%)' 
-                                        }}>
-                                            <div className="h-full bg-[var(--color-primary-medium)] rounded-sm flex items-center justify-end px-1.5 shadow-lg transition-all duration-300 group-hover:brightness-125"
-                                                 style={{ background: 'linear-gradient(90deg, #456882, #60829d)' }}
-                                            >
-                                                <div className="w-1.5 h-1.5 bg-white/80 rounded-full shadow-sm"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

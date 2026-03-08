@@ -11,24 +11,22 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-
     <script>
-      // Fix for "Cannot set property fetch of #<Window> which has only a getter"
-      // This happens when libraries try to polyfill fetch on window/globalThis
+      // Gracefully handle attempts to overwrite window.fetch
       (function() {
         try {
-          const target = window;
-          const prop = 'fetch';
-          const descriptor = Object.getOwnPropertyDescriptor(target, prop);
-          if (descriptor && !descriptor.writable && descriptor.configurable) {
-            Object.defineProperty(target, prop, {
-              value: target[prop],
-              writable: true,
-              configurable: true,
-              enumerable: true
+          const descriptor = Object.getOwnPropertyDescriptor(window, 'fetch');
+          if (descriptor && descriptor.get && !descriptor.set && descriptor.configurable) {
+            Object.defineProperty(window, 'fetch', {
+              get: descriptor.get,
+              set: function(v) { console.log('Ignored fetch assignment'); },
+              configurable: descriptor.configurable,
+              enumerable: descriptor.enumerable
             });
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Failed to handle fetch assignment:', e);
+        }
       })();
     </script>
 
