@@ -13,20 +13,6 @@ import { useAuth } from '../context/AuthContext';
 import jsPDF from 'jspdf';
 import { toJpeg } from 'html-to-image';
 
-const AwaitingParameters: React.FC = () => (
-    <div className="text-center p-8 flex flex-col items-center justify-center min-h-[300px]">
-        <div className="relative w-20 h-20 opacity-30">
-            <svg className="relative w-full h-full text-blue-400" fill="none" viewBox="0 0 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13V7m0 13a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m5-7l5.447 2.724A1 1 0 0121 8.618v10.764a1 1 0 01-1.447.894L15 18m0-13v13m0-13a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2" />
-            </svg>
-        </div>
-        <h2 className="text-xl font-bold text-gray-500 mt-6">Awaiting Parameters...</h2>
-        <p className="text-gray-600 max-w-md mx-auto mt-2 text-sm">
-            Define your project&apos;s core parameters in the panel above to generate a comprehensive presentation.
-        </p>
-    </div>
-);
-
 interface ChatMessage {
     sender: 'user' | 'ai';
     text: string;
@@ -416,9 +402,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 />
              )}
           </div>
-        ) : (
-          !isLoading && !error && <AwaitingParameters />
-        )}
+        ) : null}
       </div>
     </div>
   );

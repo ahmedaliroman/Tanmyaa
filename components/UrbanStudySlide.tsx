@@ -449,7 +449,7 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
             <div className="w-1/2 h-full absolute right-0 top-0"><img src={imageUrls[slide.after_image_prompt] || ''} className="w-full h-full object-cover" alt="After" /><div className="absolute inset-0 bg-black/75"></div><div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">AFTER</div></div>
             <div className="relative z-20 flex-grow flex flex-col justify-between p-12">
                 <div style={titleAnimation}>
-                    <Editable as="h2" value={slide.title} className="text-5xl font-extrabold tracking-tighter" onUpdate={v => onUpdate('title', v)} />
+                    <Editable as="h2" value={slide.title} className="text-4xl font-extrabold tracking-tighter break-words" onUpdate={v => onUpdate('title', v)} />
                     <Editable as="p" value={slide.site_rationale} onUpdate={v => onUpdate('site_rationale', v)} className="text-sm text-white/70 max-w-xl mx-auto mt-2 italic" />
                 </div>
                 <div className="grid grid-cols-3 gap-6">
