@@ -77,6 +77,8 @@ const parseNumericValue = (value: string): { number: number; prefix: string; suf
     return { number, prefix: parts[0] || '', suffix: parts[1] || '', precision };
 };
 
+const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(val) ? val : [];
+
 const AnimatedNumber: React.FC<{ value: string; isActive: boolean, duration?: number }> = ({ value, isActive, duration = 1500 }) => {
     const { number, prefix, suffix, precision } = parseNumericValue(value);
     const count = useCountUp(number, duration, isActive);
@@ -184,7 +186,7 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
                 </div>
                 <div className="flex flex-col justify-center">
                     <ul className="space-y-5">
-                        {(slide.key_points || []).map((point, i) => {
+                        {ensureArray(slide.key_points).map((point, i) => {
                             const keyPointAnimation = getAnimationStyles(isActive, 500 + i * 150);
                             return (
                                 <li key={i} className="flex items-start" style={keyPointAnimation}>
@@ -213,7 +215,7 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
             <div style={problemAnim}><Editable as="p" value={slide.problem_statement} className="text-lg text-white/70 max-w-3xl mx-auto mt-3" onUpdate={v => onUpdate('problem_statement', v)} /></div>
         </div>
         <div className="relative z-20 w-full grid grid-cols-3 gap-6 pb-8">
-            {(slide.key_data_points || []).map((point, i) => (
+            {ensureArray(slide.key_data_points).map((point, i) => (
                 <div key={i} className="flex flex-col items-center" style={getAnimationStyles(isActive, 500 + i * 150)}>
                     <p className="text-7xl font-extrabold text-[var(--color-accent-cream)] leading-none">
                        {isActive ? <AnimatedNumber value={point.value} isActive={isActive} /> : point.value}
@@ -230,7 +232,7 @@ const SWOTCategory: React.FC<{ title: string; items: { title: string; descriptio
     <div className="min-h-0" style={animationStyle}>
         <h3 className="font-bold text-lg mb-3 text-[var(--color-accent-light)] border-b border-white/20 pb-2">{title}</h3>
         <div className="space-y-4 mt-4">
-            {(items || []).map((item, i) => (
+            {ensureArray(items).map((item, i) => (
                 <div key={i}>
                     <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-semibold text-white text-sm" useMarkdown/>
                     <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${item.description.length > 100 ? 'text-[10px]' : 'text-xs'} text-white/70 mt-1`} />
@@ -296,7 +298,7 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
                         <div className="border-t border-[var(--color-primary-medium)] pt-4">
                             <h3 className="font-bold text-xs uppercase tracking-wider text-white/60">Proven Application</h3>
                             <ul className="list-disc list-inside space-y-1 mt-2 text-sm text-white/90">
-                                {(slide.key_findings || []).map((finding, i) => <li key={i}><Editable as="span" value={finding} onUpdate={v => onUpdate(`key_findings[${i}]`, v)} useMarkdown/></li>)}
+                                {ensureArray(slide.key_findings).map((finding, i) => <li key={i}><Editable as="span" value={finding} onUpdate={v => onUpdate(`key_findings[${i}]`, v)} useMarkdown/></li>)}
                             </ul>
                         </div>
                         <div className="border-t border-[var(--color-primary-medium)]/50 pt-4 mt-4">
@@ -347,7 +349,7 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
                  <Editable as="p" value={slide.strategic_intent} className="text-base text-white/70 max-w-3xl mt-2" onUpdate={v => onUpdate('strategic_intent', v)} />
             </div>
             <div className="relative z-20 grid grid-cols-3 gap-5">
-                {(slide.strategies || []).map((strategy, i) => {
+                {ensureArray(slide.strategies).map((strategy, i) => {
                     const strategyAnimation = getAnimationStyles(isActive, 400 + i * 150, 'scale-in');
                     return (
                         <div key={i} className="bg-black/50 backdrop-blur-md p-5 rounded-lg border border-white/10 flex flex-col" style={strategyAnimation}>
@@ -378,7 +380,7 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
                 <div style={impactsAnimation}>
                     <h3 className="font-bold text-lg text-[var(--color-accent-light)] border-b border-white/20 pb-2 mb-4">Distributional Impacts</h3>
                     <div className="space-y-4">
-                        {(slide.distributional_impacts || []).length > 0 ? (slide.distributional_impacts || []).map((item, i) => (
+                        {ensureArray(slide.distributional_impacts).length > 0 ? ensureArray(slide.distributional_impacts).map((item, i) => (
                             <div key={i} className="bg-white/5 p-4 rounded-lg">
                                 <Editable as="p" value={item.group} onUpdate={v => onUpdate(`distributional_impacts[${i}].group`, v)} className="font-semibold text-white text-sm" />
                                 <Editable as="p" value={item.impact} onUpdate={v => onUpdate(`distributional_impacts[${i}].impact`, v)} className="text-xs text-white/70 mt-1" />
@@ -391,7 +393,7 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
                 <div style={strategiesAnimation}>
                     <h3 className="font-bold text-lg text-[var(--color-accent-light)] border-b border-white/20 pb-2 mb-4">Mitigation Strategies</h3>
                      <ul className="list-disc list-inside space-y-2 mt-2 text-base text-white/90">
-                        {(slide.mitigation_strategies || []).length > 0 ? (slide.mitigation_strategies || []).map((strat, i) => (
+                        {ensureArray(slide.mitigation_strategies).length > 0 ? ensureArray(slide.mitigation_strategies).map((strat, i) => (
                             <li key={i}><Editable as="span" value={strat} onUpdate={v => onUpdate(`mitigation_strategies[${i}]`, v)} className="text-sm" /></li>
                         )) : (
                             <p className="text-white/40 italic text-sm list-none">No mitigation strategies defined.</p>
@@ -453,7 +455,7 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                     <Editable as="p" value={slide.site_rationale} onUpdate={v => onUpdate('site_rationale', v)} className="text-sm text-white/70 max-w-xl mx-auto mt-2 italic" />
                 </div>
                 <div className="grid grid-cols-3 gap-6">
-                    {(slide.metrics || []).map((metric, i) => {
+                    {ensureArray(slide.metrics).map((metric, i) => {
                         const metricAnimation = getAnimationStyles(isActive, 400 + i * 150);
                         return (
                             <div key={i} style={{...metricAnimation, textShadow: '0 2px 8px rgba(0,0,0,0.8)'}}>
@@ -485,13 +487,13 @@ const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, 
         <SlideWrapper className="p-16 flex flex-col">
             <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">{slide.title}</h1></div>
             <div className="flex-grow grid grid-cols-3 gap-6">
-                {(slide.scenarios || []).map((scenario, i) => {
+                {ensureArray(slide.scenarios).map((scenario, i) => {
                     const scenarioAnimation = getAnimationStyles(isActive, 350 + i * 150, 'scale-in');
                     return (
                         <div key={i} className="bg-white/5 p-6 rounded-lg border border-white/10 flex flex-col transition-all duration-300 hover:bg-white/10 hover:border-white/20" style={scenarioAnimation}>
                             <Editable as="h3" value={scenario.name} onUpdate={v => onUpdate(`scenarios[${i}].name`, v)} className="font-bold text-xl text-white text-center" />
                             <div className="my-4 border-t border-white/10">
-                                {(scenario.outcomes || []).map((outcome, j) => (
+                                {ensureArray(scenario.outcomes).map((outcome, j) => (
                                      <div key={j} className="flex justify-between items-center py-2 border-b border-white/10 text-sm">
                                         <Editable as="span" value={outcome.metric} onUpdate={v => onUpdate(`scenarios[${i}].outcomes[${j}].metric`, v)} className="text-white/70" />
                                         <Editable as="span" value={outcome.value} onUpdate={v => onUpdate(`scenarios[${i}].outcomes[${j}].value`, v)} className="font-bold text-white" />
@@ -523,7 +525,7 @@ const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate
         <SlideWrapper className="p-16 flex flex-col">
             <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">{slide.title}</h1></div>
             <div className="flex-grow space-y-4 overflow-y-auto content-scrollbar pr-2">
-                {(slide.risks || []).map((risk, i) => {
+                {ensureArray(slide.risks).map((risk, i) => {
                     const riskAnimation = getAnimationStyles(isActive, 350 + i * 100);
                     return (
                         <div key={i} className="bg-white/5 p-4 rounded-lg grid grid-cols-3 gap-4 items-start transition-all duration-200 hover:bg-white/10" style={riskAnimation}>
@@ -554,7 +556,7 @@ const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: stri
         <SlideWrapper className="p-16">
             <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]">Implementation Doctrine</h1></div>
             <div className="flex justify-between items-stretch gap-6 flex-grow">
-                {(slide.phases || []).map((phase, i) => {
+                {ensureArray(slide.phases).map((phase, i) => {
                     const phaseAnimation = getAnimationStyles(isActive, 350 + i * 150, 'scale-in');
                     return (
                         <div key={i} className="w-1/3 bg-[var(--color-accent-cream)]/10 p-6 rounded-xl border border-white/10 flex flex-col flex-1" style={phaseAnimation}>
@@ -568,7 +570,7 @@ const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: stri
                             <div className="flex-grow min-h-0 overflow-y-auto content-scrollbar pr-2">
                                 <p className="text-xs font-semibold mt-3 text-white/60">Action Steps & KPIs:</p>
                                 <ul className="text-sm space-y-3 mt-2 text-white/80">
-                                    {(phase.action_steps || []).map((step, j) => (
+                                    {ensureArray(phase.action_steps).map((step, j) => (
                                         <li key={j} className="text-sm">
                                             <Editable as="span" value={step.action} onUpdate={v => onUpdate(`phases[${i}].action_steps[${j}].action`, v)} />
                                             <div className="flex items-center mt-1">
@@ -684,8 +686,8 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     
                         {/* Labels and Bars */}
                         <div className="w-full relative z-10 mt-2 space-y-1">
-                            {(slide.phases || []).map((phase, pIndex) => 
-                                (phase.deliverables || []).map((d, dIndex) => {
+                            {ensureArray(slide.phases).map((phase, pIndex) => 
+                                ensureArray(phase.deliverables).map((d, dIndex) => {
                                     const startIndex = parseQuarter(d.start_quarter);
                                     const endIndex = parseQuarter(d.end_quarter);
                                     if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) return null;
