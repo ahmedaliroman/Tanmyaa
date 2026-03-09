@@ -175,9 +175,9 @@ export const generatePresentation = async (
     - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
     - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
     - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], analytic_reflection }
-    - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [{group, impact}], mitigation_strategies: [], analytic_reflection }
-    - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name, outcomes: [{metric, value}], risk, cost}], analytic_reflection }
-    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [] }
+    - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [{group: "string", impact: "string"}, {group: "string", impact: "string"}, {group: "string", impact: "string"}], mitigation_strategies: ["strategy1", "strategy2", "strategy3"], analytic_reflection: "string" }
+    - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}, {name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection: "string" }
+    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
     `;
 
     const prompt = `
