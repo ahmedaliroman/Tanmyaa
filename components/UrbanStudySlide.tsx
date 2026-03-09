@@ -625,7 +625,11 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     const totalQuarters = years.length * 4;
 
     const parseQuarter = (quarterStr: string): number => {
-        if (!quarterStr || !quarterStr.includes(' ')) return -1;
+        if (typeof quarterStr !== 'string') {
+            console.error("parseQuarter: quarterStr is not a string", quarterStr);
+            return -1;
+        }
+        if (!quarterStr.includes(' ')) return -1;
         const parts = quarterStr.split(' ');
         const quarter = parts[0];
         const year = parts[parts.length - 1]; // Handle cases like "Q1 2025" or "Q1 - 2025"
