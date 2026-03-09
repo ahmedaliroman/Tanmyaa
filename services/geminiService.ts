@@ -1,4 +1,5 @@
 import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
+import { supabase } from '../lib/supabase';
 import type { 
     PresentationSlide,
     UrbanPlanningProjectInfo,
@@ -86,11 +87,12 @@ const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: 
 };
 
 const deductCredits = async (amount: number) => {
+    const { data: { session } } = await supabase.auth.getSession();
     const response = await fetch('/api/deduct-credits', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await (await import('../lib/supabase')).supabase.auth.getSession()).data.session?.access_token}`
+            'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({ amount }),
     });
