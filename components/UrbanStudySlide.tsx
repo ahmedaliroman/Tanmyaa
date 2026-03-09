@@ -109,19 +109,20 @@ const renderWithBold = (text: string) => {
 
 const Editable: React.FC<{
   as?: React.ElementType;
-  value: string;
+  value: string | undefined | null;
   onUpdate: (newValue: string) => void;
   className?: string;
   useMarkdown?: boolean;
 }> = ({ as: Component = 'p', value, onUpdate, className, useMarkdown }) => {
   const handleBlur = (e: React.FocusEvent<HTMLElement>) => {
     const newValue = e.currentTarget.innerText;
-    if (newValue !== value) {
+    if (newValue !== (value || '')) {
       onUpdate(newValue);
     }
   };
   
-  const content = useMarkdown ? renderWithBold(value) : value;
+  const safeValue = value || '';
+  const content = useMarkdown ? renderWithBold(safeValue) : safeValue;
 
   return (
     <Component
@@ -129,7 +130,7 @@ const Editable: React.FC<{
       suppressContentEditableWarning
       onBlur={handleBlur}
       className={`outline-none focus:ring-2 focus:ring-[var(--color-primary-medium)] focus:bg-white/10 rounded-sm p-1 -m-1 transition-all break-words ${className}`}
-      dangerouslySetInnerHTML={useMarkdown ? undefined : { __html: value }}
+      dangerouslySetInnerHTML={useMarkdown ? undefined : { __html: safeValue }}
     >
       {useMarkdown ? content : null}
     </Component>
@@ -959,7 +960,15 @@ const ClosingSlideLayout: React.FC<{ slide: ClosingSlide, onUpdate: (field: stri
     );
 };
 
-const UrbanStudySlide: React.FC<{ slide: PresentationSlide; imageUrls?: Record<string, string>; onUpdate: (field: string, val: string | unknown) => void, slideNumber: number, isActive: boolean }> = ({ slide, imageUrls, onUpdate, slideNumber, isActive }) => {
+const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; imageUrls?: Record<string, string>; onUpdate: (field: string, val: string | unknown) => void, slideNumber: number, isActive: boolean }> = ({ slide, imageUrls, onUpdate, slideNumber, isActive }) => {
+  if (!slide) {
+    return (
+        <div className="w-full h-full bg-[var(--color-primary-dark)] flex items-center justify-center text-white/40 italic">
+            Invalid slide data.
+        </div>
+    );
+  }
+
   const renderLayout = () => {
     const props = { onUpdate, imageUrls: imageUrls || {}, isActive };
     const layoutMap: { [key: string]: React.FC<unknown> } = {

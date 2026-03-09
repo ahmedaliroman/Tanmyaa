@@ -188,7 +188,9 @@ export const generatePresentation = async (
         config: { systemInstruction, responseMimeType: 'application/json' },
     });
 
-    return parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
+    const slides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
+    // Filter out any null or malformed slides that the AI might have returned
+    return (slides || []).filter(s => s && typeof s === 'object' && s.layout);
 };
 
 export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string): Promise<PresentationSlide[]> => {
@@ -212,7 +214,8 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
             responseMimeType: 'application/json'
         },
     });
-    return parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
+    const slides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
+    return (slides || []).filter(s => s && typeof s === 'object' && s.layout);
 };
 
 export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string): Promise<PolicyBrief> => {

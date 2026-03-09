@@ -277,6 +277,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
         if (!prevSlides) return null;
         
         const newSlides = JSON.parse(JSON.stringify(prevSlides));
+        if (!newSlides[slideIndex]) return prevSlides;
         
         const path = fieldPath.replace(/\[(\d+)\]/g, '.$1').split('.');
         const lastKey = path.pop();
