@@ -316,12 +316,6 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
 const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string, val: string) => void, imageUrls: Record<string, string>, isActive: boolean }> = ({ slide, onUpdate, imageUrls, isActive }) => {
     const titleAnimation = getAnimationStyles(isActive, 200);
     const statementAnimation = getAnimationStyles(isActive, 400);
-    
-    const textLength = slide.vision_statement?.length || 0;
-    const fontSizeClass = textLength > 250 ? 'text-xl md:text-2xl lg:text-3xl' : 
-                          textLength > 150 ? 'text-2xl md:text-3xl lg:text-4xl' : 
-                          textLength > 80 ? 'text-3xl md:text-4xl lg:text-5xl' : 
-                          'text-4xl md:text-5xl lg:text-6xl';
 
     return (
         <SlideWrapper className="justify-center items-center text-center p-16">
@@ -329,7 +323,7 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
             <img src={imageUrls[slide.image_prompt] || ''} className="absolute inset-0 w-full h-full object-cover" alt="Vision background"/>
             <div className="relative z-20 w-full max-w-6xl">
                 <div style={titleAnimation}><Editable as="h2" value={slide.title} className="text-xl font-bold text-white/50 uppercase tracking-[0.3em]" onUpdate={v => onUpdate('title', v)} /></div>
-                <div style={statementAnimation}><Editable as="p" value={slide.vision_statement} onUpdate={v => onUpdate('vision_statement', v)} className={`${fontSizeClass} font-extrabold my-8 leading-tight tracking-tighter whitespace-pre-line`} /></div>
+                <div style={statementAnimation}><Editable as="p" value={slide.vision_statement.replace(/\n/g, '<br/>')} onUpdate={v => onUpdate('vision_statement', v)} className="text-4xl md:text-5xl lg:text-6xl font-extrabold my-8 leading-tight tracking-tighter whitespace-pre-line" /></div>
             </div>
         </SlideWrapper>
     );
