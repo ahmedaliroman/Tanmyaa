@@ -146,14 +146,13 @@ export const generatePresentation = async (
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
     
-    CRITICAL RULES:
-    1. NEVER use placeholders like "[Insert Data Here]", "TBD", or "To be determined". 
-    2. If you lack specific data for a location, use your vast internal knowledge to provide realistic, technically sound estimates and benchmarks.
-    3. Every field in the JSON must be filled with high-quality, professional content.
-    4. The output MUST be a JSON array of slide objects.
-    5. Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
-    6. TECHNICAL DEPTH: Provide rigorous, data-driven analysis. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
-    7. NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "[City Name]", "TBD", "To be determined", or any bracketed text. 
+    REAL-WORLD DATA: Use the provided Google Search tool to find real, up-to-date data, statistics, and specific details about the location (${projectInfo.location}). If specific data is unavailable, provide highly realistic, technically sound estimates based on similar global benchmarks.
+    Every field in the JSON must be filled with high-quality, professional, and specific content.
+    The output MUST be a JSON array of slide objects.
+    Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
+    TECHNICAL DEPTH: Provide rigorous, data-driven analysis. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
+    NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year }
@@ -187,7 +186,11 @@ export const generatePresentation = async (
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: { parts: [{ text: prompt }] },
-        config: { systemInstruction, responseMimeType: 'application/json' },
+        config: { 
+            systemInstruction, 
+            responseMimeType: 'application/json',
+            tools: [{ googleSearch: {} }]
+        },
     });
 
     const slides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
@@ -200,7 +203,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     const ai = getAi();
     const systemInstruction = `You are a Lead Strategist at Tanmyaa Global. Your task is to intelligently refine the provided JSON presentation structure based on the user's request, ensuring technical coherence and strategic depth.
     
-    CRITICAL: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to verify facts and find specific local details.
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
     
@@ -213,7 +216,8 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
         contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
         config: { 
             systemInstruction,
-            responseMimeType: 'application/json'
+            responseMimeType: 'application/json',
+            tools: [{ googleSearch: {} }]
         },
     });
     const slides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
@@ -225,7 +229,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     const ai = getAi();
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
     
-    CRITICAL: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to find real-world evidence and statistics.
     TECHNICAL DEPTH: Ensure the analysis is rigorous, using professional terminology and providing concrete, quantified evidence where possible.
     
     SCHEMA GUIDANCE:
@@ -360,7 +364,7 @@ export const generateRFP = async (
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
     
-    CRITICAL: NEVER use placeholders. Provide specific, technically sound requirements, evaluation criteria, and scope of work based on your expertise.
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide specific, technically sound requirements, evaluation criteria, and scope of work based on your expertise and real-world procurement standards. Use Google Search to find relevant regulations or industry benchmarks.
     TECHNICAL DEPTH: The RFP must be ready for institutional use, with detailed technical specifications and rigorous evaluation frameworks.
     
     SCHEMA GUIDANCE:
@@ -387,6 +391,7 @@ export const generateRFP = async (
         config: { 
             systemInstruction, 
             responseMimeType: 'application/json',
+            tools: [{ googleSearch: {} }],
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -425,8 +430,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
     Your task is to generate a comprehensive, tailored Capacity Building Program.
     
-    CRITICAL: NEVER use placeholders like "[Insert Data Here]", "TBD", or "[Company Name]". 
-    Provide specific learning objectives, detailed module content, concrete methodologies, and a clear evaluation plan.
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or "[Company Name]". Provide specific learning objectives, detailed module content, concrete methodologies, and a clear evaluation plan. Use Google Search to find relevant case studies or technical standards.
     The content must be technically rigorous and directly address the specific challenges and skill levels provided.
     TECHNICAL DEPTH: Use advanced pedagogical frameworks and industry-standard technical tools in the curriculum.
     
@@ -460,6 +464,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
         config: { 
             systemInstruction, 
             responseMimeType: 'application/json',
+            tools: [{ googleSearch: {} }],
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -496,7 +501,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
     Your task is to generate a cohesive and inspiring Vision Framework.
     
-    CRITICAL: NEVER use placeholders. Provide a specific, inspiring vision statement, a memorable tagline, and detailed strategic pillars with actionable initiatives.
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide a specific, inspiring vision statement, a memorable tagline, and detailed strategic pillars with actionable initiatives. Use Google Search to find relevant trends and local context for ${city}.
     TECHNICAL DEPTH: Ground the vision in urban planning theory and future-proofing strategies (e.g., circular economy, 15-minute city).
     
     SCHEMA GUIDANCE:
@@ -521,6 +526,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
         config: { 
             systemInstruction, 
             responseMimeType: 'application/json',
+            tools: [{ googleSearch: {} }],
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -552,7 +558,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     const systemInstruction = `You are a world-class public engagement strategist. 
     Your task is to generate a detailed Stakeholder Engagement Plan.
     
-    CRITICAL: NEVER use placeholders. Identify specific stakeholder groups, define clear engagement goals, and provide a detailed timeline with concrete activities.
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Identify specific stakeholder groups, define clear engagement goals, and provide a detailed timeline with concrete activities. Use Google Search to find relevant community groups or local government bodies.
     TECHNICAL DEPTH: Use sophisticated engagement methodologies (e.g., Delphi method, participatory budgeting, digital twin consultation).
     
     SCHEMA GUIDANCE:
@@ -587,6 +593,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
         config: { 
             systemInstruction, 
             responseMimeType: 'application/json',
+            tools: [{ googleSearch: {} }],
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -633,7 +640,7 @@ export const generateMethodology = async (task: string, companyProfile?: string)
     const systemInstruction = `You are a Senior Urban Project Manager. 
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
     
-    CRITICAL: NEVER use placeholders. Provide a clear introduction, detailed phases with specific steps, concrete deliverables, and relevant tools/techniques.
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide a clear introduction, detailed phases with specific steps, concrete deliverables, and relevant tools/techniques. Use Google Search to find industry-standard workflows or technical requirements.
     TECHNICAL DEPTH: The methodology should reflect a high-level professional workflow, incorporating advanced analytical tools and quality assurance processes.
     
     SCHEMA GUIDANCE:
@@ -667,6 +674,7 @@ export const generateMethodology = async (task: string, companyProfile?: string)
         config: { 
             systemInstruction, 
             responseMimeType: 'application/json',
+            tools: [{ googleSearch: {} }],
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
