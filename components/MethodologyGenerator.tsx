@@ -31,6 +31,8 @@ const SectionIcons = {
     phase: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
 };
 
+const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(val) ? val : [];
+
 const MethodologyReportDisplay: React.FC<{ content: Methodology }> = ({ content }) => {
     return (
         <div className="bg-white p-8 md:p-12 rounded-lg shadow-2xl border border-gray-200 text-gray-800">
@@ -45,11 +47,11 @@ const MethodologyReportDisplay: React.FC<{ content: Methodology }> = ({ content 
                     <p className="text-base text-gray-600">{content.introduction || "No introduction was provided."}</p>
                 </div>
 
-                {(content.phases || []).map((phase, phaseIndex) => (
+                {ensureArray(content.phases).map((phase, phaseIndex) => (
                     <Section key={phaseIndex} number={`Phase ${phase.phase_number}`} title={phase.title} icon={SectionIcons.phase}>
                         <p className="mb-4 text-gray-600">{phase.description}</p>
                         <div className="space-y-6">
-                            {(phase.steps || []).map((step, stepIndex) => (
+                            {ensureArray(phase.steps).map((step, stepIndex) => (
                                 <div key={stepIndex} className="border border-gray-200 rounded-lg p-5 bg-white transition-all duration-300 hover:border-blue-400 hover:shadow-md">
                                     <h3 className="font-bold text-lg text-gray-900">{step.step_number}: {step.title}</h3>
                                     <p className="text-sm text-gray-600 mt-2">{step.description}</p>
@@ -62,7 +64,7 @@ const MethodologyReportDisplay: React.FC<{ content: Methodology }> = ({ content 
                                             <h4 className="font-semibold text-gray-800 mb-1">Tools & Techniques</h4>
                                             {(step.tools_and_techniques?.length > 0) ? (
                                                 <ul className="list-disc list-inside">
-                                                    {step.tools_and_techniques.map((tool, i) => <li key={i}>{tool}</li>)}
+                                                    {ensureArray(step.tools_and_techniques).map((tool, i) => <li key={i}>{tool}</li>)}
                                                 </ul>
                                             ) : (
                                                 <p className="italic text-gray-500">None specified.</p>

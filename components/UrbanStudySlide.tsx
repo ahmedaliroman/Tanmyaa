@@ -454,18 +454,18 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                     <Editable as="h2" value={slide.title} className="text-4xl font-extrabold tracking-tighter break-words" onUpdate={v => onUpdate('title', v)} />
                     <Editable as="p" value={slide.site_rationale} onUpdate={v => onUpdate('site_rationale', v)} className="text-sm text-white/70 max-w-xl mx-auto mt-2 italic" />
                 </div>
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-3 gap-6 w-full max-w-5xl mx-auto">
                     {ensureArray(slide.metrics).map((metric, i) => {
                         const metricAnimation = getAnimationStyles(isActive, 400 + i * 150);
                         return (
-                            <div key={i} style={{...metricAnimation, textShadow: '0 2px 8px rgba(0,0,0,0.8)'}}>
+                            <div key={i} className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-lg" style={metricAnimation}>
                                 <MetricValueDisplay
                                     value={metric.value}
                                     isActive={isActive}
-                                    numberClass="text-5xl text-[var(--color-accent-cream)]"
-                                    suffixClass="text-3xl"
+                                    numberClass="text-4xl font-bold text-[var(--color-accent-cream)]"
+                                    suffixClass="text-xl"
                                 />
-                                <Editable as="p" value={metric.label} onUpdate={v => onUpdate(`metrics[${i}].label`, v)} className="text-sm text-white/60 uppercase tracking-widest mt-1" />
+                                <Editable as="p" value={metric.label} onUpdate={v => onUpdate(`metrics[${i}].label`, v)} className="text-xs text-white/70 uppercase tracking-widest mt-2" />
                             </div>
                         )
                     })}

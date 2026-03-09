@@ -49,7 +49,7 @@ const CapacityBuildingReportDisplay: React.FC<{ program: CapacityBuildingProgram
                     <p className="mb-4">{program.targetAudience || <span className="italic text-gray-500">Not specified.</span>}</p>
                     <h3 className="font-bold text-lg text-gray-900 mb-2">Learning Objectives</h3>
                     <ul className="list-disc list-inside space-y-2">
-                        {(program.learningObjectives || []).length > 0 ? (
+                        {Array.isArray(program.learningObjectives) && program.learningObjectives.length > 0 ? (
                             program.learningObjectives.map((obj, i) => <li key={i}>{typeof obj === 'object' ? JSON.stringify(obj) : obj}</li>)
                         ) : (
                             <li className="list-none italic text-gray-500">No learning objectives were generated.</li>
@@ -59,7 +59,7 @@ const CapacityBuildingReportDisplay: React.FC<{ program: CapacityBuildingProgram
                 
                 <Section number={2} title="Program Modules" icon={SectionIcons.modules}>
                     <div className="space-y-6">
-                        {(program.modules || []).length > 0 ? (
+                        {Array.isArray(program.modules) && program.modules.length > 0 ? (
                             program.modules.map((module, index) => (
                                 <div key={index} className="border border-gray-200 rounded-lg p-5 bg-white transition-all duration-300 hover:border-blue-400 hover:shadow-lg">
                                     <h3 className="font-bold text-lg text-gray-900">{`Module ${index + 1}: ${module.title}`}</h3>
@@ -68,7 +68,7 @@ const CapacityBuildingReportDisplay: React.FC<{ program: CapacityBuildingProgram
                                         <div>
                                             <h4 className="font-semibold text-gray-800 mb-1">Topics Covered</h4>
                                             <ul className="list-disc list-inside">
-                                                {(module.topics || []).length > 0 ? (
+                                                {Array.isArray(module.topics) && module.topics.length > 0 ? (
                                                     module.topics.map((topic, i) => <li key={i}>{typeof topic === 'object' ? JSON.stringify(topic) : topic}</li>)
                                                 ) : (
                                                     <li className="list-none italic text-gray-500">No topics listed.</li>

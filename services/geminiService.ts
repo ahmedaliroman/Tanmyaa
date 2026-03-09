@@ -147,7 +147,14 @@ export const generatePresentation = async (
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "[City Name]", "TBD", "To be determined", or any bracketed text. 
-    REAL-WORLD DATA: Use the provided Google Search tool to find real, up-to-date data, statistics, and specific details about the location (${projectInfo.location}). If specific data is unavailable, use your expert knowledge to synthesize highly plausible, technically sound, and data-driven estimates based on similar global benchmarks. DO NOT leave any field blank or use placeholder text.
+    REAL-WORLD DATA: Use the provided Google Search tool to find real, up-to-date data, statistics, and specific details about the location (${projectInfo.location}). 
+    
+    CRITICAL: For every slide, you MUST fill all fields with specific, data-driven content. 
+    - For EquityAnalysis slide: You MUST identify at least 3 distributional impacts and 3 mitigation strategies.
+    - For ScenarioComparison slide: You MUST fill in the risks and costs for all scenarios.
+    - For PolicyLevers slide: You MUST provide at least 3 actionable policy recommendations.
+    
+    If specific real-world data is unavailable, use your expert knowledge to synthesize highly plausible, technically sound, and data-driven estimates based on similar global benchmarks. DO NOT leave any field blank or use placeholder text.
     Every field in the JSON must be filled with high-quality, professional, and specific content.
     The output MUST be a JSON array of slide objects.
     Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
@@ -168,6 +175,9 @@ export const generatePresentation = async (
     - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
     - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
     - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], analytic_reflection }
+    - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [{group, impact}], mitigation_strategies: [], analytic_reflection }
+    - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name, outcomes: [{metric, value}], risk, cost}], analytic_reflection }
+    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [] }
     `;
 
     const prompt = `
