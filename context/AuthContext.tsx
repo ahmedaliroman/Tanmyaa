@@ -98,30 +98,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .maybeSingle();
             
           if (retryData) {
-             // If we found it now, ensure it has credits
-             if (retryData.credits < 100) {
-                 await supabase.from('profiles').update({ credits: 100 }).eq('id', userId);
-                 retryData.credits = 100;
-             }
              setProfile(retryData);
           }
         } else {
           setProfile(newProfile);
         }
       } else {
-        // Ensure every user has at least 100 credits (Welcome Bonus / Free Tier)
-        // This covers both new users who might have been created with 0, and existing users.
-        if (data.credits < 100 && data.plan !== 'Pro' && data.plan !== 'Business') {
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ credits: 100 })
-                .eq('id', userId);
-            
-            if (!updateError) {
-                data.credits = 100;
-            }
-        }
-
         // ONE-TIME FIX: If a user has a Pro/Business plan but 0 credits and hasn't used any, they encountered the NaN bug.
         if (data.plan === 'Pro' && (data.credits === 0 || data.credits == null) && (data.total_credits_used === 0 || data.total_credits_used == null)) {
             const { error: updateError } = await supabase
@@ -161,26 +143,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user || !profile) return false;
     if (profile.credits < amount) return false;
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ 
-        credits: profile.credits - amount,
-        total_credits_used: (profile.total_credits_used || 0) + amount
-      })
-      .eq('id', user.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/deduct-credits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ amount }),
+      });
 
-    if (error) {
-      console.error('Error deducting credits:', error);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error deducting credits via API:', errorData);
+        return false;
+      }
+
+      const result = await response.json();
+      
+      // Optimistic update
+      setProfile(prev => prev ? { 
+        ...prev, 
+        credits: result.remainingCredits,
+        total_credits_used: (prev.total_credits_used || 0) + amount
+      } : null);
+      return true;
+    } catch (error) {
+      console.error('Unexpected error deducting credits:', error);
       return false;
     }
-    
-    // Optimistic update
-    setProfile(prev => prev ? { 
-      ...prev, 
-      credits: prev.credits - amount,
-      total_credits_used: (prev.total_credits_used || 0) + amount
-    } : null);
-    return true;
   };
 
   const addCredits = async (amount: number, planName?: string): Promise<void> => {
