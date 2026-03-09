@@ -458,14 +458,14 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                     {ensureArray(slide.metrics).map((metric, i) => {
                         const metricAnimation = getAnimationStyles(isActive, 400 + i * 150);
                         return (
-                            <div key={i} className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-lg" style={metricAnimation}>
+                            <div key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-8 py-6 flex flex-col items-center justify-center text-center shadow-2xl" style={metricAnimation}>
                                 <MetricValueDisplay
                                     value={metric.value}
                                     isActive={isActive}
-                                    numberClass="text-4xl font-bold text-[var(--color-accent-cream)]"
-                                    suffixClass="text-xl"
+                                    numberClass="text-4xl font-bold text-white"
+                                    suffixClass="text-xl text-white/80"
                                 />
-                                <Editable as="p" value={metric.label} onUpdate={v => onUpdate(`metrics[${i}].label`, v)} className="text-xs text-white/70 uppercase tracking-widest mt-2" />
+                                <Editable as="p" value={metric.label} onUpdate={v => onUpdate(`metrics[${i}].label`, v)} className="text-xs text-white/60 uppercase tracking-widest mt-1" />
                             </div>
                         )
                     })}
