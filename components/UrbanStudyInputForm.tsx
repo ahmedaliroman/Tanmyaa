@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { UrbanPlanningProjectInfo } from '../types';
 import FileUpload from './FileUpload';
 import { getSceneSuggestions, getLocationSuggestions, getChallengeSuggestions, getScaleSuggestions, getPolicyContextSuggestions, getSpecificFocusSuggestions, getAudienceSuggestions, getAuthorRoleSuggestions } from '../services/geminiService';

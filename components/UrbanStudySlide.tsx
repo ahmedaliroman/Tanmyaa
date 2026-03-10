@@ -18,6 +18,7 @@ import type {
     FiscalFrameworkSlide,
     PolicyLeversSlide,
     GovernanceFrameworkSlide,
+    ProcessSlide,
     ClosingSlide,
  } from '../types';
 

@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => {
         allowedHosts: true,
       },
       plugins: [react()],
+      build: {
+        chunkSizeWarningLimit: 2000,
+      },
       envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
       define: {
         'process.env.API_KEY': JSON.stringify(GEMINI_API_KEY),
