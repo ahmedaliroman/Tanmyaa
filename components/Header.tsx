@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { TanmyaaLogo } from './TanmyaaLogo';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
-import { LogOut, CreditCard } from 'lucide-react';
+import { LogOut, CreditCard, Clock } from 'lucide-react';
+import UsageHistoryModal from './UsageHistoryModal';
 
 interface HeaderProps {
     onNavigate: (page: 'home' | 'subscription') => void;
@@ -18,6 +19,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
   const [authView, setAuthView] = useState<'signin' | 'signup'>('signin');
   const { user, profile, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -90,6 +92,16 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
                       <p className="text-xs text-gray-500">{profile?.plan || 'Free'} Plan</p>
                     </div>
                     <button 
+                      onClick={() => {
+                        setIsHistoryModalOpen(true);
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-2"
+                    >
+                      <Clock size={14} />
+                      Generation History
+                    </button>
+                    <button 
                       onClick={() => onNavigate('subscription')}
                       className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-2"
                     >
@@ -133,6 +145,11 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
         initialView={authView} 
+      />
+
+      <UsageHistoryModal 
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)} 
       />
     </>
   );

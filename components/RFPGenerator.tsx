@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { generateRFP, getRFPSuggestions } from '../services/geminiService';
 import { exportRFPToDocx } from '../services/docxGenerator';
 import { useBranding } from '../hooks/useBranding';
@@ -77,8 +77,17 @@ interface RFPGeneratorProps {
 }
 
 const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
-  const [taskDescription, setTaskDescription] = useState<string>('');
-  const [pageRange, setPageRange] = useState<string>('5-10');
+  const [taskDescription, setTaskDescription] = useState<string>(() => localStorage.getItem('rfp_task_description') || '');
+  const [pageRange, setPageRange] = useState<string>(() => localStorage.getItem('rfp_page_range') || '5-10');
+
+  useEffect(() => {
+    localStorage.setItem('rfp_task_description', taskDescription);
+  }, [taskDescription]);
+
+  useEffect(() => {
+    localStorage.setItem('rfp_page_range', pageRange);
+  }, [pageRange]);
+
   const [files, setFiles] = useState<File[]>([]);
   const [generatedContent, setGeneratedContent] = useState<RFPContent | null>(null);
   const { logo } = useBranding();

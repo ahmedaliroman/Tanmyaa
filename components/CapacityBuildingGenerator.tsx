@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generateCapacityBuildingProgram, getCapacityBuildingSuggestions } from '../services/geminiService';
 import type { CapacityBuildingProgram } from '../types';
 import GeneratorShell from './GeneratorShell';
@@ -106,11 +106,22 @@ interface CapacityBuildingGeneratorProps {
 }
 
 const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ onUpgrade }) => {
-  const [inputs, setInputs] = useState({
-    audience: '',
-    skillLevel: '',
-    challenges: '',
+  const [inputs, setInputs] = useState(() => {
+    const saved = localStorage.getItem('capacity_building_inputs');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved capacity building inputs", e);
+      }
+    }
+    return { audience: '', skillLevel: '', challenges: '' };
   });
+
+  useEffect(() => {
+    localStorage.setItem('capacity_building_inputs', JSON.stringify(inputs));
+  }, [inputs]);
+
   const [program, setProgram] = useState<CapacityBuildingProgram | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);

@@ -8,7 +8,8 @@ import type {
     CapacityBuildingProgram,
     VisionFramework,
     StakeholderPlan,
-    Methodology
+    Methodology,
+    UsageHistory
 } from '../types';
 
 const getAi = () => {
@@ -86,7 +87,7 @@ const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: 
     }
 };
 
-const deductCredits = async (amount: number) => {
+const deductCredits = async (amount: number, description: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     const response = await fetch('/api/deduct-credits', {
         method: 'POST',
@@ -94,7 +95,7 @@ const deductCredits = async (amount: number) => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount, description }),
     });
     
     if (!response.ok) {
@@ -118,18 +119,36 @@ const deductCredits = async (amount: number) => {
     }
 };
 
-export const generateImage = async (prompt: string): Promise<string> => {
-    await deductCredits(5);
-    const ai = getAi();
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}` }] },
-        config: { imageConfig: { aspectRatio: "16:9" } }
-    });
-    for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+const withRetry = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
+    let lastError: unknown;
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (e) {
+            lastError = e;
+            console.warn(`Retry ${i + 1}/${retries} failed:`, e);
+            if (i < retries - 1) await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+        }
     }
-    throw new Error("Image failed.");
+    throw lastError;
+};
+
+export const generateImage = async (prompt: string): Promise<string> => {
+    const ai = getAi();
+    const result = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}` }] },
+            config: { imageConfig: { aspectRatio: "16:9" } }
+        });
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
+        throw new Error("Image failed.");
+    });
+    
+    await deductCredits(5, `Generated AI Image: ${prompt.substring(0, 50)}...`);
+    return result;
 };
 
 export const generatePresentation = async (
@@ -139,7 +158,6 @@ export const generatePresentation = async (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _companyProfile?: string
 ): Promise<PresentationSlide[]> => {
-    await deductCredits(20);
     const ai = getAi();
     const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy (like McKinsey, Arup, or Foster + Partners). 
     Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
@@ -193,23 +211,29 @@ export const generatePresentation = async (
     Ensure the content is deeply relevant to ${projectInfo.location} and addresses ${projectInfo.mainChallenge} with specific, actionable strategies.
     `;
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: { parts: [{ text: prompt }] },
-        config: { 
-            systemInstruction, 
-            responseMimeType: 'application/json',
-            tools: [{ googleSearch: {} }]
-        },
+    const slides = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: { parts: [{ text: prompt }] },
+            config: { 
+                systemInstruction, 
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }]
+            },
+        });
+
+        const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
+        // Filter out any null or malformed slides that the AI might have returned
+        const filtered = (parsedSlides || []).filter(s => s && typeof s === 'object' && s.layout);
+        if (filtered.length === 0) throw new Error("No slides generated.");
+        return filtered;
     });
 
-    const slides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
-    // Filter out any null or malformed slides that the AI might have returned
-    return (slides || []).filter(s => s && typeof s === 'object' && s.layout);
+    await deductCredits(20, `Generated Presentation for ${projectInfo.location}`);
+    return slides;
 };
 
 export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string): Promise<PresentationSlide[]> => {
-    await deductCredits(5);
     const ai = getAi();
     const systemInstruction = `You are a Lead Strategist at Tanmyaa Global. Your task is to intelligently refine the provided JSON presentation structure based on the user's request, ensuring technical coherence and strategic depth.
     
@@ -221,21 +245,27 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
-        config: { 
-            systemInstruction,
-            responseMimeType: 'application/json',
-            tools: [{ googleSearch: {} }]
-        },
+    const slides = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
+            config: { 
+                systemInstruction,
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }]
+            },
+        });
+        const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
+        const filtered = (parsedSlides || []).filter(s => s && typeof s === 'object' && s.layout);
+        if (filtered.length === 0) throw new Error("No slides generated during refinement.");
+        return filtered;
     });
-    const slides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
-    return (slides || []).filter(s => s && typeof s === 'object' && s.layout);
+
+    await deductCredits(5, `Refined Presentation: ${userRequest.substring(0, 50)}...`);
+    return slides;
 };
 
 export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string): Promise<PolicyBrief> => {
-    await deductCredits(10);
     const ai = getAi();
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
     
@@ -280,85 +310,90 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     Your entire output MUST be a single, valid JSON object following the required schema.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: { parts: [{ text: `Generate a structured policy brief based on: ${brief}` }] },
-        config: { 
-            systemInstruction,
-            responseMimeType: 'application/json',
-            tools: [{googleSearch: {}}],
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    executiveSummary: { type: Type.STRING },
-                    policyProblem: {
-                        type: Type.OBJECT,
-                        properties: {
-                            definition: { type: Type.STRING },
-                            affectedParties: { type: Type.STRING },
-                            urgency: { type: Type.STRING }
-                        },
-                        required: ["definition", "affectedParties", "urgency"]
-                    },
-                    evidenceAndFindings: {
-                        type: Type.OBJECT,
-                        properties: {
-                            summary: { type: Type.STRING },
-                            findings: { type: Type.ARRAY, items: { type: Type.STRING } }
-                        },
-                        required: ["summary", "findings"]
-                    },
-                    policyOptions: {
-                        type: Type.ARRAY,
-                        items: {
+    const briefResult = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: { parts: [{ text: `Generate a structured policy brief based on: ${brief}` }] },
+            config: { 
+                systemInstruction,
+                responseMimeType: 'application/json',
+                tools: [{googleSearch: {}}],
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        executiveSummary: { type: Type.STRING },
+                        policyProblem: {
                             type: Type.OBJECT,
                             properties: {
-                                description: { type: Type.STRING },
-                                benefits: { type: Type.STRING },
-                                risks: { type: Type.STRING },
-                                feasibility: { type: Type.STRING }
+                                definition: { type: Type.STRING },
+                                affectedParties: { type: Type.STRING },
+                                urgency: { type: Type.STRING }
                             },
-                            required: ["description", "benefits", "risks", "feasibility"]
-                        }
-                    },
-                    recommendedAction: {
-                        type: Type.OBJECT,
-                        properties: {
-                            option: { type: Type.STRING },
-                            justification: { type: Type.STRING },
-                            impacts: { type: Type.STRING }
+                            required: ["definition", "affectedParties", "urgency"]
                         },
-                        required: ["option", "justification", "impacts"]
-                    },
-                    implementationConsiderations: {
-                        type: Type.OBJECT,
-                        properties: {
-                            responsibility: { type: Type.STRING },
-                            capacity: { type: Type.STRING },
-                            timeline: { type: Type.STRING },
-                            risks: { type: Type.STRING }
+                        evidenceAndFindings: {
+                            type: Type.OBJECT,
+                            properties: {
+                                summary: { type: Type.STRING },
+                                findings: { type: Type.ARRAY, items: { type: Type.STRING } }
+                            },
+                            required: ["summary", "findings"]
                         },
-                        required: ["responsibility", "capacity", "timeline", "risks"]
+                        policyOptions: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    description: { type: Type.STRING },
+                                    benefits: { type: Type.STRING },
+                                    risks: { type: Type.STRING },
+                                    feasibility: { type: Type.STRING }
+                                },
+                                required: ["description", "benefits", "risks", "feasibility"]
+                            }
+                        },
+                        recommendedAction: {
+                            type: Type.OBJECT,
+                            properties: {
+                                option: { type: Type.STRING },
+                                justification: { type: Type.STRING },
+                                impacts: { type: Type.STRING }
+                            },
+                            required: ["option", "justification", "impacts"]
+                        },
+                        implementationConsiderations: {
+                            type: Type.OBJECT,
+                            properties: {
+                                responsibility: { type: Type.STRING },
+                                capacity: { type: Type.STRING },
+                                timeline: { type: Type.STRING },
+                                risks: { type: Type.STRING }
+                            },
+                            required: ["responsibility", "capacity", "timeline", "risks"]
+                        },
+                        keyTakeaways: { type: Type.ARRAY, items: { type: Type.STRING } }
                     },
-                    keyTakeaways: { type: Type.ARRAY, items: { type: Type.STRING } }
-                },
-                required: ["title", "executiveSummary", "policyProblem", "evidenceAndFindings", "policyOptions", "recommendedAction", "implementationConsiderations", "keyTakeaways"]
+                    required: ["title", "executiveSummary", "policyProblem", "evidenceAndFindings", "policyOptions", "recommendedAction", "implementationConsiderations", "keyTakeaways"]
+                }
             }
+        });
+        
+        const result = parseJsonResponse<PolicyBrief>(response, 'Policy Brief');
+        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+        if (groundingChunks) {
+            const sources = (groundingChunks as unknown as Array<{ web?: { uri: string; title?: string } }>)
+                .filter(chunk => chunk.web && chunk.web.uri)
+                .map(chunk => ({
+                    uri: chunk.web!.uri,
+                    title: chunk.web!.title || "Untitled Source",
+                }));
+            (result as PolicyBrief & { groundingSources: Array<{ uri: string; title: string }> }).groundingSources = sources;
         }
+        return result;
     });
     
-    const briefResult = parseJsonResponse<PolicyBrief>(response, 'Policy Brief');
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    if (groundingChunks) {
-        const sources = (groundingChunks as unknown as Array<{ web?: { uri: string; title?: string } }>)
-            .filter(chunk => chunk.web && chunk.web.uri)
-            .map(chunk => ({
-                uri: chunk.web!.uri,
-                title: chunk.web!.title || "Untitled Source",
-            }));
-        (briefResult as PolicyBrief & { groundingSources: Array<{ uri: string; title: string }> }).groundingSources = sources;
-    }
+    await deductCredits(10, `Generated Policy Report: ${brief.substring(0, 50)}...`);
     return briefResult;
 };
 
@@ -369,7 +404,6 @@ export const generateRFP = async (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _files: File[]
 ): Promise<RFPContent> => {
-    await deductCredits(10);
     const ai = getAi();
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
@@ -395,47 +429,51 @@ export const generateRFP = async (
     
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: `Generate a detailed RFP for: ${taskDescription}`,
-        config: { 
-            systemInstruction, 
-            responseMimeType: 'application/json',
-            tools: [{ googleSearch: {} }],
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    sections: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                title: { type: Type.STRING },
-                                content: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            paragraph: { type: Type.STRING },
-                                            list: { type: Type.ARRAY, items: { type: Type.STRING } }
+    const rfp = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: `Generate a detailed RFP for: ${taskDescription}`,
+            config: { 
+                systemInstruction, 
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }],
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        sections: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING },
+                                    content: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                paragraph: { type: Type.STRING },
+                                                list: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                            }
                                         }
                                     }
-                                }
-                            },
-                            required: ["title", "content"]
+                                },
+                                required: ["title", "content"]
+                            }
                         }
-                    }
-                },
-                required: ["title", "sections"]
+                    },
+                    required: ["title", "sections"]
+                }
             }
-        }
+        });
+        return parseJsonResponse<RFPContent>(response, 'RFP');
     });
-    return parseJsonResponse<RFPContent>(response, 'RFP');
+
+    await deductCredits(10, `Generated RFP: ${taskDescription.substring(0, 50)}...`);
+    return rfp;
 };
 
 export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, companyProfile?: string): Promise<CapacityBuildingProgram> => {
-    await deductCredits(10);
     const ai = getAi();
     const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
     Your task is to generate a comprehensive, tailored Capacity Building Program.
@@ -466,47 +504,51 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: `Generate a capacity building program for: ${audience}. 
-        Skill Level: ${skillLevel}. 
-        Challenges to address: ${challenges}.`,
-        config: { 
-            systemInstruction, 
-            responseMimeType: 'application/json',
-            tools: [{ googleSearch: {} }],
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    programTitle: { type: Type.STRING },
-                    targetAudience: { type: Type.STRING },
-                    learningObjectives: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    modules: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                title: { type: Type.STRING },
-                                objective: { type: Type.STRING },
-                                topics: { type: Type.ARRAY, items: { type: Type.STRING } },
-                                methodology: { type: Type.STRING },
-                                outcome: { type: Type.STRING }
-                            },
-                            required: ["title", "objective", "topics", "methodology", "outcome"]
-                        }
+    const program = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: `Generate a capacity building program for: ${audience}. 
+            Skill Level: ${skillLevel}. 
+            Challenges to address: ${challenges}.`,
+            config: { 
+                systemInstruction, 
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }],
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        programTitle: { type: Type.STRING },
+                        targetAudience: { type: Type.STRING },
+                        learningObjectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        modules: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING },
+                                    objective: { type: Type.STRING },
+                                    topics: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                    methodology: { type: Type.STRING },
+                                    outcome: { type: Type.STRING }
+                                },
+                                required: ["title", "objective", "topics", "methodology", "outcome"]
+                            }
+                        },
+                        deliveryMethod: { type: Type.STRING },
+                        evaluationPlan: { type: Type.STRING }
                     },
-                    deliveryMethod: { type: Type.STRING },
-                    evaluationPlan: { type: Type.STRING }
-                },
-                required: ["programTitle", "targetAudience", "learningObjectives", "modules", "deliveryMethod", "evaluationPlan"]
+                    required: ["programTitle", "targetAudience", "learningObjectives", "modules", "deliveryMethod", "evaluationPlan"]
+                }
             }
-        }
+        });
+        return parseJsonResponse<CapacityBuildingProgram>(response, 'Capacity Building Program');
     });
-    return parseJsonResponse<CapacityBuildingProgram>(response, 'Capacity Building Program');
+
+    await deductCredits(10, `Generated Capacity Building Program for ${audience}`);
+    return program;
 };
 
 export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string): Promise<VisionFramework> => {
-    await deductCredits(10);
     const ai = getAi();
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
     Your task is to generate a cohesive and inspiring Vision Framework.
@@ -530,40 +572,44 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"`,
-        config: { 
-            systemInstruction, 
-            responseMimeType: 'application/json',
-            tools: [{ googleSearch: {} }],
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    visionStatement: { type: Type.STRING },
-                    tagline: { type: Type.STRING },
-                    strategicPillars: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                title: { type: Type.STRING },
-                                description: { type: Type.STRING },
-                                keyInitiatives: { type: Type.ARRAY, items: { type: Type.STRING } }
-                            },
-                            required: ["title", "description", "keyInitiatives"]
+    const vision = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"`,
+            config: { 
+                systemInstruction, 
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }],
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        visionStatement: { type: Type.STRING },
+                        tagline: { type: Type.STRING },
+                        strategicPillars: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING },
+                                    description: { type: Type.STRING },
+                                    keyInitiatives: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                },
+                                required: ["title", "description", "keyInitiatives"]
+                            }
                         }
-                    }
-                },
-                required: ["visionStatement", "tagline", "strategicPillars"]
+                    },
+                    required: ["visionStatement", "tagline", "strategicPillars"]
+                }
             }
-        }
+        });
+        return parseJsonResponse<VisionFramework>(response, 'Vision Framework');
     });
-    return parseJsonResponse<VisionFramework>(response, 'Vision Framework');
+
+    await deductCredits(10, `Generated Vision Framework for ${city}`);
+    return vision;
 };
 
 export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string): Promise<StakeholderPlan> => {
-    await deductCredits(10);
     const ai = getAi();
     const systemInstruction = `You are a world-class public engagement strategist. 
     Your task is to generate a detailed Stakeholder Engagement Plan.
@@ -597,55 +643,59 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"`,
-        config: { 
-            systemInstruction, 
-            responseMimeType: 'application/json',
-            tools: [{ googleSearch: {} }],
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    planTitle: { type: Type.STRING },
-                    engagementGoals: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    stakeholderGroups: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                name: { type: Type.STRING },
-                                category: { type: Type.STRING, description: "Government, Community, Private Sector, Expert/NGO, or Other" },
-                                interest: { type: Type.STRING, description: "High, Medium, or Low" },
-                                influence: { type: Type.STRING, description: "High, Medium, or Low" },
-                                engagementStrategy: { type: Type.STRING },
-                                communicationMethods: { type: Type.ARRAY, items: { type: Type.STRING } }
-                            },
-                            required: ["name", "category", "interest", "influence", "engagementStrategy", "communicationMethods"]
+    const plan = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"`,
+            config: { 
+                systemInstruction, 
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }],
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        planTitle: { type: Type.STRING },
+                        engagementGoals: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        stakeholderGroups: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    category: { type: Type.STRING, description: "Government, Community, Private Sector, Expert/NGO, or Other" },
+                                    interest: { type: Type.STRING, description: "High, Medium, or Low" },
+                                    influence: { type: Type.STRING, description: "High, Medium, or Low" },
+                                    engagementStrategy: { type: Type.STRING },
+                                    communicationMethods: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                },
+                                required: ["name", "category", "interest", "influence", "engagementStrategy", "communicationMethods"]
+                            }
+                        },
+                        timeline: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    phase: { type: Type.STRING },
+                                    duration: { type: Type.STRING },
+                                    activities: { type: Type.STRING }
+                                },
+                                required: ["phase", "duration", "activities"]
+                            }
                         }
                     },
-                    timeline: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                phase: { type: Type.STRING },
-                                duration: { type: Type.STRING },
-                                activities: { type: Type.STRING }
-                            },
-                            required: ["phase", "duration", "activities"]
-                        }
-                    }
-                },
-                required: ["planTitle", "engagementGoals", "stakeholderGroups", "timeline"]
+                    required: ["planTitle", "engagementGoals", "stakeholderGroups", "timeline"]
+                }
             }
-        }
+        });
+        return parseJsonResponse<StakeholderPlan>(response, 'Stakeholder Plan');
     });
-    return parseJsonResponse<StakeholderPlan>(response, 'Stakeholder Plan');
+
+    await deductCredits(10, `Generated Stakeholder Plan for ${context.substring(0, 50)}...`);
+    return plan;
 };
 
 export const generateMethodology = async (task: string, companyProfile?: string): Promise<Methodology> => {
-    await deductCredits(10);
     const ai = getAi();
     const systemInstruction = `You are a Senior Urban Project Manager. 
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
@@ -678,50 +728,72 @@ export const generateMethodology = async (task: string, companyProfile?: string)
     
     Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: `Generate a methodology for the following task: "${task}"`,
-        config: { 
-            systemInstruction, 
-            responseMimeType: 'application/json',
-            tools: [{ googleSearch: {} }],
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    introduction: { type: Type.STRING },
-                    phases: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                phase_number: { type: Type.INTEGER },
-                                title: { type: Type.STRING },
-                                description: { type: Type.STRING },
-                                steps: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            step_number: { type: Type.STRING },
-                                            title: { type: Type.STRING },
-                                            description: { type: Type.STRING },
-                                            deliverable: { type: Type.STRING },
-                                            tools_and_techniques: { type: Type.ARRAY, items: { type: Type.STRING } }
-                                        },
-                                        required: ["step_number", "title", "description", "deliverable", "tools_and_techniques"]
+    
+    const methodology = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: `Generate a methodology for the following task: "${task}"`,
+            config: { 
+                systemInstruction, 
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }],
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        introduction: { type: Type.STRING },
+                        phases: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    phase_number: { type: Type.INTEGER },
+                                    title: { type: Type.STRING },
+                                    description: { type: Type.STRING },
+                                    steps: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                step_number: { type: Type.STRING },
+                                                title: { type: Type.STRING },
+                                                description: { type: Type.STRING },
+                                                deliverable: { type: Type.STRING },
+                                                tools_and_techniques: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                            },
+                                            required: ["step_number", "title", "description", "deliverable", "tools_and_techniques"]
+                                        }
                                     }
-                                }
-                            },
-                            required: ["phase_number", "title", "description", "steps"]
+                                },
+                                required: ["phase_number", "title", "description", "steps"]
+                            }
                         }
-                    }
-                },
-                required: ["title", "introduction", "phases"]
+                    },
+                    required: ["title", "introduction", "phases"]
+                }
             }
+        });
+        return parseJsonResponse<Methodology>(response, 'Methodology');
+    });
+
+    await deductCredits(10, `Generated Methodology for ${task.substring(0, 50)}...`);
+    return methodology;
+};
+
+export const fetchUsageHistory = async (): Promise<UsageHistory[]> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch('/api/usage-history', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${session?.access_token}`
         }
     });
-    return parseJsonResponse<Methodology>(response, 'Methodology');
+    
+    if (!response.ok) {
+        throw new Error('Failed to fetch usage history.');
+    }
+    
+    return await response.json();
 };
 
 const generateInputSuggestions = async (prompt: string): Promise<string[]> => {

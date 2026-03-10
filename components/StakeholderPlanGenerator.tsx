@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generateStakeholderPlan, getStakeholderContextSuggestions } from '../services/geminiService';
 import type { StakeholderPlan, StakeholderGroup } from '../types';
 import GeneratorShell from './GeneratorShell';
@@ -184,7 +184,22 @@ interface StakeholderPlanGeneratorProps {
 }
 
 const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onUpgrade }) => {
-  const [inputs, setInputs] = useState({ projectContext: '', projectGoals: '' });
+  const [inputs, setInputs] = useState(() => {
+    const saved = localStorage.getItem('stakeholder_plan_inputs');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved stakeholder inputs", e);
+      }
+    }
+    return { projectContext: '', projectGoals: '' };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('stakeholder_plan_inputs', JSON.stringify(inputs));
+  }, [inputs]);
+
   const [plan, setPlan] = useState<StakeholderPlan | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);

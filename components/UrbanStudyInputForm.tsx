@@ -57,7 +57,22 @@ type SuggestionState = {
 }
 
 const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onSubmit, isLoading, files, setFiles, credits, userEmail, onLogin }) => {
-  const [projectInfo, setProjectInfo] = useState<UrbanPlanningProjectInfo>(initialProjectInfo);
+  const [projectInfo, setProjectInfo] = useState<UrbanPlanningProjectInfo>(() => {
+    const saved = localStorage.getItem('urban_study_form_data');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved form data", e);
+      }
+    }
+    return initialProjectInfo;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('urban_study_form_data', JSON.stringify(projectInfo));
+  }, [projectInfo]);
+
   const [currentStep, setCurrentStep] = useState(0);
 
   const [suggestionState, setSuggestionState] = useState<SuggestionState>({

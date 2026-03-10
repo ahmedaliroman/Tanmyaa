@@ -65,3 +65,27 @@ select id, email, 100, 'Free', 0
 from auth.users
 where id not in (select id from public.profiles);
 */
+
+-- 6. Create the usage_history table
+create table if not exists public.usage_history (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  description text not null,
+  credits_used integer not null,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 7. Enable RLS for usage_history
+alter table public.usage_history enable row level security;
+
+-- 8. Create policies for usage_history
+-- Allow users to view their own history
+create policy "Users can view own history" 
+  on public.usage_history for select 
+  using (auth.uid() = user_id);
+
+-- Allow the service role to insert history (server-side)
+-- Note: In Supabase, the service role bypasses RLS, but we can still define policies for clarity
+create policy "Service role can insert history" 
+  on public.usage_history for insert 
+  with check (true);

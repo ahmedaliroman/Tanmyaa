@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generatePolicyReport, getPolicyBriefSuggestions } from '../services/geminiService';
 import type { PolicyBrief as PolicyBriefType } from '../types';
 import GeneratorShell from './GeneratorShell';
@@ -149,7 +149,12 @@ interface PolicyStrategyGeneratorProps {
 }
 
 const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpgrade }) => {
-  const [projectBrief, setProjectBrief] = useState<string>('');
+  const [projectBrief, setProjectBrief] = useState<string>(() => localStorage.getItem('policy_project_brief') || '');
+
+  useEffect(() => {
+    localStorage.setItem('policy_project_brief', projectBrief);
+  }, [projectBrief]);
+
   const [files, setFiles] = useState<File[]>([]);
   const [policyBrief, setPolicyBrief] = useState<PolicyBriefType | null>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);

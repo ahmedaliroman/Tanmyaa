@@ -111,6 +111,8 @@ router.post('/deduct-credits', async (req, res) => {
             return res.status(403).json({ error: 'Insufficient credits.' });
         }
 
+        const { description } = req.body;
+
         // Deduct credits and increment total_credits_used
         const { error: updateError } = await client
             .from('profiles')
@@ -123,6 +125,22 @@ router.post('/deduct-credits', async (req, res) => {
         if (updateError) {
             console.error('Failed to update credits for user:', user.id, updateError);
             return res.status(500).json({ error: 'Failed to deduct credits.' });
+        }
+
+        // Record usage history
+        if (description) {
+            const { error: historyError } = await client
+                .from('usage_history')
+                .insert({
+                    user_id: user.id,
+                    description: description,
+                    credits_used: amount
+                });
+            
+            if (historyError) {
+                console.error('Failed to record usage history:', historyError);
+                // We don't return error here as credits were already deducted
+            }
         }
 
         res.json({ success: true, remainingCredits: profile.credits - amount });
@@ -201,6 +219,38 @@ router.post('/paypal/capture-order', async (req, res) => {
     }
 });
 
+router.get('/usage-history', async (req, res) => {
+    try {
+        const client = getSupabase();
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Authorization header is required.' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const { data: { user }, error: authError } = await client.auth.getUser(token);
+
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Invalid or expired token.' });
+        }
+
+        const { data, error } = await client
+            .from('usage_history')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Failed to fetch usage history:', error);
+            return res.status(500).json({ error: 'Failed to fetch usage history.' });
+        }
+
+        res.json(data);
+    } catch (error) {
+        console.error('Failed to fetch usage history:', error);
+        res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
+    }
+});
 
 export default router;
 

@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generateMethodology, getMethodologySuggestions } from '../services/geminiService';
 import type { Methodology } from '../types';
 import GeneratorShell from './GeneratorShell';
@@ -91,7 +91,12 @@ interface MethodologyGeneratorProps {
 }
 
 const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }) => {
-  const [taskDescription, setTaskDescription] = useState<string>('');
+  const [taskDescription, setTaskDescription] = useState<string>(() => localStorage.getItem('methodology_task_description') || '');
+
+  useEffect(() => {
+    localStorage.setItem('methodology_task_description', taskDescription);
+  }, [taskDescription]);
+
   const [generatedContent, setGeneratedContent] = useState<Methodology | null>(null);
   const { companyProfile } = useCompanyProfile();
   const { refreshProfile, profile, user, signInWithGoogle } = useAuth();

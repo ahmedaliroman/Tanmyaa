@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generateVisionFramework, getVisionAspirationSuggestions } from '../services/geminiService';
 import type { VisionFramework } from '../types';
 import GeneratorShell from './GeneratorShell';
@@ -74,11 +74,22 @@ interface VisionFrameworkGeneratorProps {
 }
 
 const VisionFrameworkGenerator: React.FC<VisionFrameworkGeneratorProps> = ({ onUpgrade }) => {
-  const [inputs, setInputs] = useState({
-    city: '',
-    aspirations: '',
-    timeframe: '',
+  const [inputs, setInputs] = useState(() => {
+    const saved = localStorage.getItem('vision_framework_inputs');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved vision framework inputs", e);
+      }
+    }
+    return { city: '', aspirations: '', timeframe: '' };
   });
+
+  useEffect(() => {
+    localStorage.setItem('vision_framework_inputs', JSON.stringify(inputs));
+  }, [inputs]);
+
   const [framework, setFramework] = useState<VisionFramework | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
