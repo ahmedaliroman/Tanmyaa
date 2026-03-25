@@ -814,7 +814,9 @@ Peer-reviewed academic research
 Satellite imagery and geospatial platforms
 Reference maps from reliable sources
 
-Conduct internal multilingual research (Arabic, English, and others if useful), and extract only accurate and directly relevant insights.
+Conduct internal multilingual research, and extract only accurate and directly relevant insights.
+CRITICAL: You MUST ensure the generated map accurately represents the real-world geography of the requested city (${input.cityName}). Do NOT hallucinate or generate fictional maps. If you are unsure of the exact geography, rely heavily on the provided reference map or use a highly stylized, abstract representation that does not convey false geographical information.
+CRITICAL: All text on the map MUST be in English, unless the user explicitly requested Arabic in the "Analysis Topic" or "City Name". Do NOT use Arabic by default. Ensure all text is clear and legible.
 
 Sources to Use (when possible):
 Google Earth, Google Maps, Landsat, Sentinel, Copernicus, ESA WorldCover, USGS, OpenStreetMap, Official government entities, Official statistics agencies, Urban planning reports, Peer-reviewed journals, Academic theses, Published studies, Open geospatial databases.
@@ -842,7 +844,7 @@ Cinematic, high-end cartographic quality
 Preferably 3D
 Based on the provided map
 Preserves real geography (no fictionalization)
-Clear, large Arabic text
+Clear, legible text (English by default)
 Academic visual style
 HD size layout
 
@@ -855,7 +857,7 @@ Overall condition related to Analysis Topic, Key strengths, Key weaknesses, Spat
 Note: "The results are based on an analysis of published sources and satellite imagery."
 
 Strict Prohibitions:
-No explanations, No questions, No justifications, No textual report, No ignoring the attached map, No fake statistics, No unrelated visuals, No small or unclear Arabic text, No missing signature.
+No explanations, No questions, No justifications, No textual report, No ignoring the attached map, No fake statistics, No unrelated visuals, No missing signature.
 
 Final Instruction:
 Analyze internally → synthesize internally → generate the final image only.
