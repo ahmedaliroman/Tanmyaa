@@ -915,55 +915,50 @@ STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
 ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
 
 CRITICAL INSTRUCTION REGARDING THE ATTACHED MAP:
-The attached map image represents the EXACT bounding box and study area selected by the user. You MUST use this exact geographical area and layout as the base for your analysis map. Do not zoom out to the whole city if the user selected a specific district. Do not hallucinate a different map. Overlay your spatial analysis directly onto the geographical context shown in the attached image.
+The attached map image represents the EXACT bounding box and study area selected by the user. You MUST use this exact geographical area and layout as the base for your analysis map. Do not zoom out to the whole city if the user selected a specific district. Do not hallucinate a different map.
+You MUST EDIT the attached image by overlaying your spatial analysis directly onto the geographical context shown. Preserve the exact streets, buildings, and urban fabric visible in the image.
 
-STEP 1: CANVAS SETUP
-Create a layout with resolution: 1920×1080 px (Full HD), landscape.
-Background color: white.
-Margins: 40–60 px on all sides.
+STEP 1: OVERLAY ANALYSIS
+Overlay clear, semi-transparent colors, heatmaps, or symbols onto the existing map to represent the "${input.analysisTopic}".
+Do not obscure the underlying street network completely.
 
 STEP 2: REMOVE CLUTTER
-Delete ALL analysis text, including: Paragraphs, Labels explaining results, Long annotations.
-Keep only: Map features, Symbols, Essential labels (e.g., place names if needed), Main roads.
+Do not add long paragraphs, labels explaining results, or long annotations on the map.
+Keep only: Map features, Symbols, Essential labels.
 
-STEP 3: MAP FRAME (NEATLINE)
-Add a rectangular border around the map. Stroke Color: dark grey (#333333) or black. Thickness: 1–2 px. Ensure even spacing between frame and content.
-
-STEP 4: CORE MAP ELEMENTS
-A. TITLE: Position: top center. Text: "Spatial Analysis – ${input.cityName}: ${input.analysisTopic}". Font: Sans-serif, large (approx. 36–48 pt), bold.
-B. LEGEND: Position: bottom left OR bottom right. Style: White background with subtle border, Padding: 10–15 px. Content: Only essential categories, Group logically. Avoid long descriptions.
-C. NORTH ARROW: Position: top right corner. Style: Minimal, modern, Black or dark grey.
-D. SCALE BAR: Position: bottom center. Units: metric (meters or kilometers). Style: simple and proportional to map extent.
-E. COORDINATE SYSTEM / GRID: Add Latitude/Longitude ticks OR UTM grid. Style: Light grey lines (#CCCCCC), Thin stroke (0.5–1 px).
-
-STEP 5: BRANDING
-Place company logo (TANNMYAA): Bottom right corner. Size: small but legible. Add small copyright text below logo: "© TANNMYAA 2026".
-
-STEP 6: VISUAL HIERARCHY
-Ensure Map content is the primary focus. UI elements are secondary. Use Consistent font family, Limited color palette (max 4–6 colors). Avoid Overlapping elements and Visual clutter.
-
-STEP 7: ADD REPORT ACCESS (QR CODE)
-Place a QR code near the legend. Size: ~100×100 px. Label below QR code: "Scan to download detailed analysis report".
+STEP 3: MAP FRAME & CORE ELEMENTS
+Add a rectangular border around the map if possible.
+Add a TITLE: "Spatial Analysis – ${input.cityName}: ${input.analysisTopic}".
+Add a LEGEND explaining the colors/symbols used.
+Add a NORTH ARROW and SCALE BAR.
 
 FINAL REQUIREMENTS:
 The map must be visually clean, minimal, and professional.
-No unnecessary text on the map itself except the main roads.
+No unnecessary text on the map itself.
 All explanations must be in the separate report.
-Ensure alignment, spacing, and balance across all elements.
 STRICTLY 2D presentation (Top-down view).
-Preserves real geography (no fictionalization, no fake 3D renders).
+Preserves real geography EXACTLY as shown in the input image (no fictionalization, no fake 3D renders).
         `;
 
+        let model = 'gemini-3.1-flash-image-preview';
+        let config: Record<string, unknown> = { 
+            imageConfig: { 
+                aspectRatio: "16:9",
+                imageSize: "1K"
+            },
+            tools: [{ googleSearch: {} }]
+        };
+
+        // If a file is provided, use gemini-2.5-flash-image to edit the image and preserve the exact urban fabric
+        if (file) {
+            model = 'gemini-2.5-flash-image';
+            config = {}; // gemini-2.5-flash-image does not support imageConfig or tools
+        }
+
         const imageResponse = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-image-preview',
+            model,
             contents: { parts: [...parts, { text: imagePrompt }] },
-            config: { 
-                imageConfig: { 
-                    aspectRatio: "16:9",
-                    imageSize: "1K"
-                },
-                tools: [{ googleSearch: {} }]
-            }
+            config
         });
 
         for (const part of imageResponse.candidates[0].content.parts) {
