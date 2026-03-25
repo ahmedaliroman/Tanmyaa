@@ -1,7 +1,5 @@
 
 import React, { useState } from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 import { useAuth } from '../context/AuthContext';
 import { generateSpatialAnalysis, SpatialAnalysisResult } from '../services/geminiService';
 import SpatialAnalysisInputForm from './SpatialAnalysisInputForm';
@@ -18,52 +16,12 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SpatialAnalysisResult | null>(null);
-  const [geeResult, setGeeResult] = useState<{ url: string, type: string } | null>(null);
   const [projectInfo, setProjectInfo] = useState({ cityName: '', analysisTopic: '' });
-
-  const handleGeeAnalysis = async (bounds: { north: number, south: number, east: number, west: number }, type: string) => {
-    try {
-      const response = await fetch('/api/gee/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bounds, analysisType: type })
-      });
-      
-      const data = await response.json();
-      if (data.success && data.mapId) {
-        setGeeResult({
-          url: `https://earthengine.googleapis.com/v1/projects/earthengine-legacy/maps/${data.mapId.mapid}/tiles/{z}/{x}/{y}`,
-          type
-        });
-        // Set a dummy result to trigger the result view in GeneratorShell
-        setResult({
-          imageUrl: '', // Not used when geeResult is present
-          report: {
-            keyInsights: ['GEE Analysis completed successfully.'],
-            spatialAnalysis: `GEE ${type} analysis results are displayed on the interactive map.`,
-            shortTermActions: [],
-            longTermStrategies: [],
-            methodology: {
-              approach: 'Google Earth Engine Cloud Computing',
-              dataSources: ['Sentinel-2', 'Landsat 8'],
-              toolsUsed: ['Google Earth Engine API']
-            }
-          }
-        });
-      } else {
-        throw new Error(data.error || 'GEE analysis failed');
-      }
-    } catch (err: unknown) {
-      console.error('GEE Error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to perform GEE analysis. Ensure credentials are set.');
-    }
-  };
 
   const handleGenerate = async (cityName: string, scale: string, analysisTopic: string, file?: File) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
-    setGeeResult(null);
     setProjectInfo({ cityName, analysisTopic });
 
     try {
@@ -210,7 +168,6 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
     >
       <SpatialAnalysisInputForm 
         onSubmit={handleGenerate}
-        onGeeAnalysis={handleGeeAnalysis}
         isLoading={isLoading}
         credits={profile?.credits || 0}
         userEmail={user?.email || null}
@@ -236,59 +193,32 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
             >
               Download PDF Report
             </button>
-            {!geeResult && (
-              <button 
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = res.imageUrl;
-                  link.download = `spatial-analysis-${Date.now()}.png`;
-                  link.click();
-                }}
-                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full transition duration-200"
-              >
-                Download HD Map
-              </button>
-            )}
             <button 
               onClick={() => {
-                setResult(null);
-                setGeeResult(null);
+                const link = document.createElement('a');
+                link.href = res.imageUrl;
+                link.download = `spatial-analysis-${Date.now()}.png`;
+                link.click();
               }}
+              className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full transition duration-200"
+            >
+              Download HD Map
+            </button>
+            <button 
+              onClick={() => setResult(null)}
               className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-full transition duration-200"
             >
               New Analysis
             </button>
           </div>
         </div>
-        <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
-          {geeResult ? (
-            <div className="w-full h-full">
-              <MapContainer 
-                center={[24.7136, 46.6753]} 
-                zoom={10} 
-                style={{ height: '100%', width: '100%' }}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                />
-                <TileLayer
-                  url={geeResult.url}
-                  opacity={0.7}
-                />
-              </MapContainer>
-              <div className="absolute top-4 left-4 z-[1000] bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg border border-white/10 text-[10px] text-white font-medium">
-                GEE Layer: {geeResult.type === 'vegetation' ? 'NDVI (Vegetation)' : 'Built-up Area Index'}
-              </div>
-            </div>
-          ) : (
-            <img 
-              src={res.imageUrl} 
-              alt="Spatial Analysis Result" 
-              className="max-w-full max-h-full object-contain"
-              referrerPolicy="no-referrer"
-            />
-          )}
+        <div className="relative aspect-video bg-black flex items-center justify-center">
+          <img 
+            src={res.imageUrl} 
+            alt="Spatial Analysis Result" 
+            className="max-w-full max-h-full object-contain"
+            referrerPolicy="no-referrer"
+          />
         </div>
       </div>
       

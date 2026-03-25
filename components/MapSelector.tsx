@@ -6,7 +6,6 @@ import { Maximize, Minimize, MousePointer2, Square } from 'lucide-react';
 
 interface MapSelectorProps {
   onBoundsChange: (bounds: string) => void;
-  onRawBoundsChange?: (bounds: { north: number, south: number, east: number, west: number } | null) => void;
   cityName?: string;
   disabled?: boolean;
 }
@@ -90,17 +89,8 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, dis
       const ne = selectedBounds.getNorthEast();
       const sw = selectedBounds.getSouthWest();
       onBoundsChange(`Selected Area - North: ${ne.lat.toFixed(4)}, South: ${sw.lat.toFixed(4)}, East: ${ne.lng.toFixed(4)}, West: ${sw.lng.toFixed(4)}`);
-      if (onRawBoundsChange) {
-        onRawBoundsChange({
-          north: ne.lat,
-          south: sw.lat,
-          east: ne.lng,
-          west: sw.lng
-        });
-      }
     } else {
       onBoundsChange('');
-      if (onRawBoundsChange) onRawBoundsChange(null);
     }
   }, [selectedBounds, onBoundsChange]);
 

@@ -6,7 +6,6 @@ import html2canvas from 'html2canvas';
 
 interface SpatialAnalysisInputFormProps {
   onSubmit: (cityName: string, scale: string, analysisTopic: string, file?: File) => void;
-  onGeeAnalysis?: (bounds: { north: number, south: number, east: number, west: number }, type: string) => void;
   isLoading: boolean;
   credits: number;
   userEmail: string | null;
@@ -15,7 +14,6 @@ interface SpatialAnalysisInputFormProps {
 
 const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({ 
   onSubmit, 
-  onGeeAnalysis,
   isLoading, 
   credits, 
   userEmail, 
@@ -23,23 +21,10 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
 }) => {
   const [cityName, setCityName] = useState('');
   const [scale, setScale] = useState('');
-  const [rawBounds, setRawBounds] = useState<{ north: number, south: number, east: number, west: number } | null>(null);
   const [analysisTopic, setAnalysisTopic] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [isGeeLoading, setIsGeeLoading] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-
-  const handleGeeClick = async (type: string) => {
-    if (rawBounds && onGeeAnalysis) {
-      setIsGeeLoading(true);
-      try {
-        await onGeeAnalysis(rawBounds, type);
-      } finally {
-        setIsGeeLoading(false);
-      }
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,33 +93,7 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
               </div>
               <div ref={mapContainerRef}>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Study Area (Detect on Map)</label>
-                <MapSelector 
-                  onBoundsChange={setScale} 
-                  onRawBoundsChange={setRawBounds}
-                  cityName={cityName} 
-                  disabled={isLoading || isCapturing} 
-                />
-                
-                {rawBounds && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleGeeClick('vegetation')}
-                      disabled={isGeeLoading || isLoading}
-                      className="text-[10px] bg-green-600/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-full hover:bg-green-600/30 transition-all flex items-center gap-1.5"
-                    >
-                      {isGeeLoading ? 'Processing...' : 'GEE: Vegetation Analysis (NDVI)'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleGeeClick('urban')}
-                      disabled={isGeeLoading || isLoading}
-                      className="text-[10px] bg-orange-600/20 text-orange-400 border border-orange-500/30 px-3 py-1.5 rounded-full hover:bg-orange-600/30 transition-all flex items-center gap-1.5"
-                    >
-                      {isGeeLoading ? 'Processing...' : 'GEE: Built-up Area Index'}
-                    </button>
-                  </div>
-                )}
+                <MapSelector onBoundsChange={setScale} cityName={cityName} disabled={isLoading || isCapturing} />
               </div>
               <div>
                 <label htmlFor="analysisTopic" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Analysis Topic</label>
