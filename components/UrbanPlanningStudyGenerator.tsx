@@ -7,6 +7,7 @@ import SlideNavigator from './SlideNavigator';
 import ChatPanel from './ChatPanel';
 import Loader from './Loader';
 import ErrorMessage from './ErrorMessage';
+import GeneratorWelcome from './Welcome';
 
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
@@ -335,6 +336,13 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
       <div className="mt-8 flex-grow">
         {isLoading && <Loader />}
         {error && <ErrorMessage message={error} />}
+
+        {!isLoading && !error && !slides && (
+          <GeneratorWelcome 
+            title="Urban Planning Presentation"
+            description="Generate a comprehensive, structured presentation from problem to implementation. This tool creates a multi-slide presentation covering case studies, vision, macro strategies, and node assessments."
+          />
+        )}
 
         {isGeneratingImages && (
             <div className="text-center py-4 bg-black/40 rounded-3xl shadow-2xl border border-white/10 mb-8 animate-ios-reveal">

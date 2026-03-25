@@ -227,11 +227,6 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
     <GeneratorShell
       title="RFP & ToR Generator"
       description="Prepare comprehensive Request for Proposals and Terms of Reference documents. Your generated document will be previewed below."
-      icon={
-        <svg className="w-full h-full" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={1}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-      }
       isLoading={isLoading}
       error={error}
       result={generatedContent}

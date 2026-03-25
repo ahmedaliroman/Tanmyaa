@@ -775,9 +775,208 @@ export const generateMethodology = async (task: string, companyProfile?: string)
         });
         return parseJsonResponse<Methodology>(response, 'Methodology');
     });
-
+    
     await deductCredits(10, `Generated Methodology for ${task.substring(0, 50)}...`);
     return methodology;
+};
+
+export const generateSpatialAnalysis = async (
+    input: { cityName: string; scale: string; analysisTopic: string },
+    file?: File
+): Promise<string> => {
+    const ai = getAi();
+    const result = await withRetry(async () => {
+        const parts: { text?: string; inlineData?: { data: string; mimeType: string } }[] = [];
+        
+        const prompt = `
+Requested Input Parameters
+City Name: ${input.cityName}
+Scale or Area Required: ${input.scale}
+Analysis Topic: ${input.analysisTopic}
+
+Additional (Optional):
+Upload one map of the target city. Use the attached map as the primary visual and spatial reference, then internally conduct extensive, multilingual scientific research on the city based on the selected Analysis Topic, relying on reliable published sources. After that, generate one final image only.
+
+Execution Rules (Strict):
+Do not explain
+Do not show steps
+Do not write a report
+Do not ask questions
+Do not discuss technical limitations
+Do not provide justifications
+Execute internally and output only the final image
+
+Task:
+Analyze the “Analysis Topic” based on:
+The attached map (if provided)
+Official published data
+Peer-reviewed academic research
+Satellite imagery and geospatial platforms
+Reference maps from reliable sources
+
+Conduct internal multilingual research (Arabic, English, and others if useful), and extract only accurate and directly relevant insights.
+
+Sources to Use (when possible):
+Google Earth, Google Maps, Landsat, Sentinel, Copernicus, ESA WorldCover, USGS, OpenStreetMap, Official government entities, Official statistics agencies, Urban planning reports, Peer-reviewed journals, Academic theses, Published studies, Open geospatial databases.
+
+Analysis Framework:
+Define the Analysis Topic in relation to spatial, urban, environmental, and service-based systems, including where relevant: Urban fabric, Road network, Accessibility to services, Land cover and open spaces, Environmental and climate aspects, Infrastructure systems, Spatial disparities.
+
+Key Indicators (as applicable):
+Density and urban cohesion, Urban sprawl patterns, Connectivity efficiency, Service distribution, Open/green space availability, Environmental sensitivity, Strength areas, Weakness areas, Priority intervention zones.
+
+Important Note:
+Do NOT claim exact GIS projection if unsupported.
+Instead, produce a highly professional analytical visual map grounded in the attached map and validated data.
+
+Final Output Requirements:
+One image only
+No text outside the image
+No explanation
+No report
+No dialogue
+
+Image Specifications:
+Professional analytical urban map (ArcGIS Pro style)
+Cinematic, high-end cartographic quality
+Preferably 3D
+Based on the provided map
+Preserves real geography (no fictionalization)
+Clear, large Arabic text
+Academic visual style
+HD size layout
+
+Map Elements (Mandatory):
+Central main map, Clear classification relevant to the Analysis Topic, North arrow, Scale bar, Coordinate frame, Clear legend, Elegant glass-style side panels.
+Clear template for the company TANNMYAA.
+
+Side Panels (Concise Insights):
+Overall condition related to Analysis Topic, Key strengths, Key weaknesses, Spatial patterns, Infrastructure/service observations, Environmental or land-related role (if relevant).
+Note: "The results are based on an analysis of published sources and satellite imagery."
+
+Strict Prohibitions:
+No explanations, No questions, No justifications, No textual report, No ignoring the attached map, No fake statistics, No unrelated visuals, No small or unclear Arabic text, No missing signature.
+
+Final Instruction:
+Analyze internally → synthesize internally → generate the final image only.
+        `;
+
+        parts.push({ text: prompt });
+
+        if (file) {
+            const base64 = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64String = (reader.result as string).split(',')[1];
+                    resolve(base64String);
+                };
+                reader.readAsDataURL(file);
+            });
+            parts.push({
+                inlineData: {
+                    data: base64,
+                    mimeType: file.type
+                }
+            });
+        }
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-image-preview',
+            contents: { parts },
+            config: { 
+                imageConfig: { 
+                    aspectRatio: "16:9",
+                    imageSize: "1K"
+                },
+                tools: [{ googleSearch: {} }]
+            }
+        });
+
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
+        throw new Error("Spatial analysis image generation failed.");
+    });
+
+    await deductCredits(10, `Spatial Analysis for ${input.cityName}: ${input.analysisTopic}`);
+    return result;
+};
+
+export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string): Promise<UrbanDeepUnderstanding> => {
+    const ai = getAi();
+    const systemInstruction = `You are a world-class Urban Specialist and Policy Consultant. 
+    Your task is to provide a "Deep Understanding" of a specific urban topic. 
+    This is an interactive, data-driven, and highly contextualized analysis presented in a Policy Brief style.
+    
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to find real-world evidence and statistics.
+    TECHNICAL DEPTH: Ensure the analysis is rigorous, using professional terminology and providing concrete, quantified evidence where possible.
+    
+    SCHEMA GUIDANCE:
+    {
+        "topic": "string",
+        "executiveSummary": "string",
+        "keyConcepts": [
+            { "title": "string", "explanation": "string", "example": "string" }
+        ],
+        "dataInsights": [
+            { "metric": "string", "currentValue": "string", "projection": "string", "trend": "Increasing" | "Decreasing" | "Stable", "rationale": "string" }
+        ],
+        "caseStudies": [
+            { "location": "string", "intervention": "string", "outcome": "string", "lessonLearned": "string" }
+        ],
+        "policyRecommendations": [
+            { "action": "string", "impact": "string", "feasibility": "High" | "Medium" | "Low" }
+        ],
+        "interactiveElements": [
+            { "question": "string", "options": ["string"], "feedback": "string" }
+        ]
+    }
+    
+    Your entire output MUST be a single, valid JSON object following the required schema.
+    ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
+
+    const result = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: { parts: [{ text: `Provide a deep understanding of the urban topic: "${topic}". Context: "${context}"` }] },
+            config: { 
+                systemInstruction,
+                responseMimeType: 'application/json',
+                tools: [{googleSearch: {}}],
+            }
+        });
+        
+        return parseJsonResponse<UrbanDeepUnderstanding>(response, 'Deep Understanding');
+    });
+    
+    await deductCredits(10, `Generated Deep Understanding for ${topic.substring(0, 50)}...`);
+    return result;
+};
+
+export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string): Promise<UrbanDeepUnderstanding> => {
+    const ai = getAi();
+    const systemInstruction = `You are a world-class Urban Specialist. Update the provided "Deep Understanding" JSON based on the user's new insights or requests for focus.
+    
+    STRICT PROHIBITION: NEVER use placeholders. Provide real data and specific examples.
+    
+    Your entire output must be only the valid JSON object, with no other text.
+    ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
+
+    const result = await withRetry(async () => {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: `Update the following Deep Understanding JSON based on the user request. Current state: ${JSON.stringify(currentData)}. User Request: "${userRequest}".`,
+            config: { 
+                systemInstruction,
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }]
+            },
+        });
+        return parseJsonResponse<UrbanDeepUnderstanding>(response, 'Deep Understanding Refinement');
+    });
+
+    await deductCredits(5, `Refined Deep Understanding: ${userRequest.substring(0, 50)}...`);
+    return result;
 };
 
 export const fetchUsageHistory = async (): Promise<UsageHistory[]> => {

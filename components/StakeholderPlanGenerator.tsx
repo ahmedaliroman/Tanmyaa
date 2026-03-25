@@ -355,11 +355,6 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
     <GeneratorShell
         title="Stakeholder Engagement Plan"
         description="This tool helps you build a comprehensive strategy for managing project stakeholders. Provide your project's context and goals to generate a plan that identifies key groups, analyzes their needs, and outlines effective communication strategies."
-        icon={
-            <svg className="w-full h-full" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.663l.005-.004c.291.246.617.452.97.612m-6.276-8.486A3.375 3.375 0 0112 5.625a3.375 3.375 0 013.375 3.375c0 1.122-.553 2.11-1.357 2.712M9.375 9.375a3.375 3.375 0 00-3.375-3.375m0 0A3.375 3.375 0 012.625 9.375c0 1.122.553 2.11 1.357 2.712m-3.07-5.422c.291-.246.617-.452.97-.612" />
-            </svg>
-        }
         isLoading={isLoading}
         error={error}
         result={plan}

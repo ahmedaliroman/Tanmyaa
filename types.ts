@@ -384,6 +384,45 @@ export interface Methodology {
     conclusion: string;
 }
 
+export interface UrbanDeepUnderstanding {
+    topic: string;
+    executiveSummary: string;
+    keyConcepts: {
+        title: string;
+        explanation: string;
+        example: string;
+    }[];
+    dataInsights: {
+        metric: string;
+        currentValue: string;
+        projection: string;
+        trend: 'Increasing' | 'Decreasing' | 'Stable';
+        rationale: string;
+    }[];
+    caseStudies: {
+        location: string;
+        intervention: string;
+        outcome: string;
+        lessonLearned: string;
+    }[];
+    policyRecommendations: {
+        action: string;
+        impact: string;
+        feasibility: 'High' | 'Medium' | 'Low';
+    }[];
+    interactiveElements: {
+        question: string;
+        options: string[];
+        feedback: string;
+    }[];
+}
+
+export interface SpatialAnalysisInput {
+    cityName: string;
+    scale: string;
+    analysisTopic: string;
+}
+
 export interface UserProfile {
     id: string;
     email: string;

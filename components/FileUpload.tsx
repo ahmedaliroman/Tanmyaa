@@ -69,7 +69,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, disabled }) =>
         className="mt-2 flex flex-col items-center justify-center p-6 border border-white/10 rounded-xl cursor-pointer hover:border-blue-400/50 transition-colors bg-black/20"
       >
         <div className="space-y-1 text-center">
-            <svg className="mx-auto h-10 w-10 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
             <div className="flex text-sm text-gray-300">
                 <label htmlFor="file-upload" className="relative cursor-pointer bg-transparent rounded-md font-semibold text-blue-400 hover:text-blue-300 focus-within:outline-none">
                 <span>Click to upload</span>

@@ -259,13 +259,6 @@ const VisionFrameworkGenerator: React.FC<VisionFrameworkGeneratorProps> = ({ onU
     <GeneratorShell
       title="Vision & Strategic Framework"
       description="This tool helps you craft a high-level vision for the future. By defining a place, its aspirations, and a timeframe, the system will generate a cohesive strategic framework to guide development."
-      icon={
-        <svg className="w-full h-full" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={1}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.657-6.657l-1.414 1.414M6.757 17.243l-1.414 1.414m12.728 0l-1.414-1.414M6.757 6.757l-1.414-1.414" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15l-3-3 3-3 3 3-3 3z" />
-        </svg>
-      }
       isLoading={isLoading}
       error={error}
       result={framework}

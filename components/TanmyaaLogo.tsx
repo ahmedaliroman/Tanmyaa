@@ -35,14 +35,14 @@ export const TanmyaaLogo: React.FC<TanmyaaLogoProps> = ({ className = '' }) => {
   );
 };
 
-export const TanmyaaLogoPPTX: React.FC = () => {
+export const TanmyaaLogoPPTX: React.FC<{className?: string}> = ({ className = '' }) => {
     const { logo, isLoaded } = useBranding();
 
     if (!isLoaded) return null;
-    if (logo) return <img src={logo} alt="Custom user logo" className="h-8 object-contain" />;
+    if (logo) return <img src={logo} alt="Custom user logo" className={`h-8 object-contain ${className}`} />;
 
     return (
-        <div className="text-4xl font-black tracking-tighter text-[#1B3C53]">
+        <div className={`text-4xl font-black tracking-tighter text-[#1B3C53] ${className}`}>
             T.
         </div>
     );

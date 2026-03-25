@@ -40,10 +40,23 @@ const IconMethodology: React.FC<{ className?: string }> = ({ className }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-1.717-.968-3.235-2.435-3.996a4.501 4.501 0 00-5.11 1.423c-1.127.99-1.828 2.378-1.828 3.91V16.5a2.25 2.25 0 002.25 2.25h4.5a2.25 2.25 0 002.25-2.25v-2.09c0-.813.386-1.583.99-2.08l.01-.01c.09-.07.18-.14.27-.2v-.22c0-.813.386-1.583.99-2.08l.01-.01c.09-.07.18-.14.27-.2v-.22Z" />
     </svg>
 );
+const IconDeepUnderstanding: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    </svg>
+);
+
+const IconSpatialAnalysis: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+    </svg>
+);
 
 
 const services = [
   { id: 'urban-planning-study', title: 'Presentation', description: 'Generate a comprehensive, structured presentation from problem to implementation.', icon: <IconPresentation /> },
+  { id: 'urban-deep-understanding', title: 'Deep Understanding', description: 'Illustrate urban topics with interactive charts, projections, and examples in a Policy Brief style.', icon: <IconDeepUnderstanding /> },
+  { id: 'spatial-analysis', title: 'Spatial Analysis', description: 'Generate professional analytical urban maps grounded in real-world data and academic research.', icon: <IconSpatialAnalysis /> },
   { id: 'policy-strategy', title: 'Policy Brief', description: 'Transform complex project briefs into clear, actionable policy reports.', icon: <IconPolicyBrief /> },
   { id: 'vision-framework', title: 'Vision & Strategic Framework', description: 'Draft compelling urban visions and translate them into strategic, actionable frameworks.', icon: <IconVisionFramework /> },
   { id: 'stakeholder-planning', title: 'Stakeholder Engagement Plan', description: 'Generate structured plans to identify, map, and engage with key project stakeholders.', icon: <IconStakeholderPlan /> },
@@ -78,16 +91,16 @@ const ServiceCard: React.FC<{ service: Service; onClick: () => void }> = ({ serv
 };
 
 const InteractiveHeader = () => {
-  const text = "Advancing Cities Worldwide";
+  const line1 = "Advancing Cities";
+  const line2 = "Worldwide";
   const containerRef = useRef<HTMLHeadingElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLHeadingElement>) => {
     if (!containerRef.current) return;
     const { clientX, clientY } = e;
 
-    for (const span of Array.from(containerRef.current.children)) {
-      // Fix: Cast the iterated element to HTMLElement to resolve TypeScript error.
-      // The children of the h1 are guaranteed to be span elements.
+    const spans = containerRef.current.querySelectorAll('span');
+    for (const span of Array.from(spans)) {
       const htmlSpan = span as HTMLElement;
       const { left, top, width, height } = htmlSpan.getBoundingClientRect();
       const centerX = left + width / 2;
@@ -107,7 +120,8 @@ const InteractiveHeader = () => {
 
   const handleMouseLeave = () => {
     if (!containerRef.current) return;
-    for (const span of Array.from(containerRef.current.children)) {
+    const spans = containerRef.current.querySelectorAll('span');
+    for (const span of Array.from(spans)) {
       const htmlSpan = span as HTMLElement;
       htmlSpan.style.transform = 'translateY(0px)';
       htmlSpan.style.textShadow = 'none';
@@ -115,15 +129,9 @@ const InteractiveHeader = () => {
     }
   };
 
-  return (
-    <h1
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="text-6xl md:text-8xl font-black text-white tracking-tighter"
-      aria-label={text}
-    >
-      {text.split('').map((char, index) => (
+  const renderLine = (line: string) => (
+    <div className="flex justify-center">
+      {line.split('').map((char, index) => (
         <span
           key={index}
           className="inline-block transition-all duration-200 ease-out"
@@ -132,6 +140,19 @@ const InteractiveHeader = () => {
           {char === ' ' ? '\u00A0' : char}
         </span>
       ))}
+    </div>
+  );
+
+  return (
+    <h1
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.9] md:leading-[0.85]"
+      aria-label={`${line1} ${line2}`}
+    >
+      {renderLine(line1)}
+      {renderLine(line2)}
     </h1>
   );
 };

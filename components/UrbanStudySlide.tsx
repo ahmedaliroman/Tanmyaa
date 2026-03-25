@@ -21,6 +21,7 @@ import type {
     ProcessSlide,
     ClosingSlide,
  } from '../types';
+import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 
 const getAnimationStyles = (isActive: boolean, delay: number, type: 'fade-in-up' | 'scale-in' = 'fade-in-up') => {
     if (!isActive) return { opacity: 0 };
@@ -1022,8 +1023,8 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
         <div className="absolute bottom-6 left-12 text-xs font-bold text-white/30 z-30">
             SLIDE {String(slideNumber).padStart(2, '0')}
         </div>
-        <div className="absolute bottom-4 right-12 text-4xl font-black text-white/20 z-30" style={{ fontFamily: 'sans-serif' }}>
-            T.
+        <div className="absolute bottom-4 right-12 z-30 opacity-20">
+            <TanmyaaLogoPPTX className="!text-white" />
         </div>
         {renderLayout()}
     </div>
