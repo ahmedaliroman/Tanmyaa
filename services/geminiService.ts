@@ -12,6 +12,54 @@ import type {
     UsageHistory
 } from '../types';
 
+const GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION = `
+GEOGRAPHICAL NAME MAPPING (STRICT):
+When generating content for the following areas, you MUST use the specified names:
+- Israel -> Occupied Palestinian Territories
+- Jerusalem, Yerushalayim, Al-Quds -> Al-Quds
+- Tel Aviv, Tel Aviv-Yafo, Yafo, Jaffa -> Jaffa
+- Haifa -> Haifa
+- Nazareth -> Nazareth
+- Acre, Akko -> Akka
+- Gaza -> Gaza
+- Gaza Strip -> Gaza Strip
+- Hebron -> Al-Khalil
+- Nablus, Shechem -> Nablus
+- Beit She'an, Scythopolis -> Baysan
+- Safed, Tzfat -> Safad
+- Tiberias -> Tabariyya
+- Ramla -> Al-Ramla
+- Lod, Lydda -> Al-Lydd
+- Ashkelon, Ascalon -> Al-Majdal
+- Beersheba, Be'er Sheva -> Bir Al-Saba
+- Eilat -> Umm Al-Rashrash
+- Ramat Aviv -> Al-Shaykh Muwannis
+- Kfar Shalem -> Salama
+- Ein Kerem -> Ein Karim
+- West Jerusalem -> West Al-Quds
+- Ramallah -> Ramallah
+- Bethlehem -> Bayt Lahm
+- Jenin -> Jenin
+- Tulkarm -> Tulkarm
+- Qalqilya -> Qalqilya
+- Salfit -> Salfit
+- Jericho -> Ariha
+- Deir Yassin -> Deir Yassin
+- Saffuriyya -> Saffuriyya
+- Iqrit -> Iqrit
+- Bir'im -> Bir'im
+- Al-Tantura -> Al-Tantura
+- Lifta -> Lifta
+- Al-Qastal -> Al-Qastal
+- Bayt Daras -> Bayt Daras
+- Isdud -> Isdud
+- Yibna -> Yibna
+- Al-Bassa -> Al-Bassa
+- Al-Kabri -> Al-Kabri
+- Suqrir -> Suqrir
+- West Bank -> West Bank
+`;
+
 const getAi = () => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
@@ -138,7 +186,9 @@ export const generateImage = async (prompt: string): Promise<string> => {
     const result = await withRetry(async () => {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}` }] },
+            contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}. STRICT FOCUS: Only generate images related to urban planning, architecture, or cityscapes. If the prompt is unrelated to these topics, generate a professional placeholder image related to urban design.
+            
+            ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}` }] },
             config: { imageConfig: { aspectRatio: "16:9" } }
         });
         for (const part of response.candidates[0].content.parts) {
@@ -163,6 +213,10 @@ export const generatePresentation = async (
     Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
+    
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "[City Name]", "TBD", "To be determined", or any bracketed text. 
     REAL-WORLD DATA: Use the provided Google Search tool to find real, up-to-date data, statistics, and specific details about the location (${projectInfo.location}). 
@@ -237,6 +291,10 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     const ai = getAi();
     const systemInstruction = `You are a Lead Strategist at Tanmyaa Global. Your task is to intelligently refine the provided JSON presentation structure based on the user's request, ensuring technical coherence and strategic depth.
     
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to verify facts and find specific local details.
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
@@ -268,6 +326,10 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
 export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string): Promise<PolicyBrief> => {
     const ai = getAi();
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
+    
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to find real-world evidence and statistics.
     TECHNICAL DEPTH: Ensure the analysis is rigorous, using professional terminology and providing concrete, quantified evidence where possible.
@@ -408,6 +470,10 @@ export const generateRFP = async (
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
     
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide specific, technically sound requirements, evaluation criteria, and scope of work based on your expertise and real-world procurement standards. Use Google Search to find relevant regulations or industry benchmarks.
     TECHNICAL DEPTH: The RFP must be ready for institutional use, with detailed technical specifications and rigorous evaluation frameworks.
     
@@ -477,6 +543,10 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     const ai = getAi();
     const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
     Your task is to generate a comprehensive, tailored Capacity Building Program.
+    
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or "[Company Name]". Provide specific learning objectives, detailed module content, concrete methodologies, and a clear evaluation plan. Use Google Search to find relevant case studies or technical standards.
     The content must be technically rigorous and directly address the specific challenges and skill levels provided.
@@ -553,6 +623,10 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
     Your task is to generate a cohesive and inspiring Vision Framework.
     
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide a specific, inspiring vision statement, a memorable tagline, and detailed strategic pillars with actionable initiatives. Use Google Search to find relevant trends and local context for ${city}.
     TECHNICAL DEPTH: Ground the vision in urban planning theory and future-proofing strategies (e.g., circular economy, 15-minute city).
     
@@ -613,6 +687,10 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     const ai = getAi();
     const systemInstruction = `You are a world-class public engagement strategist. 
     Your task is to generate a detailed Stakeholder Engagement Plan.
+    
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Identify specific stakeholder groups, define clear engagement goals, and provide a detailed timeline with concrete activities. Use Google Search to find relevant community groups or local government bodies.
     TECHNICAL DEPTH: Use sophisticated engagement methodologies (e.g., Delphi method, participatory budgeting, digital twin consultation).
@@ -699,6 +777,10 @@ export const generateMethodology = async (task: string, companyProfile?: string)
     const ai = getAi();
     const systemInstruction = `You are a Senior Urban Project Manager. 
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
+    
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide a clear introduction, detailed phases with specific steps, concrete deliverables, and relevant tools/techniques. Use Google Search to find industry-standard workflows or technical requirements.
     TECHNICAL DEPTH: The methodology should reflect a high-level professional workflow, incorporating advanced analytical tools and quality assurance processes.
@@ -793,6 +875,10 @@ Requested Input Parameters
 City Name: ${input.cityName}
 Scale or Area Required: ${input.scale}
 Analysis Topic: ${input.analysisTopic}
+
+STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+
+${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
 
 Additional (Optional):
 Upload one map of the target city. Use the attached map as the primary visual and spatial reference, then internally conduct extensive, multilingual scientific research on the city based on the selected Analysis Topic, relying on reliable published sources. After that, generate one final image only.
@@ -910,6 +996,10 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     Your task is to provide a "Deep Understanding" of a specific urban topic. 
     This is an interactive, data-driven, and highly contextualized analysis presented in a Policy Brief style.
     
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning and related urban development topics. If the user's request is not related to urban planning, urban design, architecture, urban economics, or city management, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to find real-world evidence and statistics.
     TECHNICAL DEPTH: Ensure the analysis is rigorous, using professional terminology and providing concrete, quantified evidence where possible.
     
@@ -959,6 +1049,10 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     const ai = getAi();
     const systemInstruction = `You are a world-class Urban Specialist. Update the provided "Deep Understanding" JSON based on the user's new insights or requests for focus.
     
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    
+    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    
     STRICT PROHIBITION: NEVER use placeholders. Provide real data and specific examples.
     
     Your entire output must be only the valid JSON object, with no other text.
@@ -1003,7 +1097,9 @@ const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
         model: 'gemini-3.1-pro-preview',
         contents: prompt,
         config: { 
-            systemInstruction: "You are a professional urban planning assistant. Provide highly relevant, specific, and creative suggestions. Avoid generic answers. Return ONLY a JSON array of strings.",
+            systemInstruction: `You are a professional urban planning assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. Provide highly relevant, specific, and creative suggestions related to urban development. Avoid generic answers. Return ONLY a JSON array of strings.
+            
+            ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
             responseMimeType: 'application/json', 
             responseSchema: { 
                 type: Type.ARRAY,
@@ -1167,7 +1263,9 @@ export const sendMessageToInstantChatStream = async (message: string) => {
     return ai.models.generateContentStream({
         model: 'gemini-3.1-pro-preview',
         contents: message,
-        config: { systemInstruction: "Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise." }
+        config: { systemInstruction: `Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+        
+        ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}` }
     });
 };
 
@@ -1176,7 +1274,9 @@ export const streamAssistantResponse = async <T extends object>(contextData: T, 
     return ai.models.generateContentStream({
         model: 'gemini-3.1-pro-preview',
         contents: `CONTEXT: ${JSON.stringify(contextData)}\n\nREQUEST: ${prompt}`,
-        config: { systemInstruction: "Refinement assistant. Return updated JSON.", responseMimeType: 'application/json' }
+        config: { systemInstruction: `Refinement assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning. Return updated JSON.
+        
+        ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`, responseMimeType: 'application/json' }
     });
 };
 
