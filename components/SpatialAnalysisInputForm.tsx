@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import FileUpload from './FileUpload';
+import MapSelector from './MapSelector';
 
 interface SpatialAnalysisInputFormProps {
   onSubmit: (cityName: string, scale: string, analysisTopic: string, file?: File) => void;
@@ -62,17 +63,8 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
                 />
               </div>
               <div>
-                <label htmlFor="scale" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Scale or Area Required</label>
-                <input
-                  id="scale"
-                  type="text"
-                  value={scale}
-                  onChange={(e) => setScale(e.target.value)}
-                  placeholder="e.g., City-wide, District Level, 5km Radius"
-                  className="w-full bg-black/40 border border-gray-800 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition duration-200"
-                  disabled={isLoading}
-                  required
-                />
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Study Area (Detect on Map)</label>
+                <MapSelector onBoundsChange={setScale} cityName={cityName} disabled={isLoading} />
               </div>
               <div>
                 <label htmlFor="analysisTopic" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Analysis Topic</label>
