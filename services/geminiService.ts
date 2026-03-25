@@ -927,15 +927,16 @@ No dialogue
 Image Specifications:
 Professional analytical urban map (ArcGIS Pro style)
 Cinematic, high-end cartographic quality
-Preferably 3D
-Based on the provided map
-Preserves real geography (no fictionalization)
+STRICTLY 2D presentation (Top-down view)
+Overlay the required analysis layers clearly
+Based on the provided map and EXACTLY focused on the selected area coordinates
+Preserves real geography (no fictionalization, no fake 3D renders)
 Clear, legible text (English by default)
 Academic visual style
 HD size layout
 
 Map Elements (Mandatory):
-Central main map, Clear classification relevant to the Analysis Topic, North arrow, Scale bar, Coordinate frame, Clear legend, Elegant glass-style side panels.
+Central main map focusing strictly on the selected area, Clear classification relevant to the Analysis Topic, North arrow, Scale bar, Coordinate frame, Clear legend, Elegant glass-style side panels.
 Clear template for the company TANNMYAA.
 
 Side Panels (Concise Insights):
