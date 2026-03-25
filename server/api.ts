@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import geeRouter from './gee.js';
 
 const router = Router();
+
+// Use GEE routes
+router.use('/gee', geeRouter);
 
 // Lazy initialize Supabase client
 let supabase: SupabaseClient | null = null;
