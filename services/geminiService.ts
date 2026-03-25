@@ -862,116 +862,101 @@ export const generateMethodology = async (task: string, companyProfile?: string)
     return methodology;
 };
 
+export interface SpatialAnalysisResult {
+    imageUrl: string;
+    report: {
+        keyInsights: string[];
+        spatialAnalysis: string;
+        shortTermActions: string[];
+        longTermStrategies: string[];
+        methodology: {
+            dataSources: string[];
+            toolsUsed: string[];
+            approach: string;
+        };
+    };
+}
+
 export const generateSpatialAnalysis = async (
     input: { cityName: string; scale: string; analysisTopic: string },
     file?: File
-): Promise<string> => {
+): Promise<SpatialAnalysisResult> => {
     const ai = getAi();
-    const result = await withRetry(async () => {
-        const parts: { text?: string; inlineData?: { data: string; mimeType: string } }[] = [];
-        
-        const prompt = `
+    
+    // 1. Prepare parts for both models
+    const parts: { text?: string; inlineData?: { data: string; mimeType: string } }[] = [];
+    if (file) {
+        const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = (reader.result as string).split(',')[1];
+                resolve(base64String);
+            };
+            reader.readAsDataURL(file);
+        });
+        parts.push({
+            inlineData: {
+                data: base64,
+                mimeType: file.type
+            }
+        });
+    }
+
+    // 2. Generate Image
+    const imagePromise = withRetry(async () => {
+        const imagePrompt = `
 Requested Input Parameters
 City Name: ${input.cityName}
 Scale or Area Required: ${input.scale}
 Analysis Topic: ${input.analysisTopic}
 
-STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
 
 ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
 
-Additional (Optional):
-Upload one map of the target city. Use the attached map as the primary visual and spatial reference, then internally conduct extensive, multilingual scientific research on the city based on the selected Analysis Topic, relying on reliable published sources. After that, generate one final image only.
+CRITICAL INSTRUCTION REGARDING THE ATTACHED MAP:
+The attached map image represents the EXACT bounding box and study area selected by the user. You MUST use this exact geographical area and layout as the base for your analysis map. Do not zoom out to the whole city if the user selected a specific district. Do not hallucinate a different map. Overlay your spatial analysis directly onto the geographical context shown in the attached image.
 
-Execution Rules (Strict):
-Do not explain
-Do not show steps
-Do not write a report
-Do not ask questions
-Do not discuss technical limitations
-Do not provide justifications
-Execute internally and output only the final image
+STEP 1: CANVAS SETUP
+Create a layout with resolution: 1920×1080 px (Full HD), landscape.
+Background color: white.
+Margins: 40–60 px on all sides.
 
-Task:
-Analyze the “Analysis Topic” based on:
-The attached map (if provided)
-Official published data
-Peer-reviewed academic research
-Satellite imagery and geospatial platforms
-Reference maps from reliable sources
+STEP 2: REMOVE CLUTTER
+Delete ALL analysis text, including: Paragraphs, Labels explaining results, Long annotations.
+Keep only: Map features, Symbols, Essential labels (e.g., place names if needed), Main roads.
 
-Conduct internal multilingual research, and extract only accurate and directly relevant insights.
-CRITICAL: You MUST ensure the generated map accurately represents the real-world geography of the requested city (${input.cityName}). Do NOT hallucinate or generate fictional maps. If you are unsure of the exact geography, rely heavily on the provided reference map or use a highly stylized, abstract representation that does not convey false geographical information.
-CRITICAL: All text on the map MUST be in English, unless the user explicitly requested Arabic in the "Analysis Topic" or "City Name". Do NOT use Arabic by default. Ensure all text is clear and legible.
+STEP 3: MAP FRAME (NEATLINE)
+Add a rectangular border around the map. Stroke Color: dark grey (#333333) or black. Thickness: 1–2 px. Ensure even spacing between frame and content.
 
-Sources to Use (when possible):
-Google Earth, Google Maps, Landsat, Sentinel, Copernicus, ESA WorldCover, USGS, OpenStreetMap, Official government entities, Official statistics agencies, Urban planning reports, Peer-reviewed journals, Academic theses, Published studies, Open geospatial databases.
+STEP 4: CORE MAP ELEMENTS
+A. TITLE: Position: top center. Text: "Spatial Analysis – ${input.cityName}: ${input.analysisTopic}". Font: Sans-serif, large (approx. 36–48 pt), bold.
+B. LEGEND: Position: bottom left OR bottom right. Style: White background with subtle border, Padding: 10–15 px. Content: Only essential categories, Group logically. Avoid long descriptions.
+C. NORTH ARROW: Position: top right corner. Style: Minimal, modern, Black or dark grey.
+D. SCALE BAR: Position: bottom center. Units: metric (meters or kilometers). Style: simple and proportional to map extent.
+E. COORDINATE SYSTEM / GRID: Add Latitude/Longitude ticks OR UTM grid. Style: Light grey lines (#CCCCCC), Thin stroke (0.5–1 px).
 
-Analysis Framework:
-Define the Analysis Topic in relation to spatial, urban, environmental, and service-based systems, including where relevant: Urban fabric, Road network, Accessibility to services, Land cover and open spaces, Environmental and climate aspects, Infrastructure systems, Spatial disparities.
+STEP 5: BRANDING
+Place company logo (TANNMYAA): Bottom right corner. Size: small but legible. Add small copyright text below logo: "© TANNMYAA 2026".
 
-Key Indicators (as applicable):
-Density and urban cohesion, Urban sprawl patterns, Connectivity efficiency, Service distribution, Open/green space availability, Environmental sensitivity, Strength areas, Weakness areas, Priority intervention zones.
+STEP 6: VISUAL HIERARCHY
+Ensure Map content is the primary focus. UI elements are secondary. Use Consistent font family, Limited color palette (max 4–6 colors). Avoid Overlapping elements and Visual clutter.
 
-Important Note:
-Do NOT claim exact GIS projection if unsupported.
-Instead, produce a highly professional analytical visual map grounded in the attached map and validated data.
+STEP 7: ADD REPORT ACCESS (QR CODE)
+Place a QR code near the legend. Size: ~100×100 px. Label below QR code: "Scan to download detailed analysis report".
 
-Final Output Requirements:
-One image only
-No text outside the image
-No explanation
-No report
-No dialogue
-
-Image Specifications:
-Professional analytical urban map (ArcGIS Pro style)
-Cinematic, high-end cartographic quality
-STRICTLY 2D presentation (Top-down view)
-Overlay the required analysis layers clearly
-Based on the provided map and EXACTLY focused on the selected area coordinates
-Preserves real geography (no fictionalization, no fake 3D renders)
-Clear, legible text (English by default)
-Academic visual style
-HD size layout
-
-Map Elements (Mandatory):
-Central main map focusing strictly on the selected area, Clear classification relevant to the Analysis Topic, North arrow, Scale bar, Coordinate frame, Clear legend, Elegant glass-style side panels.
-Clear template for the company TANNMYAA.
-
-Side Panels (Concise Insights):
-Overall condition related to Analysis Topic, Key strengths, Key weaknesses, Spatial patterns, Infrastructure/service observations, Environmental or land-related role (if relevant).
-Note: "The results are based on an analysis of published sources and satellite imagery."
-
-Strict Prohibitions:
-No explanations, No questions, No justifications, No textual report, No ignoring the attached map, No fake statistics, No unrelated visuals, No missing signature.
-
-Final Instruction:
-Analyze internally → synthesize internally → generate the final image only.
+FINAL REQUIREMENTS:
+The map must be visually clean, minimal, and professional.
+No unnecessary text on the map itself except the main roads.
+All explanations must be in the separate report.
+Ensure alignment, spacing, and balance across all elements.
+STRICTLY 2D presentation (Top-down view).
+Preserves real geography (no fictionalization, no fake 3D renders).
         `;
 
-        parts.push({ text: prompt });
-
-        if (file) {
-            const base64 = await new Promise<string>((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64String = (reader.result as string).split(',')[1];
-                    resolve(base64String);
-                };
-                reader.readAsDataURL(file);
-            });
-            parts.push({
-                inlineData: {
-                    data: base64,
-                    mimeType: file.type
-                }
-            });
-        }
-
-        const response = await ai.models.generateContent({
+        const imageResponse = await ai.models.generateContent({
             model: 'gemini-3.1-flash-image-preview',
-            contents: { parts },
+            contents: { parts: [...parts, { text: imagePrompt }] },
             config: { 
                 imageConfig: { 
                     aspectRatio: "16:9",
@@ -981,14 +966,89 @@ Analyze internally → synthesize internally → generate the final image only.
             }
         });
 
-        for (const part of response.candidates[0].content.parts) {
+        for (const part of imageResponse.candidates[0].content.parts) {
             if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
         }
         throw new Error("Spatial analysis image generation failed.");
     });
 
+    // 3. Generate Report
+    const reportPromise = withRetry(async () => {
+        const reportPrompt = `
+You are an expert Urban Planner. Generate a detailed Spatial Analysis report for the following:
+City Name: ${input.cityName}
+Scale or Area Required: ${input.scale}
+Analysis Topic: ${input.analysisTopic}
+
+Based on the provided map (if any) and your knowledge, provide a comprehensive report structured EXACTLY as follows.
+
+PAGE 2 – KEY INSIGHTS
+Provide 3–5 concise bullet points summarizing the most critical findings. No long paragraphs.
+
+PAGE 3 – SPATIAL ANALYSIS
+Explain key patterns, trends, and findings related to the analysis topic in the specified area.
+
+PAGE 4 – RECOMMENDATIONS
+Provide actionable recommendations divided into:
+1. Short-term actions
+2. Long-term strategies
+
+PAGE 5 – METHODOLOGY
+Provide the methodology used for this analysis, including:
+1. Data sources (e.g., Satellite imagery, OpenStreetMap, Official statistics)
+2. Tools used (e.g., GIS software, Spatial analysis algorithms)
+3. Brief explanation of approach
+        `;
+
+        const reportResponse = await ai.models.generateContent({
+            model: 'gemini-3.1-pro-preview',
+            contents: { parts: [...parts, { text: reportPrompt }] },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        keyInsights: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING },
+                            description: "3-5 concise bullet points"
+                        },
+                        spatialAnalysis: {
+                            type: Type.STRING,
+                            description: "Explanation of key patterns, trends, and findings"
+                        },
+                        shortTermActions: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING },
+                            description: "Short-term actionable recommendations"
+                        },
+                        longTermStrategies: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING },
+                            description: "Long-term strategic recommendations"
+                        },
+                        methodology: {
+                            type: Type.OBJECT,
+                            properties: {
+                                dataSources: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                toolsUsed: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                approach: { type: Type.STRING }
+                            },
+                            required: ["dataSources", "toolsUsed", "approach"]
+                        }
+                    },
+                    required: ["keyInsights", "spatialAnalysis", "shortTermActions", "longTermStrategies", "methodology"]
+                }
+            }
+        });
+
+        return parseJsonResponse<SpatialAnalysisResult['report']>(reportResponse, 'SpatialAnalysisReport');
+    });
+
+    const [imageUrl, report] = await Promise.all([imagePromise, reportPromise]);
+
     await deductCredits(10, `Spatial Analysis for ${input.cityName}: ${input.analysisTopic}`);
-    return result;
+    return { imageUrl, report };
 };
 
 export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string): Promise<UrbanDeepUnderstanding> => {

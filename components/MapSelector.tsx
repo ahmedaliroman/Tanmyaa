@@ -164,6 +164,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, dis
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            crossOrigin="anonymous"
           />
           <MapController cityName={cityName} isFullscreen={isFullscreen} />
           <DrawControl onBoundsSelected={setSelectedBounds} isDrawing={isDrawing} setIsDrawing={setIsDrawing} />
