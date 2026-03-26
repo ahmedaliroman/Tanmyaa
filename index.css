@@ -5,16 +5,39 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-serif: "Playfair Display", serif;
+  
+  /* iOS Soft Style Colors */
+  --ios-bg: #F2F2F7;
+  --ios-card: rgba(255, 255, 255, 0.8);
+  --ios-text: #1C1C1E;
+  --ios-secondary-text: #8E8E93;
+  --ios-accent: #007AFF;
+  --ios-border: rgba(0, 0, 0, 0.05);
 }
 
 @layer base {
   body {
-    @apply bg-[#050508] text-gray-200 antialiased;
+    @apply bg-[#F2F2F7] text-[#1C1C1E] antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
 @layer utilities {
+  .ios-glass {
+    @apply backdrop-blur-xl bg-white/70 border border-white/20 shadow-sm;
+  }
+  
+  .ios-card {
+    @apply bg-white rounded-[24px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-black/[0.03];
+  }
+
+  .ios-button {
+    @apply rounded-full px-6 py-3 font-semibold transition-all active:scale-95 disabled:opacity-50;
+  }
+
+  .ios-input {
+    @apply bg-black/[0.03] border-none rounded-2xl px-4 py-3 focus:ring-2 focus:ring-[#007AFF]/20 focus:bg-white transition-all;
+  }
   .animate-fade-in {
     animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }

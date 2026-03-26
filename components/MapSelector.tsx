@@ -80,7 +80,7 @@ const DrawControl = ({ onBoundsSelected, isDrawing, setIsDrawing }: { onBoundsSe
   return null;
 };
 
-const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, disabled }) => {
+const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, onRawBoundsChange, cityName, disabled }) => {
   const [selectedBounds, setSelectedBounds] = useState<LatLngBounds | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -102,7 +102,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, dis
       onBoundsChange('');
       if (onRawBoundsChange) onRawBoundsChange(null);
     }
-  }, [selectedBounds, onBoundsChange]);
+  }, [selectedBounds, onBoundsChange, onRawBoundsChange]);
 
   const toggleFullscreen = (e: React.MouseEvent) => {
     e.preventDefault();
