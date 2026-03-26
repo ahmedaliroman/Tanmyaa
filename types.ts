@@ -24,6 +24,7 @@ export interface ExecutiveOverviewSlide {
     narrative: string;
     key_points: string[];
     analytic_reflection: string;
+    image_url?: string;
 }
 
 export interface CrisisSlide {
@@ -45,6 +46,7 @@ export interface SWOTSlide {
     opportunities: { title: string; description: string; }[];
     threats: { title: string; description: string; }[];
     analytic_reflection: string;
+    image_url?: string;
 }
 
 export interface BenchmarksSlide {
@@ -104,6 +106,7 @@ export interface EquityAnalysisSlide {
     }[];
     mitigation_strategies: string[];
     analytic_reflection: string;
+    image_url?: string;
 }
 
 export interface NodeAssessmentSlide {
@@ -136,6 +139,7 @@ export interface ScenarioComparisonSlide {
         cost: string;
     }[];
     analytic_reflection: string;
+    image_url?: string;
 }
 
 export interface RiskAssessmentSlide {
@@ -148,6 +152,7 @@ export interface RiskAssessmentSlide {
         mitigation: string;
     }[];
     analytic_reflection: string;
+    image_url?: string;
 }
 
 export interface RoadmapSlide {
@@ -161,6 +166,7 @@ export interface RoadmapSlide {
         }[];
         outcome: string;
     }[];
+    image_url?: string;
 }
 
 export interface GanttChartRoadmapSlide {
@@ -177,6 +183,7 @@ export interface GanttChartRoadmapSlide {
             kpi: string;
         }[];
     }[];
+    image_url?: string;
 }
 
 
@@ -192,6 +199,7 @@ export interface ProjectedImpactSlide {
         assumption: string;
     }[];
     analytic_reflection: string;
+    image_url?: string;
 }
 
 export interface FiscalFrameworkSlide {
@@ -205,6 +213,7 @@ export interface FiscalFrameworkSlide {
         recovery_mechanism: string;
     }[];
     analytic_reflection: string;
+    image_url?: string;
 }
 
 export interface PolicyLeversSlide {
@@ -215,6 +224,7 @@ export interface PolicyLeversSlide {
         expected_impact: string;
         measurement_framework: string;
     }[];
+    image_url?: string;
 }
 
 export interface GovernanceFrameworkSlide {
@@ -230,6 +240,7 @@ export interface GovernanceFrameworkSlide {
     }[];
     funding_model: string;
     regulatory_changes: string[];
+    image_url?: string;
 }
 
 
@@ -243,6 +254,7 @@ export interface ReferencesSlide {
         link: string;
         relevance: string;
     }[];
+    image_url?: string;
 }
 
 export interface ClosingSlide {
@@ -262,6 +274,7 @@ export interface ProcessSlide {
         description: string;
     }[];
     analytic_reflection: string;
+    image_url?: string;
 }
 
 // Union type for all possible slides in the new structure

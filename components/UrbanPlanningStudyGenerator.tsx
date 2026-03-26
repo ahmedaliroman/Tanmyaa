@@ -416,6 +416,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                               imageUrls={imageUrls} 
                               onUpdate={() => {}} // Disable updates during export
                               isActive={true} // Force active state for consistent export rendering
+                              disableAnimations={true}
                           />
                       </div>
                   ))}
