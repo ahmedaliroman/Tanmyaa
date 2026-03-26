@@ -57,7 +57,13 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
                 throw new Error("Failed to deduct credits.");
             }
 
-            const stream = await sendMessageToInstantChatStream(currentInput);
+            // Prepare history for multi-turn chat
+            const history = messages.map(msg => ({
+                role: (msg.sender === 'user' ? 'user' : 'model') as 'user' | 'model',
+                parts: [{ text: msg.text }]
+            }));
+
+            const stream = await sendMessageToInstantChatStream(currentInput, history);
             
             setMessages(prev => [...prev, { sender: 'ai', text: '' }]);
             let responseReceived = false;
@@ -99,7 +105,7 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
         } finally {
             setIsLoading(false);
         }
-    }, [input, isLoading, deductCredits, profile, onUpgrade]);
+    }, [input, isLoading, deductCredits, profile, onUpgrade, messages]);
 
     return (
         <>

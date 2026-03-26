@@ -1,4 +1,4 @@
-import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
+import { GoogleGenAI, GenerateContentResponse, Type, ThinkingLevel } from '@google/genai';
 import { supabase } from '../lib/supabase';
 import type { 
     PresentationSlide,
@@ -272,7 +272,8 @@ export const generatePresentation = async (
             config: { 
                 systemInstruction, 
                 responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }]
+                tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
             },
         });
 
@@ -305,7 +306,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
 
     const slides = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model: 'gemini-3.1-flash-lite-preview',
             contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
             config: { 
                 systemInstruction,
@@ -380,6 +381,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
                 systemInstruction,
                 responseMimeType: 'application/json',
                 tools: [{googleSearch: {}}],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -503,6 +505,7 @@ export const generateRFP = async (
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -584,6 +587,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -654,6 +658,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -729,6 +734,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -819,6 +825,7 @@ export const generateMethodology = async (task: string, companyProfile?: string)
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -909,6 +916,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
                 systemInstruction,
                 responseMimeType: 'application/json',
                 tools: [{googleSearch: {}}],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
             }
         });
         
@@ -934,7 +942,7 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
 
     const result = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model: 'gemini-3.1-flash-lite-preview',
             contents: `Update the following Deep Understanding JSON based on the user request. Current state: ${JSON.stringify(currentData)}. User Request: "${userRequest}".`,
             config: { 
                 systemInstruction,
@@ -968,7 +976,7 @@ export const fetchUsageHistory = async (): Promise<UsageHistory[]> => {
 const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
     const ai = getAi();
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.1-flash-lite-preview',
         contents: prompt,
         config: { 
             systemInstruction: `You are a professional urban planning assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. Provide highly relevant, specific, and creative suggestions related to urban development. Avoid generic answers. Return ONLY a JSON array of strings.
@@ -1093,7 +1101,7 @@ export const getMethodologyRefinementSuggestions = async (task: string): Promise
 export const getRefinementSuggestions = async (prompt: string): Promise<string[]> => {
     const ai = getAi();
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.1-flash-lite-preview',
         contents: prompt,
         config: { responseMimeType: 'application/json', responseSchema: { type: Type.ARRAY, items: { type: Type.STRING }} }
     });
@@ -1114,7 +1122,7 @@ export const getSlideRefinementSuggestions = async (slideContent: PresentationSl
     const ai = getAi();
     const prompt = `Generate 3 refinement suggestions for this slide: ${JSON.stringify(slideContent)}. Return a JSON array of strings.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.1-flash-lite-preview',
         contents: prompt,
         config: { 
             responseMimeType: 'application/json', 
@@ -1132,21 +1140,25 @@ export const getSlideRefinementSuggestions = async (slideContent: PresentationSl
     }
 };
 
-export const sendMessageToInstantChatStream = async (message: string) => {
+export const sendMessageToInstantChatStream = async (message: string, history: { role: 'user' | 'model'; parts: { text: string }[] }[] = []) => {
     const ai = getAi();
-    return ai.models.generateContentStream({
-        model: 'gemini-3.1-pro-preview',
-        contents: message,
-        config: { systemInstruction: `Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    const chat = ai.chats.create({
+        model: 'gemini-3-flash-preview',
+        config: { 
+            systemInstruction: `Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
         
-        ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}` }
+        ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
+            tools: [{ googleSearch: {} }]
+        },
+        history: history
     });
+    return chat.sendMessageStream({ message });
 };
 
 export const streamAssistantResponse = async <T extends object>(contextData: T, prompt: string) => {
     const ai = getAi();
     return ai.models.generateContentStream({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.1-flash-lite-preview',
         contents: `CONTEXT: ${JSON.stringify(contextData)}\n\nREQUEST: ${prompt}`,
         config: { systemInstruction: `Refinement assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning. Return updated JSON.
         
