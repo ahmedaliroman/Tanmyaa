@@ -12,7 +12,6 @@ import StakeholderPlanGenerator from './components/StakeholderPlanGenerator';
 import SubscriptionPage from './components/SubscriptionPage';
 import MethodologyGenerator from './components/MethodologyGenerator';
 import UrbanDeepUnderstandingGenerator from './components/UrbanDeepUnderstandingGenerator';
-import SpatialAnalysisGenerator from './components/SpatialAnalysisGenerator';
 import AuthCallback from './components/AuthCallback';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
@@ -166,8 +165,6 @@ const App: React.FC = () => {
         return <PresentationGenerator {...props} />;
       case 'urban-deep-understanding':
         return <UrbanDeepUnderstandingGenerator {...props} />;
-      case 'spatial-analysis':
-        return <SpatialAnalysisGenerator {...props} />;
       case 'policy-strategy':
         return <PolicyStrategyGenerator {...props} />;
       case 'rfp-generator':

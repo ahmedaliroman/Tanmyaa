@@ -417,12 +417,6 @@ export interface UrbanDeepUnderstanding {
     }[];
 }
 
-export interface SpatialAnalysisInput {
-    cityName: string;
-    scale: string;
-    analysisTopic: string;
-}
-
 export interface UserProfile {
     id: string;
     email: string;
