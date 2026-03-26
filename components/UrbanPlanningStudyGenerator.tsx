@@ -13,6 +13,7 @@ import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
 import jsPDF from 'jspdf';
 import { toJpeg } from 'html-to-image';
+import pptxgen from 'pptxgenjs';
 
 interface ChatMessage {
     sender: 'user' | 'ai';
@@ -48,6 +49,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   const [isChatLoading, setIsChatLoading] = useState(false);
   
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingPptx, setIsExportingPptx] = useState(false);
   const [pdfExportProgress, setPdfExportProgress] = useState(0);
 
   const [chatSuggestions, setChatSuggestions] = useState<string[]>([]);
@@ -257,6 +259,107 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     }
   };
 
+  const handleExportPptx = async () => {
+    if (!slides) return;
+    setIsExportingPptx(true);
+    
+    try {
+        const pptx = new pptxgen();
+        pptx.layout = 'LAYOUT_16x9';
+        pptx.defineLayout({ name: 'TANMYAA', width: 13.33, height: 7.5 });
+        pptx.layout = 'TANMYAA';
+
+        slides.forEach((slide, index) => {
+            const pptxSlide = pptx.addSlide();
+            pptxSlide.background = { color: '0A0A0A' };
+
+            // Add Title
+            pptxSlide.addText(slide.title || 'Slide ' + (index + 1), {
+                x: 0.5,
+                y: 0.5,
+                w: '90%',
+                fontSize: 32,
+                color: 'FFFFFF',
+                bold: true,
+                fontFace: 'Arial'
+            });
+
+            // Add Content based on layout (simplified)
+            let contentY = 1.5;
+            if (slide.subtitle) {
+                pptxSlide.addText(slide.subtitle, {
+                    x: 0.5,
+                    y: contentY,
+                    w: '90%',
+                    fontSize: 18,
+                    color: '3B82F6',
+                    fontFace: 'Arial'
+                });
+                contentY += 0.8;
+            }
+
+            if (slide.description) {
+                pptxSlide.addText(slide.description, {
+                    x: 0.5,
+                    y: contentY,
+                    w: '90%',
+                    fontSize: 14,
+                    color: 'CCCCCC',
+                    fontFace: 'Arial'
+                });
+            }
+
+            // Add a footer
+            pptxSlide.addText(`Tanmyaa Strategic Planning | ${index + 1}`, {
+                x: 0.5,
+                y: 7.0,
+                w: '90%',
+                fontSize: 10,
+                color: '666666',
+                align: 'right'
+            });
+        });
+
+        await pptx.writeFile({ fileName: 'Tanmyaa_Presentation.pptx' });
+    } catch (error) {
+        console.error('Error during PPTX export:', error);
+        setError('Failed to export PPTX. Please try again.');
+    } finally {
+        setIsExportingPptx(false);
+    }
+  };
+
+  const handleDeleteSlide = useCallback(() => {
+    if (!slides || slides.length <= 1) return;
+    
+    const newSlides = [...slides];
+    newSlides.splice(currentIndex, 1);
+    setSlides(newSlides);
+    
+    // Adjust current index if needed
+    if (currentIndex >= newSlides.length) {
+        setCurrentIndex(newSlides.length - 1);
+    }
+  }, [slides, currentIndex]);
+
+  const handleAddSlide = useCallback(async () => {
+    const prompt = window.prompt("What should the new slide be about? (e.g., 'Add a slide about traffic impact analysis')");
+    if (!prompt || !slides) return;
+
+    setIsChatLoading(true);
+    try {
+        const newSlides = await refinePresentation(slides, `Add a new slide: ${prompt}`, currentIndex, companyProfile);
+        setSlides(newSlides);
+        setCurrentIndex(newSlides.length - 1); // Go to the newly added slide
+        setChatMessages(prev => [...prev, { sender: 'ai', text: `New slide added: ${prompt}` }]);
+    } catch (err) {
+        console.error("Failed to add slide:", err);
+        setError("Failed to add slide. Please try again.");
+    } finally {
+        setIsChatLoading(false);
+    }
+  }, [slides, currentIndex, companyProfile]);
+
 
   const handleSlideUpdate = (slideIndex: number, fieldPath: string, value: unknown) => {
     if (!fieldPath) return;
@@ -361,9 +464,21 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 {isEditorMode ? 'Parameters' : 'Hide Form'}
               </button>
               <div className="flex items-center space-x-4">
+                <button onClick={handleDeleteSlide} disabled={slides.length <= 1} className="bg-red-900/40 text-red-200 font-semibold py-2 px-5 rounded-full text-xs uppercase tracking-wider hover:bg-red-800 transition-all duration-300 border border-red-700/30 flex items-center disabled:opacity-30">
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                   Delete
+                </button>
+                <button onClick={handleAddSlide} className="bg-green-900/40 text-green-200 font-semibold py-2 px-5 rounded-full text-xs uppercase tracking-wider hover:bg-green-800 transition-all duration-300 border border-green-700/30 flex items-center">
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                   Add Slide
+                </button>
                 <button onClick={handleExportPdf} disabled={isExportingPdf} className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full text-xs uppercase tracking-wider hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border border-gray-600/50 flex items-center">
                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                   {isExportingPdf ? `Exporting... (${pdfExportProgress}/${slides.length})` : 'Export PDF'}
+                   {isExportingPdf ? `Exporting... (${pdfExportProgress}/${slides.length})` : 'PDF'}
+                </button>
+                <button onClick={handleExportPptx} disabled={isExportingPptx} className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full text-xs uppercase tracking-wider hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border border-gray-600/50 flex items-center">
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                   {isExportingPptx ? 'Exporting...' : 'PPTX'}
                 </button>
                 <button onClick={() => setIsChatOpen(true)} className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full text-xs uppercase tracking-wider hover:bg-gray-700 transition-all duration-300 border border-gray-600/50 flex items-center">
                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>

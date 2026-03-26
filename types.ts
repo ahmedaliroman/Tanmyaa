@@ -15,6 +15,7 @@ export interface CoverSlide {
     subtitle: string;
     project_code: string;
     year: string;
+    image_url?: string;
 }
 
 export interface ExecutiveOverviewSlide {
@@ -34,6 +35,7 @@ export interface CrisisSlide {
         label: string;
         description: string;
     }[];
+    image_url?: string;
 }
 
 export interface SWOTSlide {
@@ -63,6 +65,7 @@ export interface CaseStudyDeepDiveSlide {
     key_findings: string[];
     conclusion: string;
     image_prompt: string;
+    image_url?: string;
     data_source?: string;
     analytic_reflection: string;
 }
@@ -76,6 +79,7 @@ export interface VisionSlide {
         initiatives: string[];
     }[];
     image_prompt: string;
+    image_url?: string;
 }
 
 export interface MacroStrategySlide {
@@ -88,6 +92,7 @@ export interface MacroStrategySlide {
         rationale: string;
     }[];
     image_prompt: string;
+    image_url?: string;
 }
 
 export interface EquityAnalysisSlide {
@@ -114,6 +119,8 @@ export interface NodeAssessmentSlide {
     analytic_reflection: string;
     before_image_prompt: string;
     after_image_prompt: string;
+    before_image_url?: string;
+    after_image_url?: string;
 }
 
 export interface ScenarioComparisonSlide {
@@ -228,13 +235,21 @@ export interface GovernanceFrameworkSlide {
 
 export interface ReferencesSlide {
     layout: 'References';
-    sources: string[];
+    title: string;
+    sources: {
+        title: string;
+        author: string;
+        year: string;
+        link: string;
+        relevance: string;
+    }[];
 }
 
 export interface ClosingSlide {
     layout: 'Closing';
     tagline: string;
     credits: string;
+    image_url?: string;
 }
 
 export interface ProcessSlide {

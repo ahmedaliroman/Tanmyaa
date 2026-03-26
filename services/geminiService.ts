@@ -221,15 +221,19 @@ export const generatePresentation = async (
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "[City Name]", "TBD", "To be determined", or any bracketed text. 
     REAL-WORLD DATA: Use the provided Google Search tool to find real, up-to-date data, statistics, and specific details about the location (${projectInfo.location}). 
     
+    METRICS & CURRENCY: Use appropriate metrics (e.g., metric system vs imperial) and currency (e.g., local currency if specific, otherwise USD/EUR) that fit the content and location context.
+    
     CRITICAL: For every slide, you MUST fill all fields with specific, data-driven content. 
+    - For Roadmap and GanttChartRoadmap (Implementation Timeline): You MUST provide a detailed, realistic timeline with specific milestones, action steps, and KPIs. DO NOT leave these blank.
     - For EquityAnalysis slide: You MUST identify at least 3 distributional impacts and 3 mitigation strategies.
     - For ScenarioComparison slide: You MUST fill in the risks and costs for all scenarios.
     - For PolicyLevers slide: You MUST provide at least 3 actionable policy recommendations.
+    - For References slide: You MUST provide at least 5 real, local references (reports, studies, laws, or news articles) relevant to the data and context of the presentation.
     
     If specific real-world data is unavailable, use your expert knowledge to synthesize highly plausible, technically sound, and data-driven estimates based on similar global benchmarks. DO NOT leave any field blank or use placeholder text.
     Every field in the JSON must be filled with high-quality, professional, and specific content.
     The output MUST be a JSON array of slide objects.
-    Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
+    Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     TECHNICAL DEPTH: Provide rigorous, data-driven analysis. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
     NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
@@ -250,6 +254,7 @@ export const generatePresentation = async (
     - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [{group: "string", impact: "string"}, {group: "string", impact: "string"}, {group: "string", impact: "string"}], mitigation_strategies: ["strategy1", "strategy2", "strategy3"], analytic_reflection: "string" }
     - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}, {name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection: "string" }
     - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
+    - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}] }
     `;
 
     const prompt = `
@@ -298,7 +303,11 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to verify facts and find specific local details.
     
-    Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, Closing.
+    METRICS & CURRENCY: Use appropriate metrics and currency that fit the content and location context.
+    
+    ADD/REMOVE SLIDES: You have full authority to add new slides, remove existing ones, or reorder them based on the user's request. When adding a slide, ensure it follows one of the allowed layouts and is populated with specific, high-quality content.
+    
+    Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
     

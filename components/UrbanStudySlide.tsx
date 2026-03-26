@@ -20,6 +20,7 @@ import type {
     GovernanceFrameworkSlide,
     ProcessSlide,
     ClosingSlide,
+    ReferencesSlide,
  } from '../types';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 
@@ -111,6 +112,58 @@ const renderWithBold = (text: string) => {
     );
 };
 
+interface EditableImageProps {
+    src: string;
+    alt: string;
+    className?: string;
+    onUpdate: (newUrl: string) => void;
+}
+
+const EditableImage: React.FC<EditableImageProps> = ({ src, alt, className, onUpdate }) => {
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                onUpdate(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    return (
+        <div className={`relative group cursor-pointer overflow-hidden ${className}`} onClick={handleClick}>
+            <img 
+                src={src} 
+                alt={alt} 
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                referrerPolicy="no-referrer" 
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="bg-white/20 backdrop-blur-md p-3 rounded-full border border-white/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+            </div>
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleFileChange} 
+            />
+        </div>
+    );
+};
+
 const Editable: React.FC<{
   as?: React.ElementType;
   value: string | undefined | null;
@@ -158,8 +211,13 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
 
     return (
     <SlideWrapper className="justify-center p-16 text-center">
-        <div className="absolute inset-0 bg-black/60 z-10"></div>
-        <img src={imageUrls['cover_image'] || ''} className="absolute inset-0 w-full h-full object-cover" alt="Cover background"/>
+        <div className="absolute inset-0 bg-black/60 z-10 pointer-events-none"></div>
+        <EditableImage 
+            src={slide.image_url || imageUrls['cover_image'] || ''} 
+            alt="Cover background" 
+            className="absolute inset-0 w-full h-full"
+            onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
+        />
         <div className="relative z-20">
             <div style={titleAnimation}>
                 <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="text-[6rem] font-extrabold tracking-tighter leading-none" />
@@ -210,8 +268,13 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
     const problemAnim = getAnimationStyles(isActive, 350);
     return (
     <SlideWrapper className="p-16 flex flex-col justify-between text-center">
-        <div className="absolute inset-0 bg-black/70 z-10"></div>
-        <img src={imageUrls['crisis_image'] || ''} className="absolute inset-0 w-full h-full object-cover" alt="Crisis background"/>
+        <div className="absolute inset-0 bg-black/70 z-10 pointer-events-none"></div>
+        <EditableImage 
+            src={slide.image_url || imageUrls['crisis_image'] || ''} 
+            alt="Crisis background" 
+            className="absolute inset-0 w-full h-full"
+            onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
+        />
         <div className="relative z-20 pt-8">
             <div style={titleAnim}><Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter" onUpdate={v => onUpdate('title', v)} /></div>
             <div style={problemAnim}><Editable as="p" value={slide.problem_statement} className="text-lg text-white/70 max-w-3xl mx-auto mt-3" onUpdate={v => onUpdate('problem_statement', v)} /></div>
@@ -254,7 +317,7 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
 
     return (
         <SlideWrapper className="p-16 flex flex-col">
-            <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">SWOT Analysis</h1></div>
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || "SWOT Analysis"} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
             <div className="flex-grow grid grid-cols-2 gap-x-12 min-h-0 overflow-hidden">
                 <div className="space-y-6 flex flex-col min-h-0">
                     <div className="flex-1 overflow-y-auto content-scrollbar pr-2">
@@ -289,7 +352,12 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
     return (
         <SlideWrapper className="p-0">
             <div className="absolute inset-0 bg-black z-0"></div>
-            <img src={imageUrls[slide.image_prompt] || ''} className="absolute inset-0 w-full h-full object-cover opacity-40" alt="Case study background" />
+            <EditableImage 
+                src={slide.image_url || imageUrls[slide.image_prompt] || ''} 
+                alt="Case study background" 
+                className="absolute inset-0 w-full h-full opacity-40"
+                onUpdate={(newUrl) => onUpdate(`image_url`, newUrl)}
+            />
             <div className="relative z-10 flex flex-col justify-between h-full p-16">
                 <div style={titleAnimation}>
                     <Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter leading-tight max-w-3xl" onUpdate={v => onUpdate('title', v)} />
@@ -330,7 +398,12 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
     return (
         <SlideWrapper className="justify-center items-center text-center p-16">
             <div className="absolute inset-0 bg-black/75 z-10"></div>
-            <img src={imageUrls[slide.image_prompt] || ''} className="absolute inset-0 w-full h-full object-cover" alt="Vision background"/>
+            <EditableImage 
+                src={slide.image_url || imageUrls[slide.image_prompt] || ''} 
+                alt="Vision background" 
+                className="absolute inset-0 w-full h-full"
+                onUpdate={(newUrl) => onUpdate(`image_url`, newUrl)}
+            />
             <div className="relative z-20 w-full max-w-6xl">
                 <div style={titleAnimation}><Editable as="h2" value={slide.title} className="text-xl font-bold text-white/50 uppercase tracking-[0.3em]" onUpdate={v => onUpdate('title', v)} /></div>
                 <div style={statementAnimation}><Editable as="p" value={slide.vision_statement} onUpdate={v => onUpdate('vision_statement', v)} className={`${fontSizeClass} font-extrabold my-8 leading-tight tracking-tighter whitespace-pre-line`} /></div>
@@ -345,7 +418,12 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
     return (
         <SlideWrapper className="p-16 flex flex-col justify-between">
             <div className="absolute inset-0 bg-black/70 z-10"></div>
-            <img src={imageUrls[slide.image_prompt] || ''} className="absolute inset-0 w-full h-full object-cover" alt="Strategy map"/>
+            <EditableImage 
+                src={slide.image_url || imageUrls[slide.image_prompt] || ''} 
+                alt="Strategy map" 
+                className="absolute inset-0 w-full h-full"
+                onUpdate={(newUrl) => onUpdate(`image_url`, newUrl)}
+            />
             <div className="relative z-20" style={titleAnimation}>
                  <Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter" onUpdate={v => onUpdate('title', v)} />
                  <Editable as="p" value={slide.strategic_intent} className="text-base text-white/70 max-w-3xl mt-2" onUpdate={v => onUpdate('strategic_intent', v)} />
@@ -377,7 +455,7 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
 
     return (
         <SlideWrapper className="p-16 flex flex-col">
-            <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">{slide.title}</h1></div>
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || "Equity Analysis"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
             <div className="grid grid-cols-2 gap-12 flex-grow">
                 <div style={impactsAnimation}>
                     <h3 className="font-bold text-lg text-[var(--color-accent-light)] border-b border-white/20 pb-2 mb-4">Distributional Impacts</h3>
@@ -449,8 +527,26 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
 
     return (
         <SlideWrapper className="p-0 text-center flex flex-col">
-            <div className="w-1/2 h-full absolute left-0 top-0"><img src={imageUrls[slide.before_image_prompt] || ''} className="w-full h-full object-cover" alt="Before" /><div className="absolute inset-0 bg-black/80"></div><div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">BEFORE</div></div>
-            <div className="w-1/2 h-full absolute right-0 top-0"><img src={imageUrls[slide.after_image_prompt] || ''} className="w-full h-full object-cover" alt="After" /><div className="absolute inset-0 bg-black/75"></div><div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">AFTER</div></div>
+            <div className="w-1/2 h-full absolute left-0 top-0">
+                <EditableImage 
+                    src={slide.before_image_url || imageUrls[slide.before_image_prompt] || ''} 
+                    alt="Before" 
+                    className="w-full h-full"
+                    onUpdate={(newUrl) => onUpdate(`before_image_url`, newUrl)}
+                />
+                <div className="absolute inset-0 bg-black/80"></div>
+                <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">BEFORE</div>
+            </div>
+            <div className="w-1/2 h-full absolute right-0 top-0">
+                <EditableImage 
+                    src={slide.after_image_url || imageUrls[slide.after_image_prompt] || ''} 
+                    alt="After" 
+                    className="w-full h-full"
+                    onUpdate={(newUrl) => onUpdate(`after_image_url`, newUrl)}
+                />
+                <div className="absolute inset-0 bg-black/75"></div>
+                <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 text-xs rounded font-semibold z-10">AFTER</div>
+            </div>
             <div className="relative z-20 flex-grow flex flex-col justify-between p-12">
                 <div style={titleAnimation}>
                     <Editable as="h2" value={slide.title} className="text-4xl font-extrabold tracking-tighter break-words" onUpdate={v => onUpdate('title', v)} />
@@ -481,13 +577,53 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
     );
 };
 
+const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field: string, val: string | unknown) => void, isActive: boolean }> = ({ slide, onUpdate, isActive }) => {
+    const titleAnimation = getAnimationStyles(isActive, 200);
+    const sourcesAnimation = getAnimationStyles(isActive, 400);
+
+    return (
+        <SlideWrapper className="p-16 flex flex-col">
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || 'Strategic References'} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
+            <div className="flex-grow overflow-y-auto content-scrollbar pr-4" style={sourcesAnimation}>
+                <div className="grid grid-cols-1 gap-6">
+                    {ensureArray(slide.sources).map((source, i) => (
+                        <div key={i} className="bg-white/5 p-6 rounded-lg border border-white/10 hover:bg-white/10 transition-all group">
+                            <div className="flex items-start justify-between mb-2">
+                                <div className="flex-grow">
+                                    <Editable as="p" value={source.title} onUpdate={v => onUpdate(`sources[${i}].title`, v)} className="text-xl font-bold text-gray-100 group-hover:text-[var(--color-primary-medium)] transition-colors" />
+                                    <div className="flex items-center space-x-4 mt-1">
+                                        <Editable as="span" value={source.author} onUpdate={v => onUpdate(`sources[${i}].author`, v)} className="text-sm text-white/40" />
+                                        <span className="text-white/20">•</span>
+                                        <Editable as="span" value={source.year} onUpdate={v => onUpdate(`sources[${i}].year`, v)} className="text-sm text-white/40" />
+                                    </div>
+                                </div>
+                                {source.link && (
+                                    <a href={source.link} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 rounded-full hover:bg-[var(--color-primary-medium)]/20 text-white/40 hover:text-[var(--color-primary-medium)] transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                )}
+                            </div>
+                            <div className="mt-4 pl-4 border-l-2 border-[var(--color-primary-medium)]/30">
+                                <p className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Strategic Relevance</p>
+                                <Editable as="p" value={source.relevance} onUpdate={v => onUpdate(`sources[${i}].relevance`, v)} className="text-sm text-white/70 italic" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </SlideWrapper>
+    );
+};
+
 const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, onUpdate: (field: string, val: string | {name: string, outcomes: {metric: string, value: string}[], risk: string, cost: string}[]) => void, isActive: boolean }> = ({ slide, onUpdate, isActive }) => {
     const titleAnimation = getAnimationStyles(isActive, 200);
     const reflectionAnimation = getAnimationStyles(isActive, 800);
 
     return (
         <SlideWrapper className="p-16 flex flex-col">
-            <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">{slide.title}</h1></div>
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || "Scenario Comparison"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
             <div className="flex-grow grid grid-cols-3 gap-6">
                 {ensureArray(slide.scenarios).map((scenario, i) => {
                     const scenarioAnimation = getAnimationStyles(isActive, 350 + i * 150, 'scale-in');
@@ -525,7 +661,7 @@ const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate
 
     return (
         <SlideWrapper className="p-16 flex flex-col">
-            <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">{slide.title}</h1></div>
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || "Risk Assessment"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
             <div className="flex-grow space-y-4 overflow-y-auto content-scrollbar pr-2">
                 {ensureArray(slide.risks).map((risk, i) => {
                     const riskAnimation = getAnimationStyles(isActive, 350 + i * 100);
@@ -556,7 +692,7 @@ const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: stri
 
     return (
         <SlideWrapper className="p-16">
-            <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]">Implementation Doctrine</h1></div>
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || "Implementation Doctrine"} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
             <div className="flex justify-between items-stretch gap-6 flex-grow">
                 {ensureArray(slide.phases).map((phase, i) => {
                     const phaseAnimation = getAnimationStyles(isActive, 350 + i * 150, 'scale-in');
@@ -804,7 +940,7 @@ const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpda
 
     return (
         <SlideWrapper className="p-16 flex flex-col">
-            <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">{slide.title}</h1></div>
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || "Fiscal Framework"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
             <div className="flex-grow bg-white/5 border border-white/10 rounded-lg p-1">
                 <div className="grid grid-cols-5 text-xs font-bold text-white/60 uppercase p-4 border-b border-white/10 tracking-wider">
                     <span>Component</span>
@@ -844,7 +980,7 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
 
     return (
         <SlideWrapper className="p-16 flex flex-col">
-            <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]">Required Policy Levers</h1></div>
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || "Required Policy Levers"} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
             <div className="space-y-6 flex-grow overflow-y-auto content-scrollbar pr-4">
                 {(slide.recommendations || []).length > 0 ? (slide.recommendations || []).map((rec, i) => {
                     const recommendationAnimation = getAnimationStyles(isActive, 350 + i * 150);
@@ -883,7 +1019,7 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
 
     return (
         <SlideWrapper className="p-16 flex flex-col">
-            <div style={titleAnimation}><h1 className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]">{slide.title}</h1></div>
+            <div style={titleAnimation}><Editable as="h1" value={slide.title || "Governance Framework"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
             <div className="flex-grow grid grid-cols-2 gap-10 min-h-0">
                 <div className="space-y-6">
                     <div className="bg-white/5 p-4 rounded-lg" style={leadAgencyAnimation}>
@@ -963,8 +1099,13 @@ const ClosingSlideLayout: React.FC<{ slide: ClosingSlide, onUpdate: (field: stri
 
     return (
         <SlideWrapper className="p-16 justify-center text-center">
-             <div className="absolute inset-0 bg-black/70 z-10"></div>
-            <img src={imageUrls['closing_image'] || ''} className="absolute inset-0 w-full h-full object-cover" alt="Closing background"/>
+             <div className="absolute inset-0 bg-black/70 z-10 pointer-events-none"></div>
+            <EditableImage 
+                src={slide.image_url || imageUrls['closing_image'] || ''} 
+                alt="Closing background" 
+                className="absolute inset-0 w-full h-full"
+                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
+            />
             <div className="relative z-20">
                 <div style={taglineAnimation}><Editable as="h2" value={slide.tagline} onUpdate={v => onUpdate('tagline', v)} className="text-7xl font-black leading-tight tracking-tighter" /></div>
                 <div style={lineAnimation}><div className="w-20 h-1.5 bg-[var(--color-primary-medium)] my-8 mx-auto"></div></div>
@@ -1005,6 +1146,7 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
         'GovernanceFramework': GovernanceFrameworkSlideLayout,
         'Process': ProcessSlideLayout,
         'Closing': ClosingSlideLayout,
+        'References': ReferencesSlideLayout,
     };
 
     const Component = layoutMap[slide.layout];
