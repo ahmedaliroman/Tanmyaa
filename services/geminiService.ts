@@ -918,6 +918,7 @@ export const generateSpatialAnalysis = async (
     }
 
     // 2. Generate Image
+    console.log("Generating spatial analysis image for:", input.cityName, input.analysisTopic);
     const imagePromise = withRetry(async () => {
         const imagePrompt = `
 Requested Input Parameters
@@ -997,15 +998,22 @@ ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
             config
         });
 
+        console.log("Image generation response received.");
         for (const part of imageResponse.candidates[0].content.parts) {
-            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            if (part.inlineData) {
+                console.log("Image data found in response.");
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
         }
+        console.error("No image data found in AI response parts.");
         throw new Error("Spatial analysis image generation failed.");
     });
 
     const imageUrl = await imagePromise;
+    console.log("Image URL generated successfully.");
 
     // 3. Generate Interactive Data
+    console.log("Generating interactive spatial data...");
     const interactiveDataPromise = withRetry(async () => {
         const dataPrompt = `
         As a world-class Urban GIS Expert and Strategic Planner, generate a set of high-precision interactive analysis points and zones for the following study:

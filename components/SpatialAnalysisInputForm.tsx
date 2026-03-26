@@ -25,39 +25,61 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
   const [files, setFiles] = useState<File[]>([]);
   const [useMapCapture, setUseMapCapture] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [rawBounds, setRawBounds] = useState<LatLngBounds | undefined>(undefined);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!cityName.trim() || !analysisTopic.trim()) return;
+    if (!cityName.trim() || !analysisTopic.trim()) {
+      console.warn("City name or analysis topic is missing.");
+      return;
+    }
 
     if (useMapCapture) {
-      if (!rawBounds || !mapContainerRef.current) return;
+      if (!rawBounds) {
+        console.warn("No map area selected.");
+        return;
+      }
+      if (!mapContainerRef.current) {
+        console.warn("Map container ref is missing.");
+        return;
+      }
       
       setIsCapturing(true);
       try {
+        console.log("Starting map capture with html2canvas...");
         const canvas = await html2canvas(mapContainerRef.current, {
           useCORS: true,
           allowTaint: true,
           backgroundColor: null,
+          logging: true, // Enable logging for debugging
+          scale: 2, // Higher quality
         });
         
+        console.log("Canvas captured, converting to blob...");
         canvas.toBlob((blob) => {
           if (blob) {
+            console.log("Blob created successfully, size:", blob.size);
             const file = new File([blob], "map_capture.png", { type: "image/png" });
             onSubmit(cityName, analysisTopic, file, rawBounds);
+          } else {
+            console.error("Failed to create blob from canvas.");
+            setError("Failed to capture map image. Please try again.");
           }
           setIsCapturing(false);
         }, 'image/png');
       } catch (err) {
         console.error("Capture error:", err);
+        setError("An error occurred while capturing the map. Please try again.");
         setIsCapturing(false);
       }
     } else {
       if (files.length > 0) {
         onSubmit(cityName, analysisTopic, files[0]);
+      } else {
+        console.warn("No file uploaded.");
       }
     }
   };
@@ -133,11 +155,9 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
                       <MapSelector 
                         cityName={cityName} 
                         onBoundsChange={() => {}} 
-                        onRawBoundsChange={(b) => {
-                          if (b) {
-                            // MapSelector returns {north, south, east, west}
-                            // We need to pass it to handleBoundsChange
-                            handleBoundsChange('', b);
+                        onRawBoundsChange={(str, obj) => {
+                          if (obj) {
+                            handleBoundsChange(str, obj);
                           }
                         }}
                         disabled={isLoading || isCapturing}
@@ -187,6 +207,12 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm mb-6 animate-fade-in">
+              {error}
+            </div>
+          )}
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-6 pt-8 border-t border-gray-800">
             <div className="flex items-center gap-4">

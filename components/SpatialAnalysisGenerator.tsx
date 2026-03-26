@@ -54,26 +54,44 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
     setCapturedBounds(bounds);
     setIsInteractive(false);
 
+    console.log("handleGenerate started for:", cityName, analysisTopic);
+    if (bounds) {
+      if (!bounds || typeof (bounds as L.LatLngBounds).toBBoxString !== 'function') {
+        console.error("Invalid bounds object received:", bounds);
+        setError("Invalid map selection. Please try selecting the area again.");
+        setIsLoading(false);
+        return;
+      }
+      console.log("Bounds provided:", (bounds as L.LatLngBounds).toBBoxString());
+    } else {
+      console.log("No bounds provided, will attempt geocoding.");
+    }
+
     try {
       // If bounds weren't provided (e.g. file upload), try to geocode the city
       if (!bounds) {
         try {
+          console.log("Geocoding city:", cityName);
           const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
           const geoData = await geoResponse.json();
           if (geoData && geoData.length > 0) {
             const bbox = geoData[0].boundingbox; // [south, north, west, east]
-            setCapturedBounds(new L.LatLngBounds([parseFloat(bbox[0]), parseFloat(bbox[2])], [parseFloat(bbox[1]), parseFloat(bbox[3])]));
+            const newBounds = new L.LatLngBounds([parseFloat(bbox[0]), parseFloat(bbox[2])], [parseFloat(bbox[1]), parseFloat(bbox[3])]);
+            console.log("Geocoding successful, bounds:", newBounds.toBBoxString());
+            setCapturedBounds(newBounds);
           }
         } catch (geoErr) {
           console.warn("Geocoding failed, interactive map might not center correctly:", geoErr);
         }
       }
 
+      console.log("Calling generateSpatialAnalysis service...");
       const analysisResult = await generateSpatialAnalysis({ cityName, analysisTopic }, file);
+      console.log("generateSpatialAnalysis service returned successfully.");
       setResult(analysisResult);
       await refreshProfile();
     } catch (err: unknown) {
-      console.error('Spatial Analysis Error:', err);
+      console.error('Spatial Analysis Error in handleGenerate:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred during spatial analysis.');
     } finally {
       setIsLoading(false);
