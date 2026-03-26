@@ -11,7 +11,13 @@ interface MapSelectorProps {
   disabled?: boolean;
 }
 
-const MapController = ({ cityName, isFullscreen }: { cityName?: string, isFullscreen: boolean }) => {
+const MapController = ({ cityName, isFullscreen, hasSelection, onSearchStart, onSearchEnd }: { 
+  cityName?: string, 
+  isFullscreen: boolean, 
+  hasSelection: boolean,
+  onSearchStart: () => void,
+  onSearchEnd: () => void
+}) => {
   const map = useMap();
 
   useEffect(() => {
@@ -22,9 +28,11 @@ const MapController = ({ cityName, isFullscreen }: { cityName?: string, isFullsc
   }, [isFullscreen, map]);
 
   useEffect(() => {
-    if (!cityName || cityName.trim().length < 3) return;
+    // Priority: If user has already selected an area, don't jump the map when typing city name
+    if (hasSelection || !cityName || cityName.trim().length < 3) return;
 
     const geocode = async () => {
+      onSearchStart();
       try {
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}`);
         const data = await response.json();
@@ -34,12 +42,14 @@ const MapController = ({ cityName, isFullscreen }: { cityName?: string, isFullsc
         }
       } catch (error) {
         console.error("Geocoding error:", error);
+      } finally {
+        onSearchEnd();
       }
     };
 
     const timeoutId = setTimeout(geocode, 1000); // Debounce 1s
     return () => clearTimeout(timeoutId);
-  }, [cityName, map]);
+  }, [cityName, map, hasSelection, onSearchStart, onSearchEnd]);
 
   return null;
 };
@@ -84,6 +94,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, onRawBoundsCh
   const [selectedBounds, setSelectedBounds] = useState<LatLngBounds | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     if (selectedBounds) {
@@ -176,7 +187,13 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, onRawBoundsCh
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             crossOrigin="anonymous"
           />
-          <MapController cityName={cityName} isFullscreen={isFullscreen} />
+          <MapController 
+            cityName={cityName} 
+            isFullscreen={isFullscreen} 
+            hasSelection={!!selectedBounds} 
+            onSearchStart={() => setIsSearching(true)}
+            onSearchEnd={() => setIsSearching(false)}
+          />
           <DrawControl onBoundsSelected={setSelectedBounds} isDrawing={isDrawing} setIsDrawing={setIsDrawing} />
           
           {selectedBounds && (
@@ -188,7 +205,14 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, onRawBoundsCh
         </MapContainer>
       </div>
 
-      {!selectedBounds && !isDrawing && (
+      {isSearching && (
+        <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur text-[10px] text-gray-800 px-3 py-1.5 rounded-full flex items-center gap-2 border border-gray-200 shadow-sm">
+          <div className="w-2 h-2 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          Searching for {cityName}...
+        </div>
+      )}
+
+      {!selectedBounds && !isDrawing && !isSearching && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[400] bg-black/70 backdrop-blur text-xs text-white px-4 py-2 rounded-full pointer-events-none text-center border border-gray-700 shadow-lg">
           Click the square icon to draw your study area
         </div>
