@@ -948,50 +948,48 @@ Analyze the "${input.analysisTopic}" based on:
 Conduct internal multilingual scientific research on the city based on the selected Analysis Topic, relying on reliable published sources. Ensure all detailing and linking to real positions on the map is highly accurate.
 
 VISUAL STYLE & AESTHETIC (CRITICAL):
-- Professional architectural and urban planning aesthetic (inspired by high-end design competitions).
-- Clean, minimalist, and sophisticated cartographic style.
-- Base Map: Use a clean, muted base map (light gray, off-white, or subtle parchment texture) to allow analytical layers to stand out.
-- Symbology: Use professional urban planning symbols:
-    * Bold, elegant flow arrows for movement and dynamics.
-    * Distinct dashed or dotted lines for study area boundaries and perimeters.
-    * Professional hatched or stippled patterns for specific land-use zones or density areas.
-    * Clear, distinct circular nodes or hubs for key intersections and focal points.
-- Color Palette: Use a sophisticated and intentional color palette (e.g., deep navy for water, muted sage for green spaces, warm terracotta for arterial roads, and charcoal for dense urban fabric).
-- STRICTLY 2D top-down schematic map. No 3D perspective or tilted views.
-- Vertical layout (Portrait orientation).
-- Minimal text: Only essential labels and a title in English.
+- Professional architectural and urban planning aesthetic (inspired by high-end design competitions like WAF or Europan).
+- Clean, minimalist, and sophisticated digital cartographic style. NO hand-drawn, sketchy, or noisy effects.
+- Base Map: Use a PURE, clean, muted base map (solid light gray or white). NO parchment, paper, or textured backgrounds.
+- Symbology: Use professional, crisp, and perfectly geometric urban planning symbols:
+    * Sharp, elegant vector-style flow arrows for movement and dynamics.
+    * Precise, sharp dashed or dotted lines for study area boundaries.
+    * Uniform, professional hatched or stippled patterns for land-use zones.
+    * Clean, distinct circular nodes with subtle outlines for focal points.
+- Color Palette: Use a sophisticated, modern palette (e.g., "Nord" theme, "Solarized Light", or high-end architectural monochrome with one bold accent color like "International Orange").
+- STRICTLY 2D top-down schematic map. No 3D perspective, no tilted views, no shadows.
+- High-resolution digital clarity. Every line must be sharp and intentional.
+- TYPOGRAPHY: Use professional sans-serif fonts (like Inter, Helvetica, or Futura). Ensure PERFECT spelling in English. NO TYPOS. Every word in the legend and labels must be correctly spelled.
 
-MAP ELEMENTS:
-1. Central Main Map: Detailed spatial analysis of "${input.analysisTopic}" for the area shown in the uploaded map.
-2. High-Precision Detailing: Include building footprints, distinct road hierarchies (primary, secondary, tertiary), and clear markers for key landmarks.
-3. North Arrow & Scale Bar: Elegant, minimalist GIS symbols.
-4. Coordinate Frame: Subtle grid or frame with coordinates.
-5. Comprehensive Legend: An elegant legend explaining all symbols, line types, and colors in English.
-6. NO side panels or text boxes. Focus entirely on the map visualization.
+MAP ELEMENTS & FIXED TEMPLATE (MANDATORY):
+The output MUST be formatted as a professional, structured cartographic sheet with a fixed layout:
+1. Central Main Map: High-precision spatial analysis of "${input.analysisTopic}" for the area shown in the uploaded map.
+2. High-Precision Detailing: Include building footprints (crisp outlines), road hierarchies, and clear markers for key landmarks.
+3. Fixed Sidebar/Footer Panel: A clean, structured area (either a sidebar on the right or a footer at the bottom) containing:
+    * T. LOGO & BRANDING: The "TANNMYAA Intelligence" logo (a minimalist, modern 'T' symbol) and the text "TANNMYAA Intelligence - Spatial Analysis Engine V5".
+    * COMPREHENSIVE LEGEND: An elegant, perfectly aligned legend explaining all symbols, line types, and colors (Strategic Nodes, Movement Corridors, Development Opportunities, Critical Constraints).
+    * NORTH ARROW: A minimalist, modern GIS north arrow symbol.
+    * SCALE BAR: A precise, clean metric scale bar.
+4. Coordinate Frame: A subtle, clean grid or frame with coordinates around the main map area.
+5. NO floating text or noisy backgrounds outside this structured template.
 
-BRANDING:
-- Watermark: "TANNMYAA Intelligence" in a subtle, professional location.
-- Engine Name: "TANNMYAA_SPATIAL_V4".
+BRANDING & IDENTITY:
+- The entire sheet must follow the "TANNMYAA Intelligence" visual identity: Professional, minimalist, high-end digital cartography.
+- Colors: Use the TANNMYAA palette (Sophisticated grays, deep blues, and a single bold accent like "International Orange" for critical nodes).
 
 ${file ? 'IMAGE EDITING INSTRUCTIONS: Use the provided map as the EXACT study area and primary "Google Earth" style reference. Overlay the analysis directly onto this geography with high precision. Ensure all labels and analytical markers are accurately linked to the real positions shown in the image. Do not zoom out or change the urban fabric. Preserve the original street layout and buildings.' : ''}
 
 ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
 `;
 
-        let model = 'gemini-3.1-flash-image-preview';
-        let config: Record<string, unknown> = { 
+        const model = 'gemini-3.1-flash-image-preview';
+        const config: Record<string, unknown> = { 
             imageConfig: { 
                 aspectRatio: "9:16",
-                imageSize: "1K"
+                imageSize: "2K" // High quality resolution
             },
             tools: [{ googleSearch: {} }]
         };
-
-        // If a file is provided, use gemini-2.5-flash-image to edit the image and preserve the exact urban fabric
-        if (file) {
-            model = 'gemini-2.5-flash-image';
-            config = {}; // gemini-2.5-flash-image does not support imageConfig or tools
-        }
 
         const imageResponse = await ai.models.generateContent({
             model,
@@ -1023,7 +1021,7 @@ ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
         - points: Array of objects { lat, lng, title, description, type: 'insight' | 'warning' | 'opportunity' | 'data' }
         - zones: Array of objects { bounds: [[lat1, lng1], [lat2, lng2]], title, description, color }
 
-        Provide at least 6-10 significant points and 3-5 key zones.
+        Provide at least 8-12 significant points and 4-6 key zones.
         Ensure descriptions are professional, technical, and data-driven, using urban planning terminology (e.g., "transit-oriented development," "urban heat island effect," "permeability," "land-use conflict").
         `;
 
