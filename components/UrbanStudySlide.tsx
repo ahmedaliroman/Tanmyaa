@@ -64,7 +64,7 @@ const useCountUp = (end: number, duration: number, isActive: boolean, start: num
         }, frameRate);
 
         return () => clearInterval(counter);
-    }, [end, start, duration, isActive, totalFrames, frameRate]);
+    }, [end, start, duration, isActive, totalFrames, frameRate, disableAnimations]);
 
     return count;
 };
@@ -277,24 +277,24 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
         />
         <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
         <div className="relative z-20 pt-8">
-            <div style={titleAnim}><Editable as="h1" value={slide.title} className="text-5xl md:text-7xl font-extrabold tracking-tighter leading-tight" onUpdate={v => onUpdate('title', v)} /></div>
-            <div style={problemAnim}><Editable as="p" value={slide.problem_statement} className="text-lg md:text-xl text-white/80 max-w-4xl mx-auto mt-6 leading-relaxed" onUpdate={v => onUpdate('problem_statement', v)} /></div>
+            <div style={titleAnim}><Editable as="h1" value={slide.title} className="text-4xl md:text-6xl font-extrabold tracking-tighter leading-tight" onUpdate={v => onUpdate('title', v)} /></div>
+            <div style={problemAnim}><Editable as="p" value={slide.problem_statement} className="text-base md:text-lg text-white/80 max-w-4xl mx-auto mt-6 leading-relaxed" onUpdate={v => onUpdate('problem_statement', v)} /></div>
         </div>
         <div className="relative z-20 w-full grid grid-cols-3 gap-8 pb-12">
             {ensureArray(slide.key_data_points).map((point, i) => {
-                const valueLength = point.value?.length || 0;
-                const valueSizeClass = valueLength > 15 ? 'text-4xl md:text-5xl' : valueLength > 10 ? 'text-5xl md:text-6xl' : 'text-6xl md:text-8xl';
-                
                 return (
                     <div key={i} className="flex flex-col items-center" style={getAnimationStyles(isActive, 500 + i * 150, 'fade-in-up', disableAnimations)}>
-                        <Editable 
-                            as="p" 
-                            value={point.value} 
-                            onUpdate={v => onUpdate(`key_data_points[${i}].value`, v)} 
-                            className={`${valueSizeClass} font-black text-[var(--color-accent-cream)] leading-none mb-4`} 
-                        />
-                        <Editable as="p" value={point.label} onUpdate={v => onUpdate(`key_data_points[${i}].label`, v)} className="text-white/90 uppercase tracking-[0.2em] font-bold text-sm md:text-base" />
-                        <Editable as="p" value={point.description} onUpdate={v => onUpdate(`key_data_points[${i}].description`, v)} className="text-white/60 text-xs md:text-sm mt-4 max-w-[30ch] leading-snug" />
+                        <div className="mb-4">
+                            <MetricValueDisplay
+                                value={point.value}
+                                isActive={isActive}
+                                numberClass="text-5xl md:text-7xl font-black text-[var(--color-accent-cream)]"
+                                suffixClass="text-2xl md:text-3xl text-[var(--color-accent-cream)]/80"
+                                disableAnimations={disableAnimations}
+                            />
+                        </div>
+                        <Editable as="p" value={point.label} onUpdate={v => onUpdate(`key_data_points[${i}].label`, v)} className="text-white/90 uppercase tracking-[0.2em] font-bold text-xs md:text-sm" />
+                        <Editable as="p" value={point.description} onUpdate={v => onUpdate(`key_data_points[${i}].description`, v)} className="text-white/60 text-[10px] md:text-xs mt-4 max-w-[30ch] leading-snug" />
                     </div>
                 );
             })}
@@ -527,19 +527,21 @@ const MetricValueDisplay: React.FC<{ value: string; isActive: boolean; numberCla
         : number.toLocaleString(undefined, formatOptions);
     
     const fullValue = `${prefix}${numberPart}${suffix}`;
-    const isLong = fullValue.length > 10;
-    const adjustedNumberClass = isLong ? numberClass.replace(/text-\d+xl/, 'text-2xl') : numberClass;
-    const adjustedSuffixClass = isLong ? suffixClass.replace(/text-\d+xl/, 'text-lg') : suffixClass;
+    const isLong = fullValue.length > 12;
+    const adjustedNumberClass = isLong ? numberClass.replace(/text-\d+xl/, 'text-3xl md:text-4xl') : numberClass;
+    const adjustedSuffixClass = isLong ? suffixClass.replace(/text-\d+xl/, 'text-sm md:text-base') : suffixClass;
 
     const trimmedSuffix = suffix.trim();
         
     return (
-        <p className={`font-extrabold leading-tight break-words ${adjustedNumberClass}`}>
-            {prefix}{numberPart}
+        <div className="flex flex-col items-center">
+            <p className={`font-extrabold leading-tight break-words ${adjustedNumberClass}`}>
+                {prefix}{numberPart}
+            </p>
             {trimmedSuffix && (
-                <span className={adjustedSuffixClass}> {trimmedSuffix}</span>
+                <span className={`${adjustedSuffixClass} mt-1 font-bold opacity-80`}>{trimmedSuffix}</span>
             )}
-        </p>
+        </div>
     );
 };
 
