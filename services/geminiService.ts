@@ -910,45 +910,62 @@ City Name: ${input.cityName}
 Scale or Area Required: ${input.scale}
 Analysis Topic: ${input.analysisTopic}
 
-STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning and Geospatial Intelligence.
+URBAN PLANNING CONTEXT: You are a world-class Urban Planner and GIS Expert.
+TASK: Generate a professional, analytical urban map for "${input.cityName}" regarding "${input.analysisTopic}".
+
+EXECUTION RULES (STRICT):
+- Do not explain.
+- Do not show steps.
+- Do not write a report in the image text.
+- Do not ask questions.
+- Do not discuss technical limitations.
+- Do not provide justifications.
+- Execute internally and output only the final image.
+
+ANALYSIS TASK:
+Analyze the "${input.analysisTopic}" based on:
+1. The attached map (if provided).
+2. Official published data and government records.
+3. Peer-reviewed academic research and urban planning journals.
+4. Satellite imagery and geospatial platforms (Sentinel, Landsat, etc.).
+5. Reference maps from reliable sources (OpenStreetMap, Esri, etc.).
+
+Conduct internal multilingual scientific research on the city based on the selected Analysis Topic, relying on reliable published sources.
+
+VISUAL STYLE:
+- Professional analytical urban map (ArcGIS Pro style).
+- Cinematic, high-end cartographic quality.
+- Preferably 3D perspective or high-quality 2D top-down with depth.
+- Vertical layout (Portrait orientation).
+- Clear, large Arabic text for all labels and titles.
+
+MAP ELEMENTS:
+1. Central Main Map: Detailed spatial analysis of "${input.analysisTopic}" for the area at "${input.scale}".
+2. Clear Classification: Use professional color palettes (e.g., heatmaps, choropleth, or point density).
+3. North Arrow & Scale Bar: Professional GIS symbols.
+4. Coordinate Frame: Subtle grid or frame with coordinates.
+5. Clear Legend: Explaining all symbols and colors in Arabic.
+6. Elegant Glass-Style Side Panels (Concise Insights in Arabic):
+   - Overall condition related to "${input.analysisTopic}".
+   - Key strengths.
+   - Key weaknesses.
+   - Spatial patterns.
+   - Infrastructure/service observations.
+   - Environmental or land-related role.
+
+BRANDING:
+- Watermark: "TANNMYAA Intelligence" in a subtle, professional location.
+- Engine Name: "TANNMYAA_SPATIAL_V3".
+
+${file ? 'IMAGE EDITING INSTRUCTIONS: Use the provided map as the EXACT study area. Overlay the analysis directly onto this geography. Do not zoom out or change the urban fabric. Preserve the original street layout and buildings.' : ''}
 
 ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
-
-CRITICAL INSTRUCTION REGARDING THE ATTACHED MAP:
-The attached map image represents the EXACT bounding box and study area selected by the user. You MUST use this exact geographical area and layout as the base for your analysis map. 
-- DO NOT zoom out to the whole city if the user selected a specific district. 
-- DO NOT hallucinate a different map or different street layout.
-- You MUST EDIT the attached image by overlaying your spatial analysis directly onto the geographical context shown. 
-- Preserve the exact streets, buildings, and urban fabric visible in the image.
-
-STEP 1: OVERLAY ANALYSIS
-Overlay clear, semi-transparent colors, heatmaps, or symbols onto the existing map to represent the "${input.analysisTopic}".
-Use a professional cartographic color palette (e.g., Viridis, Plasma, or standard ArcGIS/QGIS styles).
-Do not obscure the underlying street network completely; ensure the urban fabric remains visible.
-
-STEP 2: REMOVE CLUTTER
-Do not add long paragraphs, labels explaining results, or long annotations on the map.
-Keep only: Map features, Symbols, Essential technical labels.
-
-STEP 3: MAP FRAME & CORE ELEMENTS
-Add a clean, professional rectangular border around the map.
-Add a clear TITLE at the top: "Spatial Analysis – ${input.cityName}: ${input.analysisTopic}".
-Add a comprehensive LEGEND explaining the colors/symbols used.
-Add a North Arrow and a Scale Bar.
-Add a small "Tanmyaa Intelligence" watermark or logo at the bottom corner.
-
-FINAL REQUIREMENTS:
-The map must be visually clean, minimal, and of professional cartographic quality.
-No unnecessary text on the map itself.
-All explanations must be in the separate report.
-STRICTLY 2D presentation (Top-down view).
-Preserves real geography EXACTLY as shown in the input image.
 `;
 
         let model = 'gemini-3.1-flash-image-preview';
         let config: Record<string, unknown> = { 
             imageConfig: { 
-                aspectRatio: "16:9",
+                aspectRatio: "9:16",
                 imageSize: "1K"
             },
             tools: [{ googleSearch: {} }]
@@ -974,31 +991,29 @@ Preserves real geography EXACTLY as shown in the input image.
 
     // 3. Generate Report
     const reportPromise = withRetry(async () => {
-        const reportPrompt = `
-You are an expert Urban Planner. Generate a detailed Spatial Analysis report for the following:
-City Name: ${input.cityName}
-Scale or Area Required: ${input.scale}
-Analysis Topic: ${input.analysisTopic}
+    const reportPrompt = `
+Analyze the "${input.analysisTopic}" for "${input.cityName}" at scale "${input.scale}".
 
-Based on the provided map (if any) and your knowledge, provide a comprehensive report structured EXACTLY as follows.
+TASK: Provide a detailed, professional urban planning report based on extensive, multilingual scientific research.
 
-PAGE 2 – KEY INSIGHTS
-Provide 3–5 concise bullet points summarizing the most critical findings. No long paragraphs.
+DATA SOURCES TO ANALYZE:
+- Official published data and government records.
+- Peer-reviewed academic research and urban planning journals.
+- Satellite imagery and geospatial platforms.
+- Reference maps from reliable sources.
 
-PAGE 3 – SPATIAL ANALYSIS
-Explain key patterns, trends, and findings related to the analysis topic in the specified area.
+STRUCTURE:
+1. Key Insights: Summary of the current state and critical findings.
+2. Spatial Analysis: Detailed breakdown of patterns, observations, and spatial relationships.
+3. Recommendations:
+   - Short-term actions (immediate interventions).
+   - Long-term strategic goals (future planning).
+4. Methodology: Clear explanation of data sources and analysis techniques used.
 
-PAGE 4 – RECOMMENDATIONS
-Provide actionable recommendations divided into:
-1. Short-term actions
-2. Long-term strategies
+LANGUAGE: Arabic.
 
-PAGE 5 – METHODOLOGY
-Provide the methodology used for this analysis, including:
-1. Data sources (e.g., Satellite imagery, OpenStreetMap, Official statistics). DO NOT mention Google Earth Engine.
-2. Tools used (e.g., GIS software, Spatial analysis algorithms). DO NOT mention Google Earth Engine.
-3. Brief explanation of approach. DO NOT mention Google Earth Engine.
-        `;
+${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+`;
 
         const reportResponse = await ai.models.generateContent({
             model: 'gemini-3.1-pro-preview',
