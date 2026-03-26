@@ -939,13 +939,13 @@ EXECUTION RULES (STRICT):
 
 ANALYSIS TASK:
 Analyze the "${input.analysisTopic}" based on:
-1. The attached map (if provided).
+1. The attached map/satellite image (MANDATORY REFERENCE). Use this as your primary "Google Earth" style reference for coordination, orientation, and precise linking of analysis points to real-world positions.
 2. Official published data and government records.
 3. Peer-reviewed academic research and urban planning journals.
 4. Satellite imagery and geospatial platforms (Sentinel, Landsat, etc.).
 5. Reference maps from reliable sources (OpenStreetMap, Esri, etc.).
 
-Conduct internal multilingual scientific research on the city based on the selected Analysis Topic, relying on reliable published sources.
+Conduct internal multilingual scientific research on the city based on the selected Analysis Topic, relying on reliable published sources. Ensure all detailing and linking to real positions on the map is highly accurate.
 
 VISUAL STYLE:
 - Professional analytical urban map (ArcGIS Pro style).
@@ -967,7 +967,7 @@ BRANDING:
 - Watermark: "TANNMYAA Intelligence" in a subtle, professional location.
 - Engine Name: "TANNMYAA_SPATIAL_V3".
 
-${file ? 'IMAGE EDITING INSTRUCTIONS: Use the provided map as the EXACT study area. Overlay the analysis directly onto this geography. Do not zoom out or change the urban fabric. Preserve the original street layout and buildings.' : ''}
+${file ? 'IMAGE EDITING INSTRUCTIONS: Use the provided map as the EXACT study area and primary "Google Earth" style reference. Overlay the analysis directly onto this geography with high precision. Ensure all labels and analytical markers are accurately linked to the real positions shown in the image. Do not zoom out or change the urban fabric. Preserve the original street layout and buildings.' : ''}
 
 ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
 `;
@@ -1007,6 +1007,8 @@ ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
         As an Urban GIS Expert, generate a set of interactive analysis points and zones for the following study:
         City: ${input.cityName}
         Topic: ${input.analysisTopic}
+
+        CRITICAL: Use the provided map/satellite image as your primary "Google Earth" style reference. Ensure all coordinates (lat, lng) and bounds are precisely linked to the real-world positions and urban fabric shown in the image. The goal is maximum accuracy in coordination and orientation.
 
         The data should provide "Deep Analysis" insights that can be displayed as an interactive layer on a map.
         The language for all text (titles, descriptions) MUST be English.

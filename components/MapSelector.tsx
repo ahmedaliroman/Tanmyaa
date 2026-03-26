@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LatLngBounds, LatLng } from 'leaflet';
-import { Maximize, Minimize, MousePointer2, Square } from 'lucide-react';
+import { Maximize, Minimize, MousePointer2, Square, Layers } from 'lucide-react';
 
 interface MapSelectorProps {
   onBoundsChange: (bounds: string) => void;
-  onRawBoundsChange?: (bounds: { north: number, south: number, east: number, west: number } | null) => void;
+  onRawBoundsChange?: (boundsStr: string, boundsObj?: LatLngBounds) => void;
   cityName?: string;
   disabled?: boolean;
 }
@@ -95,23 +95,20 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, onRawBoundsCh
   const [isDrawing, setIsDrawing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [layerType, setLayerType] = useState<'streets' | 'satellite'>('satellite');
 
   useEffect(() => {
     if (selectedBounds) {
       const ne = selectedBounds.getNorthEast();
       const sw = selectedBounds.getSouthWest();
-      onBoundsChange(`Selected Area - North: ${ne.lat.toFixed(4)}, South: ${sw.lat.toFixed(4)}, East: ${ne.lng.toFixed(4)}, West: ${sw.lng.toFixed(4)}`);
+      const boundsStr = `Selected Area - North: ${ne.lat.toFixed(4)}, South: ${sw.lat.toFixed(4)}, East: ${ne.lng.toFixed(4)}, West: ${sw.lng.toFixed(4)}`;
+      onBoundsChange(boundsStr);
       if (onRawBoundsChange) {
-        onRawBoundsChange({
-          north: ne.lat,
-          south: sw.lat,
-          east: ne.lng,
-          west: sw.lng
-        });
+        onRawBoundsChange(boundsStr, selectedBounds);
       }
     } else {
       onBoundsChange('');
-      if (onRawBoundsChange) onRawBoundsChange(null);
+      if (onRawBoundsChange) onRawBoundsChange('');
     }
   }, [selectedBounds, onBoundsChange, onRawBoundsChange]);
 
@@ -143,6 +140,17 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, onRawBoundsCh
         >
           {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
         </button>
+        
+        <div className="bg-white rounded shadow flex flex-col overflow-hidden mt-2">
+          <button
+            type="button"
+            onClick={() => setLayerType(layerType === 'streets' ? 'satellite' : 'streets')}
+            className={`p-2 transition-colors ${layerType === 'satellite' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+            title="Toggle Satellite/Streets"
+          >
+            <Layers size={20} />
+          </button>
+        </div>
         
         <div className="bg-white rounded shadow flex flex-col overflow-hidden mt-2">
           <button
@@ -182,11 +190,19 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, onRawBoundsCh
           zoomControl={false}
         >
           {/* Using a lighter, more obvious map theme for better visibility */}
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            crossOrigin="anonymous"
-          />
+          {layerType === 'streets' ? (
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              crossOrigin="anonymous"
+            />
+          ) : (
+            <TileLayer
+              attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              crossOrigin="anonymous"
+            />
+          )}
           <MapController 
             cityName={cityName} 
             isFullscreen={isFullscreen} 

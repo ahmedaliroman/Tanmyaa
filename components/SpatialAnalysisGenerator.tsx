@@ -33,25 +33,27 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
   const [capturedBounds, setCapturedBounds] = useState<LatLngBounds | undefined>(undefined);
   const [isInteractive, setIsInteractive] = useState(false);
 
-  const handleGenerate = async (cityName: string, analysisTopic: string, file: File) => {
+  const handleGenerate = async (cityName: string, analysisTopic: string, file: File, bounds?: LatLngBounds) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
     setProjectInfo({ cityName, analysisTopic });
-    setCapturedBounds(undefined);
+    setCapturedBounds(bounds);
     setIsInteractive(false);
 
     try {
-      // Try to geocode the city to get bounds for the interactive map
-      try {
-        const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
-        const geoData = await geoResponse.json();
-        if (geoData && geoData.length > 0) {
-          const bbox = geoData[0].boundingbox; // [south, north, west, east]
-          setCapturedBounds(new L.LatLngBounds([parseFloat(bbox[0]), parseFloat(bbox[2])], [parseFloat(bbox[1]), parseFloat(bbox[3])]));
+      // If bounds weren't provided (e.g. file upload), try to geocode the city
+      if (!bounds) {
+        try {
+          const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
+          const geoData = await geoResponse.json();
+          if (geoData && geoData.length > 0) {
+            const bbox = geoData[0].boundingbox; // [south, north, west, east]
+            setCapturedBounds(new L.LatLngBounds([parseFloat(bbox[0]), parseFloat(bbox[2])], [parseFloat(bbox[1]), parseFloat(bbox[3])]));
+          }
+        } catch (geoErr) {
+          console.warn("Geocoding failed, interactive map might not center correctly:", geoErr);
         }
-      } catch (geoErr) {
-        console.warn("Geocoding failed, interactive map might not center correctly:", geoErr);
       }
 
       const analysisResult = await generateSpatialAnalysis({ cityName, analysisTopic }, file);

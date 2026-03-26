@@ -1,9 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import FileUpload from './FileUpload';
+import MapSelector from './MapSelector';
+import html2canvas from 'html2canvas';
+import { LatLngBounds } from 'leaflet';
 
 interface SpatialAnalysisInputFormProps {
-  onSubmit: (cityName: string, analysisTopic: string, file: File) => void;
+  onSubmit: (cityName: string, analysisTopic: string, file: File, bounds?: LatLngBounds) => void;
   isLoading: boolean;
   credits: number;
   userEmail: string | null;
@@ -20,11 +23,48 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
   const [cityName, setCityName] = useState('');
   const [analysisTopic, setAnalysisTopic] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [useMapCapture, setUseMapCapture] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [rawBounds, setRawBounds] = useState<LatLngBounds | undefined>(undefined);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (cityName.trim() && analysisTopic.trim() && files.length > 0) {
-      onSubmit(cityName, analysisTopic, files[0]);
+    
+    if (!cityName.trim() || !analysisTopic.trim()) return;
+
+    if (useMapCapture) {
+      if (!rawBounds || !mapContainerRef.current) return;
+      
+      setIsCapturing(true);
+      try {
+        const canvas = await html2canvas(mapContainerRef.current, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null,
+        });
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], "map_capture.png", { type: "image/png" });
+            onSubmit(cityName, analysisTopic, file, rawBounds);
+          }
+          setIsCapturing(false);
+        }, 'image/png');
+      } catch (err) {
+        console.error("Capture error:", err);
+        setIsCapturing(false);
+      }
+    } else {
+      if (files.length > 0) {
+        onSubmit(cityName, analysisTopic, files[0]);
+      }
+    }
+  };
+
+  const handleBoundsChange = (_: string, boundsObj?: LatLngBounds) => {
+    if (boundsObj) {
+      setRawBounds(boundsObj);
     }
   };
 
@@ -61,22 +101,72 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">Upload Map (Mandatory)</label>
-                <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4 mb-4">
-                  <p className="text-[11px] text-blue-300 leading-relaxed">
-                    Upload a high-resolution map or satellite image of the target area. This map will be used as the primary spatial reference for the analysis.
-                  </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Reference Map (Google Earth Style)</label>
+                  <div className="flex bg-black/40 p-1 rounded-lg border border-gray-800">
+                    <button 
+                      type="button"
+                      onClick={() => setUseMapCapture(false)}
+                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${!useMapCapture ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                      UPLOAD
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setUseMapCapture(true)}
+                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${useMapCapture ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                      CAPTURE
+                    </button>
+                  </div>
                 </div>
-                <FileUpload 
-                  files={files} 
-                  setFiles={setFiles} 
-                  disabled={isLoading} 
-                />
-                {files.length === 0 && (
-                  <p className="text-[11px] text-red-400 mt-2 px-1 font-medium">
-                    * Map upload is required to proceed with spatial analysis.
-                  </p>
+
+                {useMapCapture ? (
+                  <div className="space-y-4">
+                    <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4">
+                      <p className="text-[11px] text-blue-300 leading-relaxed">
+                        Use the interactive satellite map below to select your study area. This provides the AI with precise &quot;Google Earth&quot; coordination for accurate results.
+                      </p>
+                    </div>
+                    <div ref={mapContainerRef} className="relative rounded-xl overflow-hidden border border-gray-800 shadow-inner">
+                      <MapSelector 
+                        cityName={cityName} 
+                        onBoundsChange={() => {}} 
+                        onRawBoundsChange={(b) => {
+                          if (b) {
+                            // MapSelector returns {north, south, east, west}
+                            // We need to pass it to handleBoundsChange
+                            handleBoundsChange('', b);
+                          }
+                        }}
+                        disabled={isLoading || isCapturing}
+                      />
+                    </div>
+                    {!rawBounds && (
+                      <p className="text-[11px] text-orange-400 px-1">
+                        * Please select an area on the map to proceed.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4">
+                      <p className="text-[11px] text-blue-300 leading-relaxed">
+                        Upload a high-resolution Google Earth screenshot or map. This will be used as the primary spatial reference for coordination and orientation.
+                      </p>
+                    </div>
+                    <FileUpload 
+                      files={files} 
+                      setFiles={setFiles} 
+                      disabled={isLoading} 
+                    />
+                    {files.length === 0 && (
+                      <p className="text-[11px] text-red-400 px-1 font-medium">
+                        * Map upload is required to proceed.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -107,13 +197,13 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
             </div>
             <button
               type="submit"
-              disabled={isLoading || !cityName.trim() || !analysisTopic.trim() || files.length === 0 || credits < 10}
+              disabled={isLoading || isCapturing || !cityName.trim() || !analysisTopic.trim() || (useMapCapture ? !rawBounds : files.length === 0) || credits < 10}
               className="bg-gray-700/80 text-gray-200 font-semibold py-3 px-8 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50 w-full md:w-auto text-lg"
             >
-              {isLoading ? (
+              {isLoading || isCapturing ? (
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Analyzing...</span>
+                  <span>{isCapturing ? 'Capturing Map...' : 'Analyzing...'}</span>
                 </div>
               ) : 'Generate Spatial Analysis'}
             </button>
