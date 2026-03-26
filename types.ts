@@ -414,35 +414,22 @@ export interface Methodology {
 
 export interface UrbanDeepUnderstanding {
     topic: string;
-    executiveSummary: string;
-    keyConcepts: {
+    teacherPersona: {
+        intro: string;
+        closing: string;
+    };
+    stickyNotes: {
+        id: string;
+        category: 'Core Concept' | 'Data Insight' | 'Case Study' | 'Strategic Move' | 'Critical Risk';
         title: string;
-        explanation: string;
-        example: string;
+        content: string;
+        tags: string[];
     }[];
-    dataInsights: {
-        metric: string;
-        currentValue: string;
-        projection: string;
-        trend: 'Increasing' | 'Decreasing' | 'Stable';
-        rationale: string;
-    }[];
-    caseStudies: {
-        location: string;
-        intervention: string;
-        outcome: string;
-        lessonLearned: string;
-    }[];
-    policyRecommendations: {
-        action: string;
-        impact: string;
-        feasibility: 'High' | 'Medium' | 'Low';
-    }[];
-    interactiveElements: {
+    lessonInteraction: {
         question: string;
-        options: string[];
-        feedback: string;
-    }[];
+        choices: string[];
+        feedback: Record<string, string>;
+    };
 }
 
 export interface UserProfile {

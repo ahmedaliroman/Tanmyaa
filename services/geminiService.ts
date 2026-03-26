@@ -882,36 +882,45 @@ export const generateMethodology = async (task: string, companyProfile?: string)
 
 export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
-    const systemInstruction = `You are a world-class Urban Specialist and Policy Consultant. 
-    Your task is to provide a "Deep Understanding" of a specific urban topic. 
-    This is an interactive, data-driven, and highly contextualized analysis presented in a Policy Brief style.
+    const systemInstruction = `You are a world-class Urban Planning Professor. 
+    Your task is to teach a student about a specific urban topic using a "Thinking Board" approach.
     
-    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning and related urban development topics. If the user's request is not related to urban planning, urban design, architecture, urban economics, or city management, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
     
     ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
-    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to find real-world evidence and statistics.
-    TECHNICAL DEPTH: Ensure the analysis is rigorous, using professional terminology and providing concrete, quantified evidence where possible.
+    STRICT PROHIBITION: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
+    
+    TEACHER PERSONA:
+    - Tone: Encouraging, authoritative yet accessible, and deeply analytical.
+    - Format: Use "Sticky Notes" for key points. Each note must be concise, "point-to-point", and coherent.
+    - No Vague Info: Every claim must be backed by a specific metric, location, or logic.
     
     SCHEMA GUIDANCE:
     {
         "topic": "string",
-        "executiveSummary": "string",
-        "keyConcepts": [
-            { "title": "string", "explanation": "string", "example": "string" }
+        "teacherPersona": {
+            "intro": "A warm, professional introduction from the professor setting the stage.",
+            "closing": "A concluding thought that challenges the student to think further."
+        },
+        "stickyNotes": [
+            { 
+                "id": "unique-id", 
+                "category": "Core Concept" | "Data Insight" | "Case Study" | "Strategic Move" | "Critical Risk",
+                "title": "Short, punchy title",
+                "content": "Concise, point-to-point explanation (max 30 words).",
+                "tags": ["tag1", "tag2"]
+            }
         ],
-        "dataInsights": [
-            { "metric": "string", "currentValue": "string", "projection": "string", "trend": "Increasing" | "Decreasing" | "Stable", "rationale": "string" }
-        ],
-        "caseStudies": [
-            { "location": "string", "intervention": "string", "outcome": "string", "lessonLearned": "string" }
-        ],
-        "policyRecommendations": [
-            { "action": "string", "impact": "string", "feasibility": "High" | "Medium" | "Low" }
-        ],
-        "interactiveElements": [
-            { "question": "string", "options": ["string"], "feedback": "string" }
-        ]
+        "lessonInteraction": {
+            "question": "A critical thinking question for the student.",
+            "choices": ["Option A", "Option B", "Option C"],
+            "feedback": {
+                "Option A": "Specific feedback explaining why this is correct or incorrect.",
+                "Option B": "...",
+                "Option C": "..."
+            }
+        }
     }
     
     Your entire output MUST be a single, valid JSON object following the required schema.
@@ -920,7 +929,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     const result = await withRetry(async () => {
         const response = await ai.models.generateContent({
             model: 'gemini-3.1-pro-preview',
-            contents: { parts: [{ text: `Provide a deep understanding of the urban topic: "${topic}". Context: "${context}"` }] },
+            contents: { parts: [{ text: `Teach me about: "${topic}". Context: "${context}"` }] },
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
@@ -938,13 +947,13 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
 
 export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
-    const systemInstruction = `You are a world-class Urban Specialist. Update the provided "Deep Understanding" JSON based on the user's new insights or requests for focus.
+    const systemInstruction = `You are a world-class Urban Planning Professor. Update the provided "Thinking Board" JSON based on the student's request.
     
-    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
     
     ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
-    STRICT PROHIBITION: NEVER use placeholders. Provide real data and specific examples.
+    STRICT PROHIBITION: NEVER use placeholders. Keep notes concise and point-to-point.
     
     Your entire output must be only the valid JSON object, with no other text.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
@@ -952,7 +961,7 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     const result = await withRetry(async () => {
         const response = await ai.models.generateContent({
             model: 'gemini-3.1-flash-lite-preview',
-            contents: `Update the following Deep Understanding JSON based on the user request. Current state: ${JSON.stringify(currentData)}. User Request: "${userRequest}".`,
+            contents: `Update the following Deep Understanding JSON based on the student's request. Current state: ${JSON.stringify(currentData)}. Student Request: "${userRequest}".`,
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
