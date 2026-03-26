@@ -910,35 +910,40 @@ City Name: ${input.cityName}
 Scale or Area Required: ${input.scale}
 Analysis Topic: ${input.analysisTopic}
 
-STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
+STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning and Geospatial Intelligence.
 
 ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
 
 CRITICAL INSTRUCTION REGARDING THE ATTACHED MAP:
-The attached map image represents the EXACT bounding box and study area selected by the user. You MUST use this exact geographical area and layout as the base for your analysis map. Do not zoom out to the whole city if the user selected a specific district. Do not hallucinate a different map.
-You MUST EDIT the attached image by overlaying your spatial analysis directly onto the geographical context shown. Preserve the exact streets, buildings, and urban fabric visible in the image.
+The attached map image represents the EXACT bounding box and study area selected by the user. You MUST use this exact geographical area and layout as the base for your analysis map. 
+- DO NOT zoom out to the whole city if the user selected a specific district. 
+- DO NOT hallucinate a different map or different street layout.
+- You MUST EDIT the attached image by overlaying your spatial analysis directly onto the geographical context shown. 
+- Preserve the exact streets, buildings, and urban fabric visible in the image.
 
 STEP 1: OVERLAY ANALYSIS
 Overlay clear, semi-transparent colors, heatmaps, or symbols onto the existing map to represent the "${input.analysisTopic}".
-Do not obscure the underlying street network completely.
+Use a professional cartographic color palette (e.g., Viridis, Plasma, or standard ArcGIS/QGIS styles).
+Do not obscure the underlying street network completely; ensure the urban fabric remains visible.
 
 STEP 2: REMOVE CLUTTER
 Do not add long paragraphs, labels explaining results, or long annotations on the map.
-Keep only: Map features, Symbols, Essential labels.
+Keep only: Map features, Symbols, Essential technical labels.
 
 STEP 3: MAP FRAME & CORE ELEMENTS
-Add a rectangular border around the map if possible.
-Add a TITLE: "Spatial Analysis – ${input.cityName}: ${input.analysisTopic}".
-Add a LEGEND explaining the colors/symbols used.
-Add a NORTH ARROW and SCALE BAR.
+Add a clean, professional rectangular border around the map.
+Add a clear TITLE at the top: "Spatial Analysis – ${input.cityName}: ${input.analysisTopic}".
+Add a comprehensive LEGEND explaining the colors/symbols used.
+Add a North Arrow and a Scale Bar.
+Add a small "Tanmyaa Intelligence" watermark or logo at the bottom corner.
 
 FINAL REQUIREMENTS:
-The map must be visually clean, minimal, and professional.
+The map must be visually clean, minimal, and of professional cartographic quality.
 No unnecessary text on the map itself.
 All explanations must be in the separate report.
 STRICTLY 2D presentation (Top-down view).
-Preserves real geography EXACTLY as shown in the input image (no fictionalization, no fake 3D renders).
-        `;
+Preserves real geography EXACTLY as shown in the input image.
+`;
 
         let model = 'gemini-3.1-flash-image-preview';
         let config: Record<string, unknown> = { 
@@ -990,9 +995,9 @@ Provide actionable recommendations divided into:
 
 PAGE 5 – METHODOLOGY
 Provide the methodology used for this analysis, including:
-1. Data sources (e.g., Satellite imagery, OpenStreetMap, Official statistics)
-2. Tools used (e.g., GIS software, Spatial analysis algorithms)
-3. Brief explanation of approach
+1. Data sources (e.g., Satellite imagery, OpenStreetMap, Official statistics). DO NOT mention Google Earth Engine.
+2. Tools used (e.g., GIS software, Spatial analysis algorithms). DO NOT mention Google Earth Engine.
+3. Brief explanation of approach. DO NOT mention Google Earth Engine.
         `;
 
         const reportResponse = await ai.models.generateContent({

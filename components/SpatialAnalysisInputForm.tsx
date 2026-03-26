@@ -38,12 +38,17 @@ const SpatialAnalysisInputForm: React.FC<SpatialAnalysisInputFormProps> = ({
           // Find the leaflet container inside our ref
           const leafletContainer = mapContainerRef.current.querySelector('.leaflet-container') as HTMLElement;
           if (leafletContainer) {
+            // Give a small delay for the map to settle if needed, 
+            // but here we just capture what's visible.
             const canvas = await html2canvas(leafletContainer, {
               useCORS: true,
               backgroundColor: null,
+              logging: false,
+              allowTaint: true,
+              scale: 2, // Higher quality
             });
             
-            const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+            const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
             if (blob) {
               submitFile = new File([blob], 'map-selection.jpg', { type: 'image/jpeg' });
             }
