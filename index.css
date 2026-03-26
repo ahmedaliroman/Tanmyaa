@@ -73,4 +73,22 @@
     from { opacity: 1; transform: translateX(0); }
     to { opacity: 0; transform: translateX(-30px); }
   }
+
+  /* Leaflet Dark Theme Popups */
+  .custom-leaflet-popup .leaflet-popup-content-wrapper {
+    @apply bg-gray-900/90 backdrop-blur-xl border border-gray-700/50 text-white rounded-2xl shadow-2xl p-0 overflow-hidden;
+  }
+
+  .custom-leaflet-popup .leaflet-popup-tip {
+    @apply bg-gray-900/90 border-gray-700/50;
+  }
+
+  .custom-leaflet-popup .leaflet-popup-content {
+    @apply m-0 p-3;
+  }
+
+  .custom-leaflet-popup .leaflet-popup-close-button {
+    @apply text-gray-400 hover:text-white;
+    padding: 0.5rem !important;
+  }
 }

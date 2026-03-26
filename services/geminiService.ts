@@ -864,7 +864,22 @@ export const generateMethodology = async (task: string, companyProfile?: string)
 
 export interface SpatialAnalysisResult {
     imageUrl: string;
-    report: {
+    interactiveData?: {
+        points: {
+            lat: number;
+            lng: number;
+            title: string;
+            description: string;
+            type: 'insight' | 'warning' | 'opportunity' | 'data';
+        }[];
+        zones?: {
+            bounds: [[number, number], [number, number]];
+            title: string;
+            description: string;
+            color: string;
+        }[];
+    };
+    report?: {
         keyInsights: string[];
         spatialAnalysis: string;
         shortTermActions: string[];
@@ -921,6 +936,7 @@ EXECUTION RULES (STRICT):
 - Do not discuss technical limitations.
 - Do not provide justifications.
 - Execute internally and output only the final image.
+- IMPORTANT: The output should be JUST the map illustration. Do not include side panels, text reports, or extensive descriptions within the image.
 
 ANALYSIS TASK:
 Analyze the "${input.analysisTopic}" based on:
@@ -935,9 +951,10 @@ Conduct internal multilingual scientific research on the city based on the selec
 VISUAL STYLE:
 - Professional analytical urban map (ArcGIS Pro style).
 - Cinematic, high-end cartographic quality.
-- Preferably 3D perspective or high-quality 2D top-down with depth.
+- STRICTLY 2D top-down schematic map.
+- No 3D perspective or tilted views.
 - Vertical layout (Portrait orientation).
-- Clear, large Arabic text for all labels and titles.
+- Minimal text: Only essential labels and a title in Arabic.
 
 MAP ELEMENTS:
 1. Central Main Map: Detailed spatial analysis of "${input.analysisTopic}" for the area at "${input.scale}".
@@ -945,13 +962,7 @@ MAP ELEMENTS:
 3. North Arrow & Scale Bar: Professional GIS symbols.
 4. Coordinate Frame: Subtle grid or frame with coordinates.
 5. Clear Legend: Explaining all symbols and colors in Arabic.
-6. Elegant Glass-Style Side Panels (Concise Insights in Arabic):
-   - Overall condition related to "${input.analysisTopic}".
-   - Key strengths.
-   - Key weaknesses.
-   - Spatial patterns.
-   - Infrastructure/service observations.
-   - Environmental or land-related role.
+6. NO side panels or text boxes. Focus entirely on the map visualization.
 
 BRANDING:
 - Watermark: "TANNMYAA Intelligence" in a subtle, professional location.
@@ -989,81 +1000,45 @@ ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
         throw new Error("Spatial analysis image generation failed.");
     });
 
-    // 3. Generate Report
-    const reportPromise = withRetry(async () => {
-    const reportPrompt = `
-Analyze the "${input.analysisTopic}" for "${input.cityName}" at scale "${input.scale}".
+    const imageUrl = await imagePromise;
 
-TASK: Provide a detailed, professional urban planning report based on extensive, multilingual scientific research.
+    // 3. Generate Interactive Data
+    const interactiveDataPromise = withRetry(async () => {
+        const dataPrompt = `
+        As an Urban GIS Expert, generate a set of interactive analysis points and zones for the following study:
+        City: ${input.cityName}
+        Scale/Area: ${input.scale}
+        Topic: ${input.analysisTopic}
 
-DATA SOURCES TO ANALYZE:
-- Official published data and government records.
-- Peer-reviewed academic research and urban planning journals.
-- Satellite imagery and geospatial platforms.
-- Reference maps from reliable sources.
+        The data should provide "Deep Analysis" insights that can be displayed as an interactive layer on a map.
+        If the Scale/Area contains coordinates (e.g., "Bounds: [[lat, lng], [lat, lng]]"), ensure the points and zones are strictly within those bounds.
+        If no coordinates are provided, use your knowledge of ${input.cityName} to place points in relevant locations.
 
-STRUCTURE:
-1. Key Insights: Summary of the current state and critical findings.
-2. Spatial Analysis: Detailed breakdown of patterns, observations, and spatial relationships.
-3. Recommendations:
-   - Short-term actions (immediate interventions).
-   - Long-term strategic goals (future planning).
-4. Methodology: Clear explanation of data sources and analysis techniques used.
+        Return a JSON object with:
+        - points: Array of objects { lat, lng, title, description, type: 'insight' | 'warning' | 'opportunity' | 'data' }
+        - zones: Array of objects { bounds: [[lat1, lng1], [lat2, lng2]], title, description, color }
 
-LANGUAGE: Arabic.
+        Provide at least 5-8 significant points and 2-3 key zones.
+        Ensure descriptions are professional, technical, and data-driven.
+        `;
 
-${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
-`;
-
-        const reportResponse = await ai.models.generateContent({
+        const response = await ai.models.generateContent({
             model: 'gemini-3.1-pro-preview',
-            contents: { parts: [...parts, { text: reportPrompt }] },
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        keyInsights: {
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING },
-                            description: "3-5 concise bullet points"
-                        },
-                        spatialAnalysis: {
-                            type: Type.STRING,
-                            description: "Explanation of key patterns, trends, and findings"
-                        },
-                        shortTermActions: {
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING },
-                            description: "Short-term actionable recommendations"
-                        },
-                        longTermStrategies: {
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING },
-                            description: "Long-term strategic recommendations"
-                        },
-                        methodology: {
-                            type: Type.OBJECT,
-                            properties: {
-                                dataSources: { type: Type.ARRAY, items: { type: Type.STRING } },
-                                toolsUsed: { type: Type.ARRAY, items: { type: Type.STRING } },
-                                approach: { type: Type.STRING }
-                            },
-                            required: ["dataSources", "toolsUsed", "approach"]
-                        }
-                    },
-                    required: ["keyInsights", "spatialAnalysis", "shortTermActions", "longTermStrategies", "methodology"]
-                }
+            contents: { parts: [{ text: dataPrompt }] },
+            config: { 
+                systemInstruction: `You are a world-class Urban GIS Analyst. Return strictly valid JSON. ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }]
             }
         });
 
-        return parseJsonResponse<SpatialAnalysisResult['report']>(reportResponse, 'SpatialAnalysisReport');
+        return parseJsonResponse<SpatialAnalysisResult['interactiveData']>(response, 'Spatial Interactive Data');
     });
 
-    const [imageUrl, report] = await Promise.all([imagePromise, reportPromise]);
+    const interactiveData = await interactiveDataPromise;
 
     await deductCredits(10, `Spatial Analysis for ${input.cityName}: ${input.analysisTopic}`);
-    return { imageUrl, report };
+    return { imageUrl, interactiveData };
 };
 
 export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string): Promise<UrbanDeepUnderstanding> => {
