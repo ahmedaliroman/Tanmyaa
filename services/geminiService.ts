@@ -893,8 +893,8 @@ export interface SpatialAnalysisResult {
 }
 
 export const generateSpatialAnalysis = async (
-    input: { cityName: string; scale: string; analysisTopic: string },
-    file?: File
+    input: { cityName: string; analysisTopic: string },
+    file: File
 ): Promise<SpatialAnalysisResult> => {
     const ai = getAi();
     
@@ -922,7 +922,6 @@ export const generateSpatialAnalysis = async (
         const imagePrompt = `
 Requested Input Parameters
 City Name: ${input.cityName}
-Scale or Area Required: ${input.scale}
 Analysis Topic: ${input.analysisTopic}
 
 URBAN PLANNING CONTEXT: You are a world-class Urban Planner and GIS Expert.
@@ -954,14 +953,14 @@ VISUAL STYLE:
 - STRICTLY 2D top-down schematic map.
 - No 3D perspective or tilted views.
 - Vertical layout (Portrait orientation).
-- Minimal text: Only essential labels and a title in Arabic.
+- Minimal text: Only essential labels and a title in English.
 
 MAP ELEMENTS:
-1. Central Main Map: Detailed spatial analysis of "${input.analysisTopic}" for the area at "${input.scale}".
+1. Central Main Map: Detailed spatial analysis of "${input.analysisTopic}" for the area shown in the uploaded map.
 2. Clear Classification: Use professional color palettes (e.g., heatmaps, choropleth, or point density).
 3. North Arrow & Scale Bar: Professional GIS symbols.
 4. Coordinate Frame: Subtle grid or frame with coordinates.
-5. Clear Legend: Explaining all symbols and colors in Arabic.
+5. Clear Legend: Explaining all symbols and colors in English.
 6. NO side panels or text boxes. Focus entirely on the map visualization.
 
 BRANDING:
@@ -1007,12 +1006,10 @@ ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
         const dataPrompt = `
         As an Urban GIS Expert, generate a set of interactive analysis points and zones for the following study:
         City: ${input.cityName}
-        Scale/Area: ${input.scale}
         Topic: ${input.analysisTopic}
 
         The data should provide "Deep Analysis" insights that can be displayed as an interactive layer on a map.
-        If the Scale/Area contains coordinates (e.g., "Bounds: [[lat, lng], [lat, lng]]"), ensure the points and zones are strictly within those bounds.
-        If no coordinates are provided, use your knowledge of ${input.cityName} to place points in relevant locations.
+        The language for all text (titles, descriptions) MUST be English.
 
         Return a JSON object with:
         - points: Array of objects { lat, lng, title, description, type: 'insight' | 'warning' | 'opportunity' | 'data' }

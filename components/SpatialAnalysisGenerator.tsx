@@ -33,16 +33,28 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
   const [capturedBounds, setCapturedBounds] = useState<LatLngBounds | undefined>(undefined);
   const [isInteractive, setIsInteractive] = useState(false);
 
-  const handleGenerate = async (cityName: string, scale: string, analysisTopic: string, file?: File, bounds?: LatLngBounds) => {
+  const handleGenerate = async (cityName: string, analysisTopic: string, file: File) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
     setProjectInfo({ cityName, analysisTopic });
-    setCapturedBounds(bounds);
+    setCapturedBounds(undefined);
     setIsInteractive(false);
 
     try {
-      const analysisResult = await generateSpatialAnalysis({ cityName, scale, analysisTopic }, file);
+      // Try to geocode the city to get bounds for the interactive map
+      try {
+        const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
+        const geoData = await geoResponse.json();
+        if (geoData && geoData.length > 0) {
+          const bbox = geoData[0].boundingbox; // [south, north, west, east]
+          setCapturedBounds(new L.LatLngBounds([parseFloat(bbox[0]), parseFloat(bbox[2])], [parseFloat(bbox[1]), parseFloat(bbox[3])]));
+        }
+      } catch (geoErr) {
+        console.warn("Geocoding failed, interactive map might not center correctly:", geoErr);
+      }
+
+      const analysisResult = await generateSpatialAnalysis({ cityName, analysisTopic }, file);
       setResult(analysisResult);
       await refreshProfile();
     } catch (err: unknown) {
@@ -83,6 +95,32 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
     }
 
     doc.save(`Spatial_Analysis_Map_${projectInfo.cityName.replace(/\s+/g, '_')}.pdf`);
+  };
+
+  const handleUpdatePoint = (idx: number, updates: Partial<typeof result.interactiveData.points[0]>) => {
+    if (!result || !result.interactiveData) return;
+    const newPoints = [...result.interactiveData.points];
+    newPoints[idx] = { ...newPoints[idx], ...updates };
+    setResult({
+      ...result,
+      interactiveData: {
+        ...result.interactiveData,
+        points: newPoints
+      }
+    });
+  };
+
+  const handleUpdateZone = (idx: number, updates: Partial<typeof result.interactiveData.zones[0]>) => {
+    if (!result || !result.interactiveData || !result.interactiveData.zones) return;
+    const newZones = [...result.interactiveData.zones];
+    newZones[idx] = { ...newZones[idx], ...updates };
+    setResult({
+      ...result,
+      interactiveData: {
+        ...result.interactiveData,
+        zones: newZones
+      }
+    });
   };
 
   const renderInputForm = () => (
@@ -191,10 +229,19 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
                         }}
                       >
                         <Popup className="custom-leaflet-popup">
-                          <div className="p-1 min-w-[180px]">
-                            <h4 className="font-bold text-blue-400 text-sm mb-1">{zone.title}</h4>
-                            <p className="text-[11px] text-gray-200 leading-relaxed">{zone.description}</p>
-                          </div>
+                            <div className="p-1 min-w-[180px]">
+                              <input 
+                                className="font-bold text-blue-400 text-sm mb-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 rounded w-full"
+                                value={zone.title}
+                                onChange={(e) => handleUpdateZone(idx, { title: e.target.value })}
+                              />
+                              <textarea 
+                                className="text-[11px] text-gray-200 leading-relaxed bg-transparent border-none focus:ring-1 focus:ring-blue-500 rounded w-full resize-none"
+                                value={zone.description}
+                                rows={3}
+                                onChange={(e) => handleUpdateZone(idx, { description: e.target.value })}
+                              />
+                            </div>
                         </Popup>
                       </Rectangle>
                     ))}
@@ -214,21 +261,39 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
                         }}
                       >
                         <Popup className="custom-leaflet-popup">
-                          <div className="p-1 min-w-[200px]">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className={`w-2 h-2 rounded-full ${
-                                point.type === 'warning' ? 'bg-red-500' : 
-                                point.type === 'opportunity' ? 'bg-green-500' : 
-                                point.type === 'insight' ? 'bg-blue-500' : 'bg-yellow-500'
-                              }`} />
-                              <h4 className="font-bold text-white text-sm">{point.title}</h4>
+                            <div className="p-1 min-w-[200px]">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  point.type === 'warning' ? 'bg-red-500' : 
+                                  point.type === 'opportunity' ? 'bg-green-500' : 
+                                  point.type === 'insight' ? 'bg-blue-500' : 'bg-yellow-500'
+                                }`} />
+                                <input 
+                                  className="font-bold text-white text-sm bg-transparent border-none focus:ring-1 focus:ring-blue-500 rounded w-full"
+                                  value={point.title}
+                                  onChange={(e) => handleUpdatePoint(idx, { title: e.target.value })}
+                                />
+                              </div>
+                              <textarea 
+                                className="text-[11px] text-gray-300 leading-relaxed mb-2 bg-transparent border-none focus:ring-1 focus:ring-blue-500 rounded w-full resize-none"
+                                value={point.description}
+                                rows={3}
+                                onChange={(e) => handleUpdatePoint(idx, { description: e.target.value })}
+                              />
+                              <div className="pt-2 border-t border-gray-800 flex justify-between items-center">
+                                <select 
+                                  className="text-[9px] uppercase font-black text-gray-500 tracking-[0.2em] bg-transparent border-none focus:ring-1 focus:ring-blue-500 rounded"
+                                  value={point.type}
+                                  onChange={(e) => handleUpdatePoint(idx, { type: e.target.value as 'insight' | 'warning' | 'opportunity' | 'data' })}
+                                >
+                                  <option value="insight">INSIGHT</option>
+                                  <option value="warning">WARNING</option>
+                                  <option value="opportunity">OPPORTUNITY</option>
+                                  <option value="data">DATA</option>
+                                </select>
+                                <span className="text-[9px] text-blue-400 font-bold">EDITABLE_ANALYSIS</span>
+                              </div>
                             </div>
-                            <p className="text-[11px] text-gray-300 leading-relaxed mb-2">{point.description}</p>
-                            <div className="pt-2 border-t border-gray-800 flex justify-between items-center">
-                              <span className="text-[9px] uppercase font-black text-gray-500 tracking-[0.2em]">{point.type}</span>
-                              <span className="text-[9px] text-blue-400 font-bold">DEEP_ANALYSIS_V1</span>
-                            </div>
-                          </div>
                         </Popup>
                       </CircleMarker>
                     ))}
