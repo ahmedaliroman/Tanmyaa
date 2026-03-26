@@ -5,7 +5,8 @@ import { LatLngBounds, LatLng } from 'leaflet';
 import { Maximize, Minimize, MousePointer2, Square } from 'lucide-react';
 
 interface MapSelectorProps {
-  onBoundsChange: (bounds: string, rawBounds?: LatLngBounds) => void;
+  onBoundsChange: (bounds: string) => void;
+  onRawBoundsChange?: (bounds: { north: number, south: number, east: number, west: number } | null) => void;
   cityName?: string;
   disabled?: boolean;
 }
@@ -88,9 +89,18 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, dis
     if (selectedBounds) {
       const ne = selectedBounds.getNorthEast();
       const sw = selectedBounds.getSouthWest();
-      onBoundsChange(`Selected Area - North: ${ne.lat.toFixed(4)}, South: ${sw.lat.toFixed(4)}, East: ${ne.lng.toFixed(4)}, West: ${sw.lng.toFixed(4)}`, selectedBounds);
+      onBoundsChange(`Selected Area - North: ${ne.lat.toFixed(4)}, South: ${sw.lat.toFixed(4)}, East: ${ne.lng.toFixed(4)}, West: ${sw.lng.toFixed(4)}`);
+      if (onRawBoundsChange) {
+        onRawBoundsChange({
+          north: ne.lat,
+          south: sw.lat,
+          east: ne.lng,
+          west: sw.lng
+        });
+      }
     } else {
-      onBoundsChange('', undefined);
+      onBoundsChange('');
+      if (onRawBoundsChange) onRawBoundsChange(null);
     }
   }, [selectedBounds, onBoundsChange]);
 
@@ -110,24 +120,24 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, dis
       {isFullscreen && (
         <div className="fixed inset-0 bg-black/80 z-[9998] backdrop-blur-sm" onClick={() => setIsFullscreen(false)} />
       )}
-      <div className={`${isFullscreen ? 'fixed inset-4 md:inset-10 z-[9999] bg-white p-4 rounded-[32px] shadow-2xl flex flex-col' : 'h-80 w-full relative'} rounded-[24px] overflow-hidden border border-black/[0.05] transition-all duration-300 ${disabled && !isFullscreen ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className={`${isFullscreen ? 'fixed inset-4 md:inset-10 z-[9999] bg-gray-900 p-4 rounded-2xl shadow-2xl flex flex-col' : 'h-80 w-full relative'} rounded-xl overflow-hidden border border-gray-700 transition-all duration-300 ${disabled && !isFullscreen ? 'opacity-50 pointer-events-none' : ''}`}>
         
         {/* Toolbar */}
         <div className={`absolute top-4 right-4 z-[400] flex flex-col gap-2 ${isFullscreen ? 'top-8 right-8' : ''}`}>
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="bg-white/80 backdrop-blur-md text-gray-800 p-3 rounded-2xl shadow-sm hover:bg-white transition-all active:scale-90"
+          className="bg-white text-gray-800 p-2 rounded shadow hover:bg-gray-100 transition-colors"
           title={isFullscreen ? "Minimize" : "Maximize"}
         >
           {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
         </button>
         
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm flex flex-col overflow-hidden mt-2">
+        <div className="bg-white rounded shadow flex flex-col overflow-hidden mt-2">
           <button
             type="button"
             onClick={() => setIsDrawing(false)}
-            className={`p-3 transition-all active:scale-90 ${!isDrawing ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-white'}`}
+            className={`p-2 transition-colors ${!isDrawing ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
             title="Pan/Navigate"
           >
             <MousePointer2 size={20} />
@@ -135,7 +145,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, dis
           <button
             type="button"
             onClick={() => setIsDrawing(true)}
-            className={`p-3 transition-all active:scale-90 border-t border-black/[0.05] ${isDrawing ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-white'}`}
+            className={`p-2 transition-colors border-t border-gray-200 ${isDrawing ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
             title="Draw Selection Area"
           >
             <Square size={20} />
@@ -146,14 +156,14 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, dis
           <button
             type="button"
             onClick={clearSelection}
-            className="bg-red-500/90 backdrop-blur-md text-white p-3 rounded-2xl shadow-sm hover:bg-red-600 transition-all active:scale-90 mt-2"
+            className="bg-red-500 text-white p-2 rounded shadow hover:bg-red-600 transition-colors mt-2 text-xs font-bold"
           >
-            <Square size={20} className="rotate-45" />
+            Clear
           </button>
         )}
       </div>
 
-      <div className="flex-1 rounded-2xl overflow-hidden h-full">
+      <div className={`flex-1 rounded-lg overflow-hidden ${isFullscreen ? 'h-full' : 'h-full'}`}>
         <MapContainer 
           center={[24.7136, 46.6753]} 
           zoom={11} 
@@ -179,18 +189,18 @@ const MapSelector: React.FC<MapSelectorProps> = ({ onBoundsChange, cityName, dis
       </div>
 
       {!selectedBounds && !isDrawing && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[400] bg-white/90 backdrop-blur-md text-[11px] text-gray-800 px-5 py-2.5 rounded-full pointer-events-none text-center border border-black/[0.05] shadow-sm font-medium">
-          Select area using the square tool
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[400] bg-black/70 backdrop-blur text-xs text-white px-4 py-2 rounded-full pointer-events-none text-center border border-gray-700 shadow-lg">
+          Click the square icon to draw your study area
         </div>
       )}
       {isDrawing && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[400] bg-blue-500 text-white text-[11px] px-5 py-2.5 rounded-full pointer-events-none text-center shadow-lg shadow-blue-500/20 font-medium">
-          Drag to select study area
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[400] bg-blue-600/90 backdrop-blur text-xs text-white px-4 py-2 rounded-full pointer-events-none text-center shadow-lg shadow-blue-500/30 animate-pulse">
+          Click and drag on the map to select the area
         </div>
       )}
       {selectedBounds && !isDrawing && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[400] bg-green-500 text-white text-[11px] px-5 py-2.5 rounded-full pointer-events-none text-center shadow-lg shadow-green-500/20 font-medium">
-          Area Selected
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[400] bg-green-600/90 backdrop-blur text-xs text-white px-4 py-2 rounded-full pointer-events-none text-center shadow-lg">
+          Area selected successfully
         </div>
       )}
       </div>

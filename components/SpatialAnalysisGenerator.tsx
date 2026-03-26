@@ -6,10 +6,7 @@ import SpatialAnalysisInputForm from './SpatialAnalysisInputForm';
 import { motion } from 'motion/react';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
-import { FileText, RefreshCw, BarChart3, Info, Layers, Map as MapIcon, Eye } from 'lucide-react';
-import { MapContainer, TileLayer, ImageOverlay } from 'react-leaflet';
-import { LatLngBounds } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { Download, FileText, RefreshCw, BarChart3, Info, Layers, Compass } from 'lucide-react';
 
 interface GeneratorProps {
   onUpgrade: () => void;
@@ -21,16 +18,12 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SpatialAnalysisResult | null>(null);
   const [projectInfo, setProjectInfo] = useState({ cityName: '', analysisTopic: '' });
-  const [capturedBounds, setCapturedBounds] = useState<LatLngBounds | undefined>(undefined);
-  const [isInteractive, setIsInteractive] = useState(false);
 
-  const handleGenerate = async (cityName: string, scale: string, analysisTopic: string, file?: File, bounds?: LatLngBounds) => {
+  const handleGenerate = async (cityName: string, scale: string, analysisTopic: string, file?: File) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
     setProjectInfo({ cityName, analysisTopic });
-    setCapturedBounds(bounds);
-    setIsInteractive(false);
 
     try {
       const analysisResult = await generateSpatialAnalysis({ cityName, scale, analysisTopic }, file);
@@ -189,120 +182,113 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
       key="result"
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="space-y-10 animate-fade-in max-w-7xl mx-auto"
+      className="space-y-8 animate-fade-in"
     >
-      {/* iOS Soft Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#007AFF] font-bold text-xs uppercase tracking-[0.2em]">
-            <BarChart3 size={14} />
-            Spatial Intelligence
-          </div>
-          <h2 className="text-4xl font-bold text-[#1C1C1E] tracking-tight">
-            {projectInfo.cityName}
+      {/* Professional Dashboard Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <BarChart3 className="text-blue-400" size={24} />
+            Spatial Intelligence Report
           </h2>
-          <p className="text-[#8E8E93] text-lg font-medium">
-            {projectInfo.analysisTopic}
+          <p className="text-gray-400 text-sm mt-1">
+            Analytical assessment of <span className="text-blue-400 font-medium">{projectInfo.cityName}</span> • {projectInfo.analysisTopic}
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <button 
-            onClick={() => setIsInteractive(!isInteractive)}
-            className={`ios-button flex items-center gap-2 text-sm shadow-lg transition-all ${isInteractive ? 'bg-[#007AFF] text-white shadow-blue-500/20' : 'bg-white text-[#1C1C1E] hover:bg-gray-50'}`}
-          >
-            {isInteractive ? <Eye size={16} /> : <MapIcon size={16} />}
-            {isInteractive ? 'Static View' : 'Interactive Map'}
-          </button>
+        <div className="flex flex-wrap gap-2">
           <button 
             onClick={generatePDF}
-            className="ios-button flex items-center gap-2 text-sm bg-white text-[#1C1C1E] hover:bg-gray-50 shadow-lg"
+            className="flex items-center gap-2 text-xs bg-white text-black hover:bg-gray-200 px-5 py-2.5 rounded-full font-bold transition-all shadow-lg shadow-white/5"
           >
-            <FileText size={16} />
-            Export PDF
+            <FileText size={14} />
+            Export PDF Report
+          </button>
+          <button 
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = res.imageUrl;
+              link.download = `spatial-analysis-${Date.now()}.png`;
+              link.click();
+            }}
+            className="flex items-center gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full font-bold transition-all shadow-lg shadow-blue-600/20"
+          >
+            <Download size={14} />
+            HD Map
           </button>
           <button 
             onClick={() => setResult(null)}
-            className="ios-button flex items-center gap-2 text-sm bg-black/[0.03] text-[#1C1C1E] hover:bg-black/[0.05]"
+            className="flex items-center gap-2 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-5 py-2.5 rounded-full font-bold transition-all border border-white/5"
           >
-            <RefreshCw size={16} />
-            Reset
+            <RefreshCw size={14} />
+            New Analysis
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Map Area */}
-        <div className="lg:col-span-8 space-y-10">
-          <div className="ios-card overflow-hidden relative group aspect-[16/10] flex flex-col">
-            <div className="absolute top-6 left-6 z-[1000] flex flex-col gap-2">
-              <div className="ios-glass px-4 py-2 rounded-2xl text-[11px] text-[#1C1C1E] font-bold flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                {isInteractive ? 'INTERACTIVE_GEOSPATIAL' : 'ANALYTICAL_STATIC'}
+        <div className="lg:col-span-3 space-y-6">
+          <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative group">
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+              <div className="bg-black/60 backdrop-blur-md border border-white/10 p-2 rounded-lg text-[10px] text-white/80 font-mono flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                LIVE_ANALYSIS_STREAM
               </div>
             </div>
             
-            <div className="flex-1 relative bg-[#F2F2F7]">
-              {isInteractive && capturedBounds ? (
-                <MapContainer 
-                  bounds={capturedBounds} 
-                  style={{ height: '100%', width: '100%' }}
-                  zoomControl={false}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                  />
-                  <ImageOverlay
-                    url={res.imageUrl}
-                    bounds={capturedBounds}
-                    opacity={0.8}
-                  />
-                </MapContainer>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center p-4">
-                  <img 
-                    src={res.imageUrl} 
-                    alt="Spatial Analysis Result" 
-                    className="max-w-full max-h-full object-contain rounded-xl shadow-sm"
-                    referrerPolicy="no-referrer"
-                  />
+            <div className="absolute bottom-4 right-4 z-10">
+              <div className="bg-black/60 backdrop-blur-md border border-white/10 p-3 rounded-xl flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-[10px] text-white/60 font-mono uppercase tracking-widest">
+                  <Compass size={12} /> Orientation
                 </div>
-              )}
-              
+                <div className="flex items-center justify-center py-1">
+                   <div className="w-8 h-8 border-2 border-white/20 rounded-full flex items-center justify-center relative">
+                      <div className="w-0.5 h-4 bg-blue-500 absolute -top-1" />
+                      <span className="text-[8px] font-bold">N</span>
+                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative aspect-[16/9] bg-[#050508] flex items-center justify-center">
+              <img 
+                src={res.imageUrl} 
+                alt="Spatial Analysis Result" 
+                className="max-w-full max-h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
               {/* Grid Overlay for Technical Feel */}
-              {!isInteractive && (
-                <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 
-                     style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-              )}
+              <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 
+                   style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
             </div>
             
-            <div className="px-8 py-5 bg-white border-t border-black/[0.03] flex items-center justify-between">
-              <div className="flex items-center gap-6">
+            <div className="p-4 bg-black/40 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#007AFF] shadow-sm" />
-                  <span className="text-[11px] text-[#8E8E93] font-bold uppercase tracking-wider">Primary Zone</span>
+                  <div className="w-3 h-3 rounded-sm bg-blue-500/80 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                  <span className="text-[10px] text-gray-400 font-mono uppercase tracking-wider">Primary Zone</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#FF9500] shadow-sm" />
-                  <span className="text-[11px] text-[#8E8E93] font-bold uppercase tracking-wider">Impact Area</span>
+                  <div className="w-3 h-3 rounded-sm bg-orange-500/80 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                  <span className="text-[10px] text-gray-400 font-mono uppercase tracking-wider">Impact Area</span>
                 </div>
               </div>
-              <div className="text-[11px] text-[#8E8E93] font-medium">
-                SCALE: 1:25,000 | DATUM: WGS 84
+              <div className="text-[10px] text-gray-500 font-mono">
+                COORD: 24.7136° N, 46.6753° E | SCALE: 1:25,000
               </div>
             </div>
           </div>
 
           {/* Detailed Analysis Text */}
-          <div className="ios-card p-10">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-[#007AFF]/10 rounded-2xl flex items-center justify-center text-[#007AFF]">
-                <Layers size={24} />
+          <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-8 shadow-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400">
+                <Layers size={20} />
               </div>
-              <h3 className="text-2xl font-bold text-[#1C1C1E] tracking-tight">Spatial Narrative</h3>
+              <h3 className="text-xl font-bold text-white">Spatial Narrative</h3>
             </div>
-            <div className="prose prose-slate max-w-none">
-              <p className="text-[#1C1C1E] leading-relaxed text-xl font-medium opacity-90">
+            <div className="prose prose-invert max-w-none">
+              <p className="text-gray-400 leading-relaxed text-lg italic font-serif">
                 {res.report.spatialAnalysis}
               </p>
             </div>
@@ -310,39 +296,39 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
         </div>
 
         {/* Sidebar Insights */}
-        <div className="lg:col-span-4 space-y-8">
-          <div className="ios-card p-8">
-            <h3 className="text-xs font-bold text-[#007AFF] uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <Info size={14} /> Critical Insights
+        <div className="space-y-6">
+          <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-6 shadow-xl">
+            <h3 className="text-xs font-bold text-blue-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+              <Info size={14} /> Key Insights
             </h3>
-            <div className="space-y-5">
+            <div className="space-y-4">
               {res.report.keyInsights.map((insight, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="mt-1.5 w-2 h-2 rounded-full bg-[#007AFF] shrink-0" />
-                  <p className="text-[15px] text-[#1C1C1E] font-medium leading-normal">{insight}</p>
+                <div key={i} className="flex gap-3 group">
+                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:scale-150 transition-transform" />
+                  <p className="text-sm text-gray-300 leading-snug">{insight}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="ios-card p-8">
-            <h3 className="text-xs font-bold text-[#34C759] uppercase tracking-[0.2em] mb-6">Strategic Roadmap</h3>
-            <div className="space-y-8">
+          <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-6 shadow-xl">
+            <h3 className="text-xs font-bold text-green-400 uppercase tracking-[0.2em] mb-4">Strategic Actions</h3>
+            <div className="space-y-6">
               <div>
-                <h4 className="text-[11px] text-[#8E8E93] font-bold uppercase mb-4 tracking-widest">Short-term Actions</h4>
-                <div className="space-y-3">
+                <h4 className="text-[10px] text-gray-500 font-bold uppercase mb-2">Short-term</h4>
+                <div className="space-y-2">
                   {res.report.shortTermActions.slice(0, 3).map((action, i) => (
-                    <div key={i} className="text-sm text-[#1C1C1E] bg-black/[0.02] p-4 rounded-2xl font-medium">
+                    <div key={i} className="text-xs text-gray-300 bg-white/5 p-2 rounded-lg border border-white/5">
                       {action}
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <h4 className="text-[11px] text-[#8E8E93] font-bold uppercase mb-4 tracking-widest">Long-term Strategies</h4>
-                <div className="space-y-3">
+                <h4 className="text-[10px] text-gray-500 font-bold uppercase mb-2">Long-term</h4>
+                <div className="space-y-2">
                   {res.report.longTermStrategies.slice(0, 3).map((strategy, i) => (
-                    <div key={i} className="text-sm text-[#1C1C1E] bg-black/[0.02] p-4 rounded-2xl font-medium">
+                    <div key={i} className="text-xs text-gray-300 bg-white/5 p-2 rounded-lg border border-white/5">
                       {strategy}
                     </div>
                   ))}
@@ -351,24 +337,24 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
             </div>
           </div>
 
-          <div className="bg-[#007AFF]/5 border border-[#007AFF]/10 rounded-[32px] p-8">
-            <h3 className="text-[11px] font-bold text-[#007AFF] uppercase tracking-widest mb-4">Technical Metadata</h3>
-            <div className="space-y-3 font-mono text-[11px]">
+          <div className="bg-blue-600/10 border border-blue-500/20 rounded-3xl p-6">
+            <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3">Technical Metadata</h3>
+            <div className="space-y-2 font-mono text-[10px]">
               <div className="flex justify-between">
-                <span className="text-[#8E8E93]">ENGINE:</span>
-                <span className="text-[#007AFF] font-bold">TANMYAA_SPATIAL_V3</span>
+                <span className="text-gray-500">ENGINE:</span>
+                <span className="text-blue-300">TANMYAA_SPATIAL_V3</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#8E8E93]">DATA_SRC:</span>
-                <span className="text-[#007AFF] font-bold">OPEN_GEOSPATIAL_NET</span>
+                <span className="text-gray-500">DATA_SRC:</span>
+                <span className="text-blue-300">OPEN_GEOSPATIAL_NET</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#8E8E93]">ACCURACY:</span>
-                <span className="text-[#007AFF] font-bold">96.8%_VALIDATED</span>
+                <span className="text-gray-500">ACCURACY:</span>
+                <span className="text-blue-300">96.8%_VALIDATED</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#8E8E93]">PROJECTION:</span>
-                <span className="text-[#007AFF] font-bold">EPSG:4326</span>
+                <span className="text-gray-500">PROJECTION:</span>
+                <span className="text-blue-300">EPSG:4326</span>
               </div>
             </div>
           </div>
@@ -376,28 +362,28 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
       </div>
       
       {/* Footer Methodology */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 border-t border-black/[0.05]">
-        <div className="space-y-3">
-          <h3 className="text-[#8E8E93] font-bold uppercase text-[11px] tracking-widest">Methodology</h3>
-          <p className="text-sm text-[#1C1C1E] font-medium leading-relaxed opacity-80">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-white/10">
+        <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+          <h3 className="text-gray-500 font-bold mb-3 uppercase text-[10px] tracking-widest">Methodology</h3>
+          <p className="text-xs text-gray-400 leading-relaxed">
             {res.report.methodology.approach}
           </p>
         </div>
-        <div className="space-y-3">
-          <h3 className="text-[#8E8E93] font-bold uppercase text-[11px] tracking-widest">Data Sources</h3>
+        <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+          <h3 className="text-gray-500 font-bold mb-3 uppercase text-[10px] tracking-widest">Data Sources</h3>
           <div className="flex flex-wrap gap-2">
             {res.report.methodology.dataSources.map((src, i) => (
-              <span key={i} className="text-[10px] bg-white text-[#1C1C1E] px-3 py-1.5 rounded-xl border border-black/[0.05] font-bold">
+              <span key={i} className="text-[9px] bg-black/40 text-gray-400 px-2 py-1 rounded border border-white/5 uppercase">
                 {src}
               </span>
             ))}
           </div>
         </div>
-        <div className="space-y-3">
-          <h3 className="text-[#8E8E93] font-bold uppercase text-[11px] tracking-widest">Analytical Tools</h3>
+        <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+          <h3 className="text-gray-500 font-bold mb-3 uppercase text-[10px] tracking-widest">Analytical Tools</h3>
           <div className="flex flex-wrap gap-2">
             {res.report.methodology.toolsUsed.map((tool, i) => (
-              <span key={i} className="text-[10px] bg-[#007AFF]/10 text-[#007AFF] px-3 py-1.5 rounded-xl border border-[#007AFF]/10 font-bold">
+              <span key={i} className="text-[9px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded border border-blue-500/20 uppercase">
                 {tool}
               </span>
             ))}
