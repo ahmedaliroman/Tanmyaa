@@ -924,8 +924,8 @@ Requested Input Parameters
 City Name: ${input.cityName}
 Analysis Topic: ${input.analysisTopic}
 
-URBAN PLANNING CONTEXT: You are a world-class Urban Planner and GIS Expert.
-TASK: Generate a professional, analytical urban map for "${input.cityName}" regarding "${input.analysisTopic}".
+URBAN PLANNING CONTEXT: You are a world-class Urban Planner, GIS Expert, and Architectural Illustrator.
+TASK: Generate a professional, high-end analytical urban map for "${input.cityName}" regarding "${input.analysisTopic}".
 
 EXECUTION RULES (STRICT):
 - Do not explain.
@@ -947,25 +947,31 @@ Analyze the "${input.analysisTopic}" based on:
 
 Conduct internal multilingual scientific research on the city based on the selected Analysis Topic, relying on reliable published sources. Ensure all detailing and linking to real positions on the map is highly accurate.
 
-VISUAL STYLE:
-- Professional analytical urban map (ArcGIS Pro style).
-- Cinematic, high-end cartographic quality.
-- STRICTLY 2D top-down schematic map.
-- No 3D perspective or tilted views.
+VISUAL STYLE & AESTHETIC (CRITICAL):
+- Professional architectural and urban planning aesthetic (inspired by high-end design competitions).
+- Clean, minimalist, and sophisticated cartographic style.
+- Base Map: Use a clean, muted base map (light gray, off-white, or subtle parchment texture) to allow analytical layers to stand out.
+- Symbology: Use professional urban planning symbols:
+    * Bold, elegant flow arrows for movement and dynamics.
+    * Distinct dashed or dotted lines for study area boundaries and perimeters.
+    * Professional hatched or stippled patterns for specific land-use zones or density areas.
+    * Clear, distinct circular nodes or hubs for key intersections and focal points.
+- Color Palette: Use a sophisticated and intentional color palette (e.g., deep navy for water, muted sage for green spaces, warm terracotta for arterial roads, and charcoal for dense urban fabric).
+- STRICTLY 2D top-down schematic map. No 3D perspective or tilted views.
 - Vertical layout (Portrait orientation).
 - Minimal text: Only essential labels and a title in English.
 
 MAP ELEMENTS:
 1. Central Main Map: Detailed spatial analysis of "${input.analysisTopic}" for the area shown in the uploaded map.
-2. Clear Classification: Use professional color palettes (e.g., heatmaps, choropleth, or point density).
-3. North Arrow & Scale Bar: Professional GIS symbols.
+2. High-Precision Detailing: Include building footprints, distinct road hierarchies (primary, secondary, tertiary), and clear markers for key landmarks.
+3. North Arrow & Scale Bar: Elegant, minimalist GIS symbols.
 4. Coordinate Frame: Subtle grid or frame with coordinates.
-5. Clear Legend: Explaining all symbols and colors in English.
+5. Comprehensive Legend: An elegant legend explaining all symbols, line types, and colors in English.
 6. NO side panels or text boxes. Focus entirely on the map visualization.
 
 BRANDING:
 - Watermark: "TANNMYAA Intelligence" in a subtle, professional location.
-- Engine Name: "TANNMYAA_SPATIAL_V3".
+- Engine Name: "TANNMYAA_SPATIAL_V4".
 
 ${file ? 'IMAGE EDITING INSTRUCTIONS: Use the provided map as the EXACT study area and primary "Google Earth" style reference. Overlay the analysis directly onto this geography with high precision. Ensure all labels and analytical markers are accurately linked to the real positions shown in the image. Do not zoom out or change the urban fabric. Preserve the original street layout and buildings.' : ''}
 
@@ -1004,21 +1010,21 @@ ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     // 3. Generate Interactive Data
     const interactiveDataPromise = withRetry(async () => {
         const dataPrompt = `
-        As an Urban GIS Expert, generate a set of interactive analysis points and zones for the following study:
+        As a world-class Urban GIS Expert and Strategic Planner, generate a set of high-precision interactive analysis points and zones for the following study:
         City: ${input.cityName}
         Topic: ${input.analysisTopic}
 
         CRITICAL: Use the provided map/satellite image as your primary "Google Earth" style reference. Ensure all coordinates (lat, lng) and bounds are precisely linked to the real-world positions and urban fabric shown in the image. The goal is maximum accuracy in coordination and orientation.
 
-        The data should provide "Deep Analysis" insights that can be displayed as an interactive layer on a map.
+        The data should provide "Deep Analysis" insights that align with professional urban planning standards (e.g., identifying strategic nodes, movement corridors, development opportunities, and critical constraints).
         The language for all text (titles, descriptions) MUST be English.
 
         Return a JSON object with:
         - points: Array of objects { lat, lng, title, description, type: 'insight' | 'warning' | 'opportunity' | 'data' }
         - zones: Array of objects { bounds: [[lat1, lng1], [lat2, lng2]], title, description, color }
 
-        Provide at least 5-8 significant points and 2-3 key zones.
-        Ensure descriptions are professional, technical, and data-driven.
+        Provide at least 6-10 significant points and 3-5 key zones.
+        Ensure descriptions are professional, technical, and data-driven, using urban planning terminology (e.g., "transit-oriented development," "urban heat island effect," "permeability," "land-use conflict").
         `;
 
         const response = await ai.models.generateContent({

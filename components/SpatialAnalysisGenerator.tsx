@@ -196,6 +196,10 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
               <div className="w-2 h-2 rounded-full bg-green-500" />
               {isInteractive ? 'INTERACTIVE_GEOSPATIAL' : 'ANALYTICAL_STATIC'}
             </div>
+            <div className="bg-blue-600/20 backdrop-blur-md border border-blue-500/20 px-4 py-2 rounded-2xl text-[10px] text-blue-300 font-bold flex items-center gap-2">
+              <BarChart3 size={12} />
+              PROFESSIONAL_CARTOGRAPHIC_STANDARD
+            </div>
           </div>
           
           <div className="flex-1 relative bg-black/40">
@@ -320,19 +324,31 @@ const SpatialAnalysisGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
             )}
           </div>
           
-          <div className="px-8 py-5 bg-gray-900/50 border-t border-gray-800 flex items-center justify-between">
-            <div className="flex items-center gap-6">
+          <div className="px-8 py-6 bg-gray-900/50 border-t border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm" />
-                <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Primary Zone</span>
+                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Strategic Node</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500 shadow-sm" />
-                <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Impact Area</span>
+                <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Opportunity Area</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Critical Constraint</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Data Point</span>
               </div>
             </div>
-            <div className="text-[11px] text-gray-500 font-medium">
-              ENGINE: TANNMYAA_SPATIAL_V3 | DATUM: WGS 84
+            <div className="text-[10px] text-gray-500 font-bold tracking-widest uppercase flex items-center gap-4">
+              <span>ENGINE: TANNMYAA_SPATIAL_V4</span>
+              <span className="w-1 h-1 rounded-full bg-gray-700" />
+              <span>DATUM: WGS 84</span>
+              <span className="w-1 h-1 rounded-full bg-gray-700" />
+              <span>PRECISION: HIGH</span>
             </div>
           </div>
         </div>
