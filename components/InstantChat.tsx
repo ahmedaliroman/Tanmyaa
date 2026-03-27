@@ -3,6 +3,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { sendMessageToInstantChatStream } from '../services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
 import { useAuth } from '../context/AuthContext';
+import { BrandingInfo } from '../types';
 
 interface Message {
     sender: 'user' | 'ai';
@@ -63,7 +64,16 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
                 parts: [{ text: msg.text }]
             }));
 
-            const stream = await sendMessageToInstantChatStream(currentInput, history);
+            const branding: BrandingInfo = {
+                logo: profile?.branding_logo || '',
+                colors: profile?.branding_colors || '',
+                presentation_template: profile?.branding_presentation_template || '',
+                presentation_template_url: profile?.branding_presentation_template_url || '',
+                report_template: profile?.branding_report_template || '',
+                report_template_url: profile?.branding_report_template_url || ''
+            };
+
+            const stream = await sendMessageToInstantChatStream(currentInput, history, profile?.plan, branding);
             
             setMessages(prev => [...prev, { sender: 'ai', text: '' }]);
             let responseReceived = false;

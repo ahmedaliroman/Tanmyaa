@@ -3,25 +3,35 @@ import { toast } from 'sonner';
 import { useBranding } from '../hooks/useBranding';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { FileText, Upload, X, Check } from 'lucide-react';
+import { FileText, Upload, X, Check, Image as ImageIcon } from 'lucide-react';
 
 const BrandingManager: React.FC = () => {
     const { profile } = useAuth();
     const { 
         logo, saveLogo, removeLogo, 
         colors, saveColors, removeColors,
-        template, saveTemplate, removeTemplate,
-        templateUrl, saveTemplateUrl, removeTemplateUrl
+        presentationTemplate, savePresentationTemplate, removePresentationTemplate,
+        presentationTemplateUrl, savePresentationTemplateUrl, removePresentationTemplateUrl,
+        reportTemplate, saveReportTemplate, removeReportTemplate,
+        reportTemplateUrl, saveReportTemplateUrl, removeReportTemplateUrl
     } = useBranding();
 
     const [logoPreview, setLogoPreview] = useState<string | null>(logo);
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [colorsText, setColorsText] = useState(colors || '');
-    const [templateText, setTemplateText] = useState(template || '');
-    const [templatePdfFile, setTemplatePdfFile] = useState<File | null>(null);
+    
+    // Presentation Template State
+    const [presentationTemplateText, setPresentationTemplateText] = useState(presentationTemplate || '');
+    const [presentationFile, setPresentationFile] = useState<File | null>(null);
+    
+    // Report Template State
+    const [reportTemplateText, setReportTemplateText] = useState(reportTemplate || '');
+    const [reportFile, setReportFile] = useState<File | null>(null);
+
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const presentationInputRef = useRef<HTMLInputElement>(null);
+    const reportInputRef = useRef<HTMLInputElement>(null);
 
     const isBusiness = profile?.plan === 'Business';
 
@@ -42,19 +52,44 @@ const BrandingManager: React.FC = () => {
         }
     };
 
-    const handlePdfChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'presentation' | 'report') => {
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
-            if (selectedFile.type !== 'application/pdf') {
-                toast.error("Please upload a PDF file.");
+            const isPdf = selectedFile.type === 'application/pdf';
+            const isImage = selectedFile.type.startsWith('image/');
+            
+            if (!isPdf && !isImage) {
+                toast.error("Please upload a PDF or an Image file.");
                 return;
             }
             if (selectedFile.size > 5 * 1024 * 1024) { // 5MB limit
-                toast.error("PDF is too large. Please upload a file under 5MB.");
+                toast.error("File is too large. Please upload a file under 5MB.");
                 return;
             }
-            setTemplatePdfFile(selectedFile);
+            
+            if (type === 'presentation') {
+                setPresentationFile(selectedFile);
+            } else {
+                setReportFile(selectedFile);
+            }
         }
+    };
+
+    const uploadBrandingFile = async (file: File, prefix: string) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${profile?.id}/${prefix}_${Date.now()}.${fileExt}`;
+        
+        const { data, error: uploadError } = await supabase.storage
+            .from('branding')
+            .upload(fileName, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('branding')
+            .getPublicUrl(data.path);
+        
+        return publicUrl;
     };
 
     const handleSaveAll = async () => {
@@ -66,7 +101,8 @@ const BrandingManager: React.FC = () => {
         setIsSaving(true);
         try {
             let finalLogoUrl = logo;
-            let finalTemplateUrl = templateUrl;
+            let finalPresentationUrl = presentationTemplateUrl;
+            let finalReportUrl = reportTemplateUrl;
 
             // 1. Handle Logo Upload (if new file)
             if (logoPreview && logoFile) {
@@ -74,47 +110,49 @@ const BrandingManager: React.FC = () => {
                 finalLogoUrl = logoPreview;
             }
             
-            // 2. Handle PDF Template Upload
-            if (templatePdfFile) {
-                const fileExt = templatePdfFile.name.split('.').pop();
-                const fileName = `${profile?.id}/template_${Date.now()}.${fileExt}`;
-                
-                const { data, error: uploadError } = await supabase.storage
-                    .from('branding')
-                    .upload(fileName, templatePdfFile, { upsert: true });
-
-                if (uploadError) throw uploadError;
-
-                const { data: { publicUrl } } = supabase.storage
-                    .from('branding')
-                    .getPublicUrl(data.path);
-                
-                finalTemplateUrl = publicUrl;
-                saveTemplateUrl(publicUrl);
-                setTemplatePdfFile(null);
+            // 2. Handle Presentation Template Upload
+            if (presentationFile) {
+                finalPresentationUrl = await uploadBrandingFile(presentationFile, 'presentation');
+                savePresentationTemplateUrl(finalPresentationUrl);
+                setPresentationFile(null);
             }
 
-            // 3. Save Text Fields
+            // 3. Handle Report Template Upload
+            if (reportFile) {
+                finalReportUrl = await uploadBrandingFile(reportFile, 'report');
+                saveReportTemplateUrl(finalReportUrl);
+                setReportFile(null);
+            }
+
+            // 4. Save Text Fields
             if (colorsText.trim()) {
                 saveColors(colorsText);
             } else {
                 removeColors();
             }
 
-            if (templateText.trim()) {
-                saveTemplate(templateText);
+            if (presentationTemplateText.trim()) {
+                savePresentationTemplate(presentationTemplateText);
             } else {
-                removeTemplate();
+                removePresentationTemplate();
             }
 
-            // 4. Sync to Supabase Profile
+            if (reportTemplateText.trim()) {
+                saveReportTemplate(reportTemplateText);
+            } else {
+                removeReportTemplate();
+            }
+
+            // 5. Sync to Supabase Profile
             const { error: syncError } = await supabase
                 .from('profiles')
                 .update({
                     branding_logo: finalLogoUrl,
                     branding_colors: colorsText.trim() || null,
-                    branding_template: templateText.trim() || null,
-                    branding_template_url: finalTemplateUrl
+                    branding_presentation_template: presentationTemplateText.trim() || null,
+                    branding_presentation_template_url: finalPresentationUrl,
+                    branding_report_template: reportTemplateText.trim() || null,
+                    branding_report_template_url: finalReportUrl
                 })
                 .eq('id', profile?.id);
 
@@ -213,8 +251,8 @@ const BrandingManager: React.FC = () => {
                         <div className="space-y-3">
                             <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Text Description</p>
                             <textarea 
-                                value={templateText}
-                                onChange={(e) => setTemplateText(e.target.value)}
+                                value={presentationTemplateText}
+                                onChange={(e) => setPresentationTemplateText(e.target.value)}
                                 placeholder="e.g., Minimalist Swiss design, bold typography, high-contrast imagery, and spacious layouts. Focus on technical clarity."
                                 className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors h-32"
                             />
@@ -222,20 +260,20 @@ const BrandingManager: React.FC = () => {
                         </div>
 
                         <div className="space-y-3">
-                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">PDF Attachment (Visual Reference)</p>
+                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Attachment (Visual Reference)</p>
                             <div className="h-32 bg-black/30 border border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center p-4 transition-colors hover:border-blue-500/50 group relative">
-                                {templatePdfFile ? (
+                                {presentationFile ? (
                                     <div className="flex flex-col items-center text-center">
-                                        <FileText className="w-8 h-8 text-blue-400 mb-2" />
-                                        <span className="text-xs text-white font-medium truncate max-w-[180px]">{templatePdfFile.name}</span>
+                                        {presentationFile.type === 'application/pdf' ? <FileText className="w-8 h-8 text-blue-400 mb-2" /> : <ImageIcon className="w-8 h-8 text-blue-400 mb-2" />}
+                                        <span className="text-xs text-white font-medium truncate max-w-[180px]">{presentationFile.name}</span>
                                         <button 
-                                            onClick={() => setTemplatePdfFile(null)}
+                                            onClick={() => setPresentationFile(null)}
                                             className="absolute top-2 right-2 p-1 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/40 transition-colors"
                                         >
                                             <X size={14} />
                                         </button>
                                     </div>
-                                ) : templateUrl ? (
+                                ) : presentationTemplateUrl ? (
                                     <div className="flex flex-col items-center text-center">
                                         <div className="relative">
                                             <FileText className="w-8 h-8 text-green-400 mb-2" />
@@ -243,10 +281,10 @@ const BrandingManager: React.FC = () => {
                                                 <Check size={8} className="text-black" />
                                             </div>
                                         </div>
-                                        <span className="text-xs text-gray-300">Template PDF Active</span>
+                                        <span className="text-xs text-gray-300">Template Active</span>
                                         <div className="flex gap-2 mt-2">
                                             <a 
-                                                href={templateUrl} 
+                                                href={presentationTemplateUrl} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
                                                 className="text-[10px] text-blue-400 hover:underline"
@@ -254,7 +292,10 @@ const BrandingManager: React.FC = () => {
                                                 View Current
                                             </a>
                                             <button 
-                                                onClick={handleRemoveTemplateUrl}
+                                                onClick={() => {
+                                                    removePresentationTemplateUrl();
+                                                    toast.success("Presentation template removed.");
+                                                }}
                                                 className="text-[10px] text-red-400 hover:underline"
                                             >
                                                 Remove
@@ -264,18 +305,98 @@ const BrandingManager: React.FC = () => {
                                 ) : (
                                     <>
                                         <Upload className="w-8 h-8 text-gray-500 mb-2 group-hover:text-blue-400 transition-colors" />
-                                        <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">Upload reference PDF</p>
+                                        <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">Upload PDF or Image</p>
                                         <input 
                                             type="file" 
-                                            ref={fileInputRef}
-                                            onChange={handlePdfChange}
-                                            accept=".pdf"
+                                            ref={presentationInputRef}
+                                            onChange={(e) => handleFileChange(e, 'presentation')}
+                                            accept=".pdf,image/*"
                                             className="absolute inset-0 opacity-0 cursor-pointer"
                                         />
                                     </>
                                 )}
                             </div>
-                            <p className="text-[10px] text-gray-500 italic">Upload a sample presentation or brand guide (PDF) for the AI to analyze and replicate.</p>
+                            <p className="text-[10px] text-gray-500 italic">Upload a sample presentation, brand guide, or image for the AI to analyze.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Reports Template Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-semibold text-gray-300">Reports / Documents Template</label>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Text Description</p>
+                            <textarea 
+                                value={reportTemplateText}
+                                onChange={(e) => setReportTemplateText(e.target.value)}
+                                placeholder="e.g., Formal corporate reports, serif fonts for body text, clean tables, and professional headers. Consistent with our policy brief standards."
+                                className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors h-32"
+                            />
+                            <p className="text-[10px] text-gray-500 italic">Describe the document structure and formatting style.</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Attachment (Visual Reference)</p>
+                            <div className="h-32 bg-black/30 border border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center p-4 transition-colors hover:border-blue-500/50 group relative">
+                                {reportFile ? (
+                                    <div className="flex flex-col items-center text-center">
+                                        {reportFile.type === 'application/pdf' ? <FileText className="w-8 h-8 text-blue-400 mb-2" /> : <ImageIcon className="w-8 h-8 text-blue-400 mb-2" />}
+                                        <span className="text-xs text-white font-medium truncate max-w-[180px]">{reportFile.name}</span>
+                                        <button 
+                                            onClick={() => setReportFile(null)}
+                                            className="absolute top-2 right-2 p-1 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/40 transition-colors"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ) : reportTemplateUrl ? (
+                                    <div className="flex flex-col items-center text-center">
+                                        <div className="relative">
+                                            <FileText className="w-8 h-8 text-green-400 mb-2" />
+                                            <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5">
+                                                <Check size={8} className="text-black" />
+                                            </div>
+                                        </div>
+                                        <span className="text-xs text-gray-300">Report Template Active</span>
+                                        <div className="flex gap-2 mt-2">
+                                            <a 
+                                                href={reportTemplateUrl} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-[10px] text-blue-400 hover:underline"
+                                            >
+                                                View Current
+                                            </a>
+                                            <button 
+                                                onClick={() => {
+                                                    removeReportTemplateUrl();
+                                                    toast.success("Report template removed.");
+                                                }}
+                                                className="text-[10px] text-red-400 hover:underline"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Upload className="w-8 h-8 text-gray-500 mb-2 group-hover:text-blue-400 transition-colors" />
+                                        <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">Upload PDF or Image</p>
+                                        <input 
+                                            type="file" 
+                                            ref={reportInputRef}
+                                            onChange={(e) => handleFileChange(e, 'report')}
+                                            accept=".pdf,image/*"
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                        />
+                                    </>
+                                )}
+                            </div>
+                            <p className="text-[10px] text-gray-500 italic">Upload a sample report or document template for the AI to follow.</p>
                         </div>
                     </div>
                 </div>

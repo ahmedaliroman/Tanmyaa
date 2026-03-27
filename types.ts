@@ -453,6 +453,8 @@ export interface UsageHistory {
 export interface BrandingInfo {
     logo?: string | null;
     colors?: string | null;
-    template?: string | null;
-    template_url?: string | null;
+    presentation_template?: string | null;
+    presentation_template_url?: string | null;
+    report_template?: string | null;
+    report_template_url?: string | null;
 }

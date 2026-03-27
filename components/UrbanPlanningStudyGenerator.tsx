@@ -144,10 +144,13 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     setChatMessages([{sender: 'ai', text: "Strategic deck generated. I can refine any slide or add technical depth upon request."}]);
 
     try {
-        const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
-            logo: profile.branding_logo,
-            colors: profile.branding_colors,
-            template: profile.branding_template
+        const branding: BrandingInfo | undefined = profile ? {
+            logo: profile.branding_logo || '',
+            colors: profile.branding_colors || '',
+            presentation_template: profile.branding_presentation_template || '',
+            presentation_template_url: profile.branding_presentation_template_url || '',
+            report_template: profile.branding_report_template || '',
+            report_template_url: profile.branding_report_template_url || ''
         } : undefined;
 
         const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile, profile?.plan, branding);
@@ -183,10 +186,13 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     setIsChatLoading(true);
 
     try {
-        const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
-            logo: profile.branding_logo,
-            colors: profile.branding_colors,
-            template: profile.branding_template
+        const branding: BrandingInfo | undefined = profile ? {
+            logo: profile.branding_logo || '',
+            colors: profile.branding_colors || '',
+            presentation_template: profile.branding_presentation_template || '',
+            presentation_template_url: profile.branding_presentation_template_url || '',
+            report_template: profile.branding_report_template || '',
+            report_template_url: profile.branding_report_template_url || ''
         } : undefined;
 
         const newSlides = await refinePresentation(slides, messageToSend, currentIndex, companyProfile, profile?.plan, branding);

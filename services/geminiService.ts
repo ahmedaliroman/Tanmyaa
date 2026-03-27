@@ -88,11 +88,17 @@ const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
     if (branding.colors) {
         instruction += `- Use the following Color Palette: ${branding.colors}\n`;
     }
-    if (branding.template) {
-        instruction += `- Follow this Presentation Template/Style Description: ${branding.template}\n`;
+    if (branding.presentation_template) {
+        instruction += `- Follow this Presentation Template/Style Description: ${branding.presentation_template}\n`;
     }
-    if (branding.template_url) {
-        instruction += `- A reference PDF template has been provided. Analyze its visual style, layout patterns, typography, and branding elements to replicate them in your output.\n`;
+    if (branding.presentation_template_url) {
+        instruction += `- A reference Presentation Template (PDF or Image) has been provided. Analyze its visual style, layout patterns, typography, and branding elements to replicate them in your presentation output.\n`;
+    }
+    if (branding.report_template) {
+        instruction += `- Follow this Report/Document Template/Style Description: ${branding.report_template}\n`;
+    }
+    if (branding.report_template_url) {
+        instruction += `- A reference Report Template (PDF or Image) has been provided. Analyze its structural style, layout patterns, typography, and professional formatting to replicate them in your document output.\n`;
     }
     instruction += '- Ensure the tone and visual descriptions (for image prompts) align with this branding.\n';
     return instruction;
@@ -110,6 +116,49 @@ const fetchFileAsBase64 = async (url: string): Promise<{ data: string; mimeType:
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
+};
+
+const addBrandingAssetsToParts = async (parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }>, plan?: string, branding?: BrandingInfo, type: 'presentation' | 'report' = 'presentation') => {
+    if (plan !== 'Business' || !branding) return;
+
+    const templateUrl = type === 'presentation' ? branding.presentation_template_url : branding.report_template_url;
+    const templateLabel = type === 'presentation' ? 'presentation' : 'report';
+
+    if (templateUrl) {
+        try {
+            const fileData = await fetchFileAsBase64(templateUrl);
+            parts.push({
+                inlineData: {
+                    data: fileData.data,
+                    mimeType: fileData.mimeType
+                }
+            });
+            parts.push({ text: `The attached file is the ${templateLabel} template you MUST follow for visual style and layout.` });
+        } catch (e) {
+            console.warn(`Failed to fetch branding ${templateLabel} template:`, e);
+        }
+    }
+
+    if (branding.logo) {
+        try {
+            const logoBase64 = branding.logo.includes('base64,') 
+                ? branding.logo.split('base64,')[1] 
+                : branding.logo;
+            const mimeType = branding.logo.includes('image/') 
+                ? branding.logo.split(';')[0].split(':')[1] 
+                : 'image/png';
+                
+            parts.push({
+                inlineData: {
+                    data: logoBase64,
+                    mimeType: mimeType
+                }
+            });
+            parts.push({ text: "The attached image is the company logo. Ensure its colors and presence are considered in the design descriptions." });
+        } catch (e) {
+            console.warn("Failed to process branding logo:", e);
+        }
+    }
 };
 
 const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: string): T => {
@@ -340,44 +389,7 @@ export const generatePresentation = async (
     const slides = await withRetry(async () => {
         const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
         
-        // Include Branding Assets if Business Plan
-        if (plan === 'Business' && branding) {
-            if (branding.template_url) {
-                try {
-                    const pdfData = await fetchFileAsBase64(branding.template_url);
-                    parts.push({
-                        inlineData: {
-                            data: pdfData.data,
-                            mimeType: pdfData.mimeType
-                        }
-                    });
-                    parts.push({ text: "The attached PDF is the presentation template you MUST follow for visual style and layout." });
-                } catch (e) {
-                    console.warn("Failed to fetch branding template PDF:", e);
-                }
-            }
-            
-            if (branding.logo) {
-                try {
-                    const logoBase64 = branding.logo.includes('base64,') 
-                        ? branding.logo.split('base64,')[1] 
-                        : branding.logo;
-                    const mimeType = branding.logo.includes('image/') 
-                        ? branding.logo.split(';')[0].split(':')[1] 
-                        : 'image/png';
-                        
-                    parts.push({
-                        inlineData: {
-                            data: logoBase64,
-                            mimeType: mimeType
-                        }
-                    });
-                    parts.push({ text: "The attached image is the company logo. Ensure its colors and presence are considered in the design descriptions." });
-                } catch (e) {
-                    console.warn("Failed to process branding logo:", e);
-                }
-            }
-        }
+        await addBrandingAssetsToParts(parts, plan, branding, 'presentation');
 
         const response = await ai.models.generateContent({
             model,
@@ -427,44 +439,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     const slides = await withRetry(async () => {
         const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".` }];
         
-        // Include Branding Assets if Business Plan
-        if (plan === 'Business' && branding) {
-            if (branding.template_url) {
-                try {
-                    const pdfData = await fetchFileAsBase64(branding.template_url);
-                    parts.push({
-                        inlineData: {
-                            data: pdfData.data,
-                            mimeType: pdfData.mimeType
-                        }
-                    });
-                    parts.push({ text: "The attached PDF is the presentation template you MUST follow for visual style and layout." });
-                } catch (e) {
-                    console.warn("Failed to fetch branding template PDF:", e);
-                }
-            }
-            
-            if (branding.logo) {
-                try {
-                    const logoBase64 = branding.logo.includes('base64,') 
-                        ? branding.logo.split('base64,')[1] 
-                        : branding.logo;
-                    const mimeType = branding.logo.includes('image/') 
-                        ? branding.logo.split(';')[0].split(':')[1] 
-                        : 'image/png';
-                        
-                    parts.push({
-                        inlineData: {
-                            data: logoBase64,
-                            mimeType: mimeType
-                        }
-                    });
-                    parts.push({ text: "The attached image is the company logo. Ensure its colors and presence are considered in the design descriptions." });
-                } catch (e) {
-                    console.warn("Failed to process branding logo:", e);
-                }
-            }
-        }
+        await addBrandingAssetsToParts(parts, plan, branding, 'presentation');
 
         const response = await ai.models.generateContent({
             model,
@@ -539,9 +514,13 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
     const briefResult = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a structured policy brief based on: ${brief}` }];
+        
+        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+
         const response = await ai.models.generateContent({
             model,
-            contents: { parts: [{ text: `Generate a structured policy brief based on: ${brief}` }] },
+            contents: { parts },
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
@@ -668,9 +647,13 @@ export const generateRFP = async (
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const rfp = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a detailed RFP for: ${taskDescription}` }];
+        
+        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+
         const response = await ai.models.generateContent({
             model,
-            contents: `Generate a detailed RFP for: ${taskDescription}`,
+            contents: { parts },
             config: { 
                 systemInstruction, 
                 responseMimeType: 'application/json',
@@ -752,11 +735,15 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const program = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a capacity building program for: ${audience}. 
+            Skill Level: ${skillLevel}. 
+            Challenges to address: ${challenges}.` }];
+        
+        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+
         const response = await ai.models.generateContent({
             model,
-            contents: `Generate a capacity building program for: ${audience}. 
-            Skill Level: ${skillLevel}. 
-            Challenges to address: ${challenges}.`,
+            contents: { parts },
             config: { 
                 systemInstruction, 
                 responseMimeType: 'application/json',
@@ -829,9 +816,13 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const vision = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"` }];
+        
+        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+
         const response = await ai.models.generateContent({
             model,
-            contents: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"`,
+            contents: { parts },
             config: { 
                 systemInstruction, 
                 responseMimeType: 'application/json',
@@ -909,9 +900,13 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const planResult = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"` }];
+        
+        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+
         const response = await ai.models.generateContent({
             model,
-            contents: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"`,
+            contents: { parts },
             config: { 
                 systemInstruction, 
                 responseMimeType: 'application/json',
@@ -1004,9 +999,13 @@ export const generateMethodology = async (task: string, companyProfile?: string,
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const methodology = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a methodology for the following task: "${task}"` }];
+        
+        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+
         const response = await ai.models.generateContent({
             model,
-            contents: `Generate a methodology for the following task: "${task}"`,
+            contents: { parts },
             config: { 
                 systemInstruction, 
                 responseMimeType: 'application/json',
@@ -1108,9 +1107,13 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
     const result = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Teach me about: "${topic}". Context: "${context}"` }];
+        
+        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+
         const response = await ai.models.generateContent({
             model,
-            contents: { parts: [{ text: `Teach me about: "${topic}". Context: "${context}"` }] },
+            contents: { parts },
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
@@ -1143,9 +1146,13 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
     const result = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Update the following Deep Understanding JSON based on the student's request. Current state: ${JSON.stringify(currentData)}. Student Request: "${userRequest}".` }];
+        
+        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+
         const response = await ai.models.generateContent({
             model,
-            contents: `Update the following Deep Understanding JSON based on the student's request. Current state: ${JSON.stringify(currentData)}. Student Request: "${userRequest}".`,
+            contents: { parts },
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
@@ -1364,13 +1371,14 @@ export const getSlideRefinementSuggestions = async (slideContent: PresentationSl
     }
 };
 
-export const sendMessageToInstantChatStream = async (message: string, history: { role: 'user' | 'model'; parts: { text: string }[] }[] = []) => {
+export const sendMessageToInstantChatStream = async (message: string, history: { role: 'user' | 'model'; parts: { text: string }[] }[] = [], plan?: string, branding?: BrandingInfo) => {
     const ai = getAi();
     const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
         config: { 
             systemInstruction: `Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
         
+        ${getBrandingInstruction(plan, branding)}
         ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
             tools: [{ googleSearch: {} }]
         },

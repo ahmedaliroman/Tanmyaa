@@ -17,8 +17,10 @@ interface Profile {
   invited_by?: string;
   branding_logo?: string;
   branding_colors?: string;
-  branding_template?: string;
-  branding_template_url?: string;
+  branding_presentation_template?: string;
+  branding_presentation_template_url?: string;
+  branding_report_template?: string;
+  branding_report_template_url?: string;
 }
 
 interface AuthContextType {

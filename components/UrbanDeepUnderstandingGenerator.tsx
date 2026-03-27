@@ -29,10 +29,13 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
         setError(null);
         setSelectedChoice(null);
         try {
-            const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
-                logo: profile.branding_logo,
-                colors: profile.branding_colors,
-                template: profile.branding_template
+            const branding: BrandingInfo | undefined = profile ? {
+                logo: profile.branding_logo || '',
+                colors: profile.branding_colors || '',
+                presentation_template: profile.branding_presentation_template || '',
+                presentation_template_url: profile.branding_presentation_template_url || '',
+                report_template: profile.branding_report_template || '',
+                report_template_url: profile.branding_report_template_url || ''
             } : undefined;
 
             const result = await generateDeepUnderstanding(topic, context, companyProfile, profile?.plan, branding);
@@ -50,10 +53,13 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
         setIsRefining(true);
         setError(null);
         try {
-            const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
-                logo: profile.branding_logo,
-                colors: profile.branding_colors,
-                template: profile.branding_template
+            const branding: BrandingInfo | undefined = profile ? {
+                logo: profile.branding_logo || '',
+                colors: profile.branding_colors || '',
+                presentation_template: profile.branding_presentation_template || '',
+                presentation_template_url: profile.branding_presentation_template_url || '',
+                report_template: profile.branding_report_template || '',
+                report_template_url: profile.branding_report_template_url || ''
             } : undefined;
 
             const result = await refineDeepUnderstanding(data, refinementRequest, companyProfile, profile?.plan, branding);
