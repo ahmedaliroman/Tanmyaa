@@ -76,11 +76,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         }
 
+        // Generate unique referral code
+        const newReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
         // If profile doesn't exist, create one with 100 credits
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .upsert([
-            { id: userId, email: email, credits: 100, plan: 'Free', invited_by: invitedBy }
+            { 
+              id: userId, 
+              email: email, 
+              credits: 100, 
+              plan: 'Free', 
+              invited_by: invitedBy,
+              referral_code: newReferralCode
+            }
           ], { onConflict: 'id' })
           .select()
           .single();
@@ -103,6 +113,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (referralCode) localStorage.removeItem('referral_code');
         }
       } else {
+        // If user exists but has no referral code, generate one
+        if (!data.referral_code) {
+          const newReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+          const { data: updatedData, error: updateError } = await supabase
+            .from('profiles')
+            .update({ referral_code: newReferralCode })
+            .eq('id', userId)
+            .select()
+            .single();
+          
+          if (!updateError && updatedData) {
+            data.referral_code = updatedData.referral_code;
+          }
+        }
+
         // ONE-TIME FIX: If a user has a Pro/Business plan but 0 credits and hasn't used any, they encountered the NaN bug.
         if (data.plan === 'Pro' && (data.credits === 0 || data.credits == null) && (data.total_credits_used === 0 || data.total_credits_used == null)) {
             const { error: updateError } = await supabase

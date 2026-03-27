@@ -87,9 +87,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
           </div>
           <div className="flex items-center space-x-4">
             {user ? (
-              <div className="relative" ref={menuRef}>
+              <div 
+                className="relative" 
+                ref={menuRef}
+                onMouseLeave={() => setShowUserMenu(false)}
+              >
                 <button 
                   onClick={() => setShowUserMenu(!showUserMenu)}
+                  onMouseEnter={() => setShowUserMenu(true)}
                   className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full pl-1 pr-4 py-1 transition-all"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
@@ -134,7 +139,10 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
                         <span className="font-medium">Generation History</span>
                       </button>
                       <button 
-                        onClick={() => onNavigate('subscription')}
+                        onClick={() => {
+                          onNavigate('subscription');
+                          setShowUserMenu(false);
+                        }}
                         className="w-full text-left px-4 py-3 text-sm text-white/80 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-colors"
                       >
                         <CreditCard size={16} />
