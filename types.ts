@@ -454,4 +454,5 @@ export interface BrandingInfo {
     logo?: string | null;
     colors?: string | null;
     template?: string | null;
+    template_url?: string | null;
 }

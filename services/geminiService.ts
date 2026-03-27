@@ -89,10 +89,27 @@ const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
         instruction += `- Use the following Color Palette: ${branding.colors}\n`;
     }
     if (branding.template) {
-        instruction += `- Follow this Presentation Template/Style: ${branding.template}\n`;
+        instruction += `- Follow this Presentation Template/Style Description: ${branding.template}\n`;
+    }
+    if (branding.template_url) {
+        instruction += `- A reference PDF template has been provided. Analyze its visual style, layout patterns, typography, and branding elements to replicate them in your output.\n`;
     }
     instruction += '- Ensure the tone and visual descriptions (for image prompts) align with this branding.\n';
     return instruction;
+};
+
+const fetchFileAsBase64 = async (url: string): Promise<{ data: string; mimeType: string }> => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = (reader.result as string).split(',')[1];
+            resolve({ data: base64String, mimeType: blob.type });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 };
 
 const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: string): T => {
@@ -321,9 +338,50 @@ export const generatePresentation = async (
     `;
 
     const slides = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+        
+        // Include Branding Assets if Business Plan
+        if (plan === 'Business' && branding) {
+            if (branding.template_url) {
+                try {
+                    const pdfData = await fetchFileAsBase64(branding.template_url);
+                    parts.push({
+                        inlineData: {
+                            data: pdfData.data,
+                            mimeType: pdfData.mimeType
+                        }
+                    });
+                    parts.push({ text: "The attached PDF is the presentation template you MUST follow for visual style and layout." });
+                } catch (e) {
+                    console.warn("Failed to fetch branding template PDF:", e);
+                }
+            }
+            
+            if (branding.logo) {
+                try {
+                    const logoBase64 = branding.logo.includes('base64,') 
+                        ? branding.logo.split('base64,')[1] 
+                        : branding.logo;
+                    const mimeType = branding.logo.includes('image/') 
+                        ? branding.logo.split(';')[0].split(':')[1] 
+                        : 'image/png';
+                        
+                    parts.push({
+                        inlineData: {
+                            data: logoBase64,
+                            mimeType: mimeType
+                        }
+                    });
+                    parts.push({ text: "The attached image is the company logo. Ensure its colors and presence are considered in the design descriptions." });
+                } catch (e) {
+                    console.warn("Failed to process branding logo:", e);
+                }
+            }
+        }
+
         const response = await ai.models.generateContent({
             model,
-            contents: { parts: [{ text: prompt }] },
+            contents: { parts },
             config: { 
                 systemInstruction, 
                 responseMimeType: 'application/json',
@@ -367,9 +425,50 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
 
     const slides = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".` }];
+        
+        // Include Branding Assets if Business Plan
+        if (plan === 'Business' && branding) {
+            if (branding.template_url) {
+                try {
+                    const pdfData = await fetchFileAsBase64(branding.template_url);
+                    parts.push({
+                        inlineData: {
+                            data: pdfData.data,
+                            mimeType: pdfData.mimeType
+                        }
+                    });
+                    parts.push({ text: "The attached PDF is the presentation template you MUST follow for visual style and layout." });
+                } catch (e) {
+                    console.warn("Failed to fetch branding template PDF:", e);
+                }
+            }
+            
+            if (branding.logo) {
+                try {
+                    const logoBase64 = branding.logo.includes('base64,') 
+                        ? branding.logo.split('base64,')[1] 
+                        : branding.logo;
+                    const mimeType = branding.logo.includes('image/') 
+                        ? branding.logo.split(';')[0].split(':')[1] 
+                        : 'image/png';
+                        
+                    parts.push({
+                        inlineData: {
+                            data: logoBase64,
+                            mimeType: mimeType
+                        }
+                    });
+                    parts.push({ text: "The attached image is the company logo. Ensure its colors and presence are considered in the design descriptions." });
+                } catch (e) {
+                    console.warn("Failed to process branding logo:", e);
+                }
+            }
+        }
+
         const response = await ai.models.generateContent({
             model,
-            contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
+            contents: { parts },
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',

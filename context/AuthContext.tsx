@@ -18,6 +18,7 @@ interface Profile {
   branding_logo?: string;
   branding_colors?: string;
   branding_template?: string;
+  branding_template_url?: string;
 }
 
 interface AuthContextType {

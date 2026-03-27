@@ -15,6 +15,7 @@ create table if not exists public.profiles (
   branding_logo text,
   branding_colors text,
   branding_template text,
+  branding_template_url text,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
