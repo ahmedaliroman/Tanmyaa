@@ -261,6 +261,7 @@ const FeatureComparisonTable: React.FC = () => (
 
 
 const SubscriptionPage: React.FC = () => {
+    const { profile } = useAuth();
     const [hoveredTier, setHoveredTier] = useState<string | null>(null);
     const [paymentSuccess, setPaymentSuccess] = useState<{ plan: string, credits: number } | null>(null);
 
