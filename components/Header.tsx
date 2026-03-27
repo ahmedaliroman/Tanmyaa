@@ -112,7 +112,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-1 w-56 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-fade-in z-50">
+                  <div className="absolute right-0 mt-0 w-56 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-fade-in z-50">
                     <div className="p-5 border-b border-white/10 bg-white/5">
                       <p className="text-sm font-semibold text-white truncate">{user.email}</p>
                       <p className="text-[10px] uppercase tracking-widest font-bold text-white/40 mt-1">{profile?.plan || 'Free'} Plan</p>
