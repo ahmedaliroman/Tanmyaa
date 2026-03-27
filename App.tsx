@@ -13,6 +13,7 @@ import SubscriptionPage from './components/SubscriptionPage';
 import MethodologyGenerator from './components/MethodologyGenerator';
 import UrbanDeepUnderstandingGenerator from './components/UrbanDeepUnderstandingGenerator';
 import AuthCallback from './components/AuthCallback';
+import ResetPasswordPage from './components/ResetPasswordPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 
@@ -130,6 +131,15 @@ const App: React.FC = () => {
         }
     };
     checkApiKey();
+
+    // Handle referral code
+    const params = new URLSearchParams(window.location.search);
+    const referralCode = params.get('ref');
+    if (referralCode) {
+      localStorage.setItem('referral_code', referralCode);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   const handleConnectApiKey = async () => {
@@ -217,6 +227,8 @@ const App: React.FC = () => {
       <AuthProvider>
         {window.location.pathname.startsWith('/auth/callback') ? (
             <AuthCallback />
+        ) : window.location.pathname.startsWith('/auth/reset-password') ? (
+            <ResetPasswordPage />
         ) : (
             <AppContent 
                 view={view}

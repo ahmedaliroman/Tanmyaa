@@ -3,8 +3,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TanmyaaLogo } from './TanmyaaLogo';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
-import { LogOut, CreditCard, Clock } from 'lucide-react';
+import { LogOut, CreditCard, Clock, Gift } from 'lucide-react';
 import UsageHistoryModal from './UsageHistoryModal';
+import ReferralModal from './ReferralModal';
+import PasswordResetModal from './PasswordResetModal';
 
 interface HeaderProps {
     onNavigate: (page: 'home' | 'subscription') => void;
@@ -20,6 +22,8 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
   const { user, profile, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,6 +114,16 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
                     </div>
                     <button 
                       onClick={() => {
+                        setIsReferralModalOpen(true);
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-purple-400 hover:bg-purple-500/10 flex items-center gap-2"
+                    >
+                      <Gift size={14} />
+                      Invite Friends
+                    </button>
+                    <button 
+                      onClick={() => {
                         setIsHistoryModalOpen(true);
                         setShowUserMenu(false);
                       }}
@@ -162,11 +176,25 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
         initialView={authView} 
+        onForgotPassword={() => {
+          setIsAuthModalOpen(false);
+          setIsResetModalOpen(true);
+        }}
       />
 
       <UsageHistoryModal 
         isOpen={isHistoryModalOpen} 
         onClose={() => setIsHistoryModalOpen(false)} 
+      />
+
+      <ReferralModal 
+        isOpen={isReferralModalOpen} 
+        onClose={() => setIsReferralModalOpen(false)} 
+      />
+
+      <PasswordResetModal 
+        isOpen={isResetModalOpen} 
+        onClose={() => setIsResetModalOpen(false)} 
       />
     </>
   );

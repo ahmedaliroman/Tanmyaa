@@ -10,6 +10,8 @@ create table if not exists public.profiles (
   subscription_start_date timestamp with time zone,
   subscription_end_date timestamp with time zone,
   total_credits_used integer default 0,
+  referral_code text unique default gen_random_uuid()::text,
+  invited_by uuid references auth.users(id),
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
@@ -36,16 +38,40 @@ create policy "Users can insert own profile"
 -- This ensures every new signup gets a profile with 100 credits immediately
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  inviter_id uuid;
+  referral_code_input text;
 begin
-  insert into public.profiles (id, email, full_name, credits, plan, total_credits_used)
+  -- Check if there's a referral code in the metadata
+  referral_code_input := new.raw_user_meta_data->>'referral_code';
+  
+  if referral_code_input is not null then
+    select id into inviter_id from public.profiles where referral_code = referral_code_input;
+  end if;
+
+  insert into public.profiles (id, email, full_name, credits, plan, total_credits_used, invited_by)
   values (
     new.id, 
     new.email, 
     new.raw_user_meta_data->>'full_name', 
     100,
     'Free',
-    0
+    0,
+    inviter_id
   );
+
+  -- If invited by someone, check if they reached 20 invitations
+  if inviter_id is not null then
+    -- Count successful invitations for this inviter
+    if (select count(*) from public.profiles where invited_by = inviter_id) >= 20 then
+      update public.profiles
+      set plan = 'Pro',
+          credits = credits + 600 -- Bonus credits for reaching Pro
+      where id = inviter_id
+      and plan = 'Free'; -- Only upgrade if they are on Free plan
+    end if;
+  end if;
+
   return new;
 end;
 $$ language plpgsql security definer;

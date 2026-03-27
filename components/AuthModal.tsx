@@ -6,9 +6,10 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialView?: 'signin' | 'signup';
+  onForgotPassword?: () => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'signin' }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'signin', onForgotPassword }) => {
   const [view, setView] = useState<'signin' | 'signup'>(initialView);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,12 +26,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
 
     try {
       if (view === 'signup') {
+        const referralCode = localStorage.getItem('referral_code');
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
+              referral_code: referralCode
             },
           },
         });
@@ -38,9 +41,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
         
         if (data.session) {
             // Auto-login successful (Email confirmation disabled)
+            localStorage.removeItem('referral_code');
             onClose();
         } else {
             // Email confirmation required
+            localStorage.removeItem('referral_code');
             alert('Sign up successful! Please check your email to confirm your account.');
             onClose();
         }
@@ -177,6 +182,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
                   minLength={6}
                 />
               </div>
+              {view === 'signin' && onForgotPassword && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={onForgotPassword}
+                    className="text-xs text-blue-500 hover:text-blue-400 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </div>
 
             {error && (

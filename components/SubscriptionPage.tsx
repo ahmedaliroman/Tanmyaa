@@ -3,6 +3,7 @@ import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const CheckIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-blue-400" }) => (
     <svg className={className} fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -106,7 +107,9 @@ const SubscriptionTier: React.FC<{
     isDimmed: boolean;
     showPayPal?: boolean;
     amount?: string;
-}> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, amount }) => {
+    onSuccess?: (plan: string, credits: number) => void;
+}> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, amount, onSuccess }) => {
+    const { user } = useAuth();
     
     const baseClasses = `relative bg-black/30 backdrop-blur-lg border rounded-2xl p-8 flex flex-col text-center transition-all duration-300`;
     
@@ -122,22 +125,34 @@ const SubscriptionTier: React.FC<{
 
     const buttonClasses = `w-full font-bold py-3 px-4 rounded-xl mt-auto transition-all duration-300 disabled:cursor-not-allowed ${isFeatured ? 'bg-blue-500/20 backdrop-blur-md border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 disabled:bg-blue-500/10 disabled:text-blue-500/50' : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400'}`;
 
-    const { user } = useAuth();
-
     const handleCaptureOrder = async (orderID: string) => {
         if (!user) {
             alert('Please sign in to complete the purchase.');
             return;
         }
         try {
-            const response = await fetch('/api/paypal/capture-order', {
+            // Call Supabase Edge Function instead of Express server
+            const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-capture`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderID, plan: title, userId: user.id })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+                },
+                body: JSON.stringify({ 
+                    orderID,
+                    plan: title,
+                    userId: user.id,
+                    email: user.email
+                }),
             });
             if (response.ok) {
-                alert(`Payment successful! Your credits have been updated for the ${title} plan.`);
-                window.location.reload();
+                const data = await response.json();
+                if (onSuccess) {
+                    onSuccess(title, data.newCredits);
+                } else {
+                    alert(`Payment successful! Your credits have been updated for the ${title} plan.`);
+                    window.location.reload();
+                }
             } else {
                 const error = await response.json();
                 alert(`Payment failed: ${error.error || 'Unknown error'}`);
@@ -180,6 +195,7 @@ const SubscriptionTier: React.FC<{
                                     intent: "CAPTURE",
                                     purchase_units: [{
                                         description: `${title} Plan Subscription`,
+                                        custom_id: JSON.stringify({ userId: user?.id, plan: title }),
                                         amount: {
                                             currency_code: "USD",
                                             value: amount || "0.00"
@@ -245,6 +261,48 @@ const FeatureComparisonTable: React.FC = () => (
 
 const SubscriptionPage: React.FC = () => {
     const [hoveredTier, setHoveredTier] = useState<string | null>(null);
+    const [paymentSuccess, setPaymentSuccess] = useState<{ plan: string, credits: number } | null>(null);
+
+    if (paymentSuccess) {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 animate-fade-in">
+                <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-6">
+                    <CheckIcon className="w-12 h-12" />
+                </div>
+                <h2 className="text-4xl font-bold text-white mb-4">Payment Successful!</h2>
+                <p className="text-xl text-gray-300 max-w-md mb-8">
+                    Thank you for subscribing to the <span className="text-blue-400 font-bold">{paymentSuccess.plan}</span> plan. 
+                    Your account has been upgraded and <span className="text-green-400 font-bold">{paymentSuccess.credits}</span> credits have been added.
+                </p>
+                <div className="bg-white/5 border border-white/10 p-6 rounded-2xl mb-8 w-full max-w-md text-left">
+                    <p className="text-gray-400 text-sm mb-2 uppercase tracking-widest font-bold">Subscription Details</p>
+                    <div className="space-y-2">
+                        <div className="flex justify-between">
+                            <span className="text-gray-500">Plan</span>
+                            <span className="text-white font-medium">{paymentSuccess.plan}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-500">Status</span>
+                            <span className="text-green-400 font-medium">Active</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-500">Billing Cycle</span>
+                            <span className="text-white font-medium">Monthly</span>
+                        </div>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => window.location.reload()}
+                    className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                >
+                    Back to Dashboard
+                </button>
+                <p className="mt-6 text-gray-500 text-sm italic">
+                    A confirmation email and invoice have been sent to your email address.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="animate-fade-in w-full">
@@ -270,6 +328,7 @@ const SubscriptionPage: React.FC = () => {
                     disabled
                     onMouseEnter={() => setHoveredTier('Trial')}
                     isDimmed={hoveredTier !== null && hoveredTier !== 'Trial'}
+                    onSuccess={(plan, credits) => setPaymentSuccess({ plan, credits })}
                 />
                 <SubscriptionTier
                     title="Pro"
@@ -288,6 +347,7 @@ const SubscriptionPage: React.FC = () => {
                     isDimmed={hoveredTier !== null && hoveredTier !== 'Pro'}
                     showPayPal
                     amount="30.00"
+                    onSuccess={(plan, credits) => setPaymentSuccess({ plan, credits })}
                 />
                 <SubscriptionTier
                     title="Business"
@@ -306,6 +366,7 @@ const SubscriptionPage: React.FC = () => {
                     isDimmed={hoveredTier !== null && hoveredTier !== 'Business'}
                     showPayPal
                     amount="100.00"
+                    onSuccess={(plan, credits) => setPaymentSuccess({ plan, credits })}
                 />
             </div>
             

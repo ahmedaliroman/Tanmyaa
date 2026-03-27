@@ -21,9 +21,9 @@ const UsageHistoryModal: React.FC<UsageHistoryModalProps> = ({ isOpen, onClose }
         try {
           const data = await fetchUsageHistory();
           setHistory(data);
-        } catch (err) {
+        } catch (err: unknown) {
           console.error('Failed to load history:', err);
-          setError('Failed to load your generation history.');
+          setError(err instanceof Error ? err.message : 'Failed to load your generation history.');
         } finally {
           setIsLoading(false);
         }

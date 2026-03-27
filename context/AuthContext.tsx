@@ -13,6 +13,8 @@ interface Profile {
   subscription_start_date?: string;
   subscription_end_date?: string;
   total_credits_used?: number;
+  referral_code?: string;
+  invited_by?: string;
 }
 
 interface AuthContextType {
@@ -26,6 +28,8 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   deductCredits: (amount: number) => Promise<boolean>;
   addCredits: (amount: number, planName?: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,11 +82,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('Error fetching profile:', error);
             setAuthError(`Failed to fetch profile: ${error.message}. Ensure the "profiles" table exists.`);
         }
+        
+        // Check for referral code
+        const referralCode = localStorage.getItem('referral_code');
+        let invitedBy = null;
+        
+        if (referralCode) {
+            const { data: inviter } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('referral_code', referralCode)
+                .maybeSingle();
+            
+            if (inviter) {
+                invitedBy = inviter.id;
+            }
+        }
+
         // If profile doesn't exist, create one with 100 credits
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .upsert([
-            { id: userId, email: email, credits: 100, plan: 'Free' }
+            { id: userId, email: email, credits: 100, plan: 'Free', invited_by: invitedBy }
           ], { onConflict: 'id' })
           .select()
           .single();
@@ -102,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } else {
           setProfile(newProfile);
+          if (referralCode) localStorage.removeItem('referral_code');
         }
       } else {
         // ONE-TIME FIX: If a user has a Pro/Business plan but 0 credits and hasn't used any, they encountered the NaN bug.
@@ -222,8 +244,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(null);
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    if (error) throw error;
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, authError, signInWithGoogle, signOut, refreshProfile, deductCredits, addCredits }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      profile, 
+      loading, 
+      authError, 
+      signInWithGoogle, 
+      signOut, 
+      refreshProfile, 
+      deductCredits, 
+      addCredits,
+      resetPassword,
+      updatePassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

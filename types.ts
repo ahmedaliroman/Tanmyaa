@@ -436,6 +436,9 @@ export interface UserProfile {
     id: string;
     email: string;
     credits: number;
+    plan: string;
+    referral_code: string;
+    invited_by?: string;
     created_at: string;
 }
 

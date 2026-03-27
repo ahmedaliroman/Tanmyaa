@@ -1,11 +1,7 @@
 import { Router } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import geeRouter from './gee.js';
 
 const router = Router();
-
-// Use GEE routes
-router.use('/gee', geeRouter);
 
 // Lazy initialize Supabase client
 let supabase: SupabaseClient | null = null;
@@ -203,11 +199,18 @@ router.post('/paypal/capture-order', async (req, res) => {
 
         // Update credits and plan
         const currentCredits = Number(profile.credits) || 0;
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1); // 1 month subscription
+
         const { error: updateError } = await client
             .from('profiles')
             .update({ 
                 credits: currentCredits + creditsToAdd,
-                plan: plan 
+                plan: plan,
+                subscription_status: 'active',
+                subscription_start_date: startDate.toISOString(),
+                subscription_end_date: endDate.toISOString()
             })
             .eq('id', userId);
 
@@ -216,7 +219,12 @@ router.post('/paypal/capture-order', async (req, res) => {
             return res.status(500).json({ error: 'Failed to update credits after payment.' });
         }
 
-        res.json({ success: true, newCredits: profile.credits + creditsToAdd });
+        res.json({ 
+            success: true, 
+            newCredits: currentCredits + creditsToAdd,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+        });
     } catch (error) {
         console.error('Failed to capture PayPal order:', error);
         res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
@@ -232,9 +240,14 @@ router.get('/usage-history', async (req, res) => {
         }
 
         const token = authHeader.split(' ')[1];
+        if (!token || token === 'undefined' || token === 'null') {
+            return res.status(401).json({ error: 'Invalid or missing authentication token.' });
+        }
+
         const { data: { user }, error: authError } = await client.auth.getUser(token);
 
         if (authError || !user) {
+            console.error('Auth error fetching usage history:', authError);
             return res.status(401).json({ error: 'Invalid or expired token.' });
         }
 
@@ -245,15 +258,34 @@ router.get('/usage-history', async (req, res) => {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Failed to fetch usage history:', error);
-            return res.status(500).json({ error: 'Failed to fetch usage history.' });
+            console.error('Database error fetching usage history for user:', user.id, error);
+            return res.status(500).json({ 
+                error: 'Failed to fetch usage history.',
+                details: error.message,
+                hint: 'Ensure the "usage_history" table exists and has correct RLS policies.'
+            });
         }
 
-        res.json(data);
+        res.json(data || []);
     } catch (error) {
-        console.error('Failed to fetch usage history:', error);
+        console.error('Unexpected error fetching usage history:', error);
         res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
     }
+});
+
+router.post('/paypal/webhook', async (req, res) => {
+    const event = req.body;
+    console.log('PayPal Webhook received:', event.event_type);
+
+    // Handle different event types
+    // For now, we mainly care about successful payments if they happen asynchronously
+    if (event.event_type === 'PAYMENT.SALE.COMPLETED' || event.event_type === 'BILLING.SUBSCRIPTION.CREATED') {
+        // In a real production app, you would verify the webhook signature here
+        // and update the database based on the resource ID
+        console.log('Payment/Subscription confirmed via webhook');
+    }
+
+    res.status(200).send('OK');
 });
 
 export default router;
