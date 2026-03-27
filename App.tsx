@@ -14,7 +14,7 @@ import MethodologyGenerator from './components/MethodologyGenerator';
 import UrbanDeepUnderstandingGenerator from './components/UrbanDeepUnderstandingGenerator';
 import AuthCallback from './components/AuthCallback';
 import ResetPasswordPage from './components/ResetPasswordPage';
-import { toast, Toaster } from 'sonner';
+import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 

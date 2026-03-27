@@ -107,48 +107,51 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl overflow-hidden animate-fade-in z-50">
-                    <div className="p-3 border-b border-white/5">
-                      <p className="text-sm font-medium text-white truncate">{user.email}</p>
-                      <p className="text-xs text-gray-500">{profile?.plan || 'Free'} Plan</p>
+                  <div className="absolute right-0 mt-4 w-56 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-fade-in z-50">
+                    <div className="p-5 border-b border-white/10 bg-white/5">
+                      <p className="text-sm font-semibold text-white truncate">{user.email}</p>
+                      <p className="text-[10px] uppercase tracking-widest font-bold text-white/40 mt-1">{profile?.plan || 'Free'} Plan</p>
                     </div>
-                    <button 
-                      onClick={() => {
-                        setIsReferralModalOpen(true);
-                        setShowUserMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-purple-400 hover:bg-purple-500/10 flex items-center gap-2"
-                    >
-                      <Gift size={14} />
-                      Invite Friends
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setIsHistoryModalOpen(true);
-                        setShowUserMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-2"
-                    >
-                      <Clock size={14} />
-                      Generation History
-                    </button>
-                    <button 
-                      onClick={() => onNavigate('subscription')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-2"
-                    >
-                      <CreditCard size={14} />
-                      Buy Credits
-                    </button>
-                    <button 
-                      onClick={() => {
-                        signOut();
-                        setShowUserMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"
-                    >
-                      <LogOut size={14} />
-                      Sign Out
-                    </button>
+                    <div className="p-2">
+                      <button 
+                        onClick={() => {
+                          setIsReferralModalOpen(true);
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-purple-400 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-colors"
+                      >
+                        <Gift size={16} />
+                        <span className="font-medium">Invite Friends</span>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setIsHistoryModalOpen(true);
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-white/80 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-colors"
+                      >
+                        <Clock size={16} />
+                        <span className="font-medium">Generation History</span>
+                      </button>
+                      <button 
+                        onClick={() => onNavigate('subscription')}
+                        className="w-full text-left px-4 py-3 text-sm text-white/80 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-colors"
+                      >
+                        <CreditCard size={16} />
+                        <span className="font-medium">Buy Credits</span>
+                      </button>
+                      <div className="h-px bg-white/10 my-2 mx-2" />
+                      <button 
+                        onClick={() => {
+                          signOut();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-colors"
+                      >
+                        <LogOut size={16} />
+                        <span className="font-medium">Sign Out</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
