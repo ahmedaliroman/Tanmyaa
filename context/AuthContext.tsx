@@ -15,6 +15,9 @@ interface Profile {
   total_credits_used?: number;
   referral_code?: string;
   invited_by?: string;
+  branding_logo?: string;
+  branding_colors?: string;
+  branding_template?: string;
 }
 
 interface AuthContextType {

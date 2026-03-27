@@ -12,6 +12,9 @@ create table if not exists public.profiles (
   total_credits_used integer default 0,
   referral_code text unique default gen_random_uuid()::text,
   invited_by uuid references auth.users(id),
+  branding_logo text,
+  branding_colors text,
+  branding_template text,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 

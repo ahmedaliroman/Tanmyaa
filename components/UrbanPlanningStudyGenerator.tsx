@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '../services/geminiService';
-import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide } from '../types';
+import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo } from '../types';
 import UrbanStudyInputForm from './UrbanStudyInputForm';
 import UrbanStudySlide from './UrbanStudySlide';
 import SlideNavigator from './SlideNavigator';
@@ -144,7 +144,13 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     setChatMessages([{sender: 'ai', text: "Strategic deck generated. I can refine any slide or add technical depth upon request."}]);
 
     try {
-        const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile);
+        const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
+            logo: profile.branding_logo,
+            colors: profile.branding_colors,
+            template: profile.branding_template
+        } : undefined;
+
+        const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (generatedSlides && generatedSlides.length > 0) {
             setSlides(generatedSlides);
@@ -177,7 +183,13 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     setIsChatLoading(true);
 
     try {
-        const newSlides = await refinePresentation(slides, messageToSend, currentIndex, companyProfile);
+        const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
+            logo: profile.branding_logo,
+            colors: profile.branding_colors,
+            template: profile.branding_template
+        } : undefined;
+
+        const newSlides = await refinePresentation(slides, messageToSend, currentIndex, companyProfile, profile?.plan, branding);
         await refreshProfile();
         setSlides(newSlides);
         setChatMessages(prev => [...prev, { sender: 'ai', text: "Technical updates processed." }]);

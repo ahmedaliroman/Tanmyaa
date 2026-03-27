@@ -9,7 +9,8 @@ import type {
     VisionFramework,
     StakeholderPlan,
     Methodology,
-    UsageHistory
+    UsageHistory,
+    BrandingInfo
 } from '../types';
 
 const GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION = `
@@ -67,6 +68,31 @@ const getAi = () => {
         throw new Error('Gemini API key is not configured. Please check your environment variables.');
     }
     return new GoogleGenAI({ apiKey });
+};
+
+const getModelForPlan = (plan?: string, taskType: 'basic' | 'complex' = 'complex') => {
+    if (plan === 'Business') {
+        return 'gemini-3.1-pro-preview'; // Custom & Fine-Tuned (using Pro for highest quality)
+    }
+    if (plan === 'Pro') {
+        return 'gemini-3.1-pro-preview'; // Enhanced
+    }
+    // Trial / Free / Default
+    return taskType === 'complex' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview'; 
+};
+
+const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
+    if (plan !== 'Business' || !branding) return '';
+    
+    let instruction = '\n**CUSTOM BRANDING & STYLE (MANDATORY):**\n';
+    if (branding.colors) {
+        instruction += `- Use the following Color Palette: ${branding.colors}\n`;
+    }
+    if (branding.template) {
+        instruction += `- Follow this Presentation Template/Style: ${branding.template}\n`;
+    }
+    instruction += '- Ensure the tone and visual descriptions (for image prompts) align with this branding.\n';
+    return instruction;
 };
 
 const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: string): T => {
@@ -223,16 +249,20 @@ export const generateImage = async (prompt: string): Promise<string> => {
 
 export const generatePresentation = async (
     projectInfo: UrbanPlanningProjectInfo, 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _files: File[], 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _companyProfile?: string
+    _companyProfile?: string,
+    plan?: string,
+    branding?: BrandingInfo
 ): Promise<PresentationSlide[]> => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy (like McKinsey, Arup, or Foster + Partners). 
     Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
+    
+    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
@@ -292,7 +322,7 @@ export const generatePresentation = async (
 
     const slides = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model,
             contents: { parts: [{ text: prompt }] },
             config: { 
                 systemInstruction, 
@@ -313,9 +343,12 @@ export const generatePresentation = async (
     return slides;
 };
 
-export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string): Promise<PresentationSlide[]> => {
+export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PresentationSlide[]> => {
     const ai = getAi();
+    const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
     const systemInstruction = `You are a Lead Strategist at Tanmyaa Global. Your task is to intelligently refine the provided JSON presentation structure based on the user's request, ensuring technical coherence and strategic depth.
+    
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
@@ -335,7 +368,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
 
     const slides = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-lite-preview',
+            model,
             contents: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".`,
             config: { 
                 systemInstruction,
@@ -353,9 +386,13 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     return slides;
 };
 
-export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string): Promise<PolicyBrief> => {
+export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
+    
+    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
@@ -404,7 +441,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
 
     const briefResult = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model,
             contents: { parts: [{ text: `Generate a structured policy brief based on: ${brief}` }] },
             config: { 
                 systemInstruction,
@@ -492,14 +529,19 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
 
 export const generateRFP = async (
     taskDescription: string, 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _pageRange: string, 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _files: File[]
+    _files: File[],
+    companyProfile?: string,
+    plan?: string,
+    branding?: BrandingInfo
 ): Promise<RFPContent> => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
+    
+    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
@@ -528,7 +570,7 @@ export const generateRFP = async (
     
     const rfp = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model,
             contents: `Generate a detailed RFP for: ${taskDescription}`,
             config: { 
                 systemInstruction, 
@@ -571,10 +613,14 @@ export const generateRFP = async (
     return rfp;
 };
 
-export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, companyProfile?: string): Promise<CapacityBuildingProgram> => {
+export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<CapacityBuildingProgram> => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
     Your task is to generate a comprehensive, tailored Capacity Building Program.
+    
+    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
@@ -608,7 +654,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     
     const program = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model,
             contents: `Generate a capacity building program for: ${audience}. 
             Skill Level: ${skillLevel}. 
             Challenges to address: ${challenges}.`,
@@ -651,10 +697,14 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     return program;
 };
 
-export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string): Promise<VisionFramework> => {
+export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<VisionFramework> => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
     Your task is to generate a cohesive and inspiring Vision Framework.
+    
+    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
@@ -681,7 +731,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     
     const vision = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model,
             contents: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"`,
             config: { 
                 systemInstruction, 
@@ -717,10 +767,14 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     return vision;
 };
 
-export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string): Promise<StakeholderPlan> => {
+export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<StakeholderPlan> => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class public engagement strategist. 
     Your task is to generate a detailed Stakeholder Engagement Plan.
+    
+    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
@@ -755,9 +809,9 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
-    const plan = await withRetry(async () => {
+    const planResult = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model,
             contents: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"`,
             config: { 
                 systemInstruction, 
@@ -805,13 +859,17 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     });
 
     await deductCredits(10, `Generated Stakeholder Plan for ${context.substring(0, 50)}...`, undefined, 'STAKEHOLDER');
-    return plan;
+    return planResult;
 };
 
-export const generateMethodology = async (task: string, companyProfile?: string): Promise<Methodology> => {
+export const generateMethodology = async (task: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<Methodology> => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a Senior Urban Project Manager. 
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
+    
+    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
@@ -848,7 +906,7 @@ export const generateMethodology = async (task: string, companyProfile?: string)
     
     const methodology = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model,
             contents: `Generate a methodology for the following task: "${task}"`,
             config: { 
                 systemInstruction, 
@@ -900,10 +958,14 @@ export const generateMethodology = async (task: string, companyProfile?: string)
 
 
 
-export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string): Promise<UrbanDeepUnderstanding> => {
+export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Urban Planning Professor. 
     Your task is to teach a student about a specific urban topic using a "Thinking Board" approach.
+    
+    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
     
@@ -948,7 +1010,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
 
     const result = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model,
             contents: { parts: [{ text: `Teach me about: "${topic}". Context: "${context}"` }] },
             config: { 
                 systemInstruction,
@@ -965,9 +1027,12 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     return result;
 };
 
-export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string): Promise<UrbanDeepUnderstanding> => {
+export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
+    const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
     const systemInstruction = `You are a world-class Urban Planning Professor. Update the provided "Thinking Board" JSON based on the student's request.
+    
+    ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
     
@@ -980,7 +1045,7 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
 
     const result = await withRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-lite-preview',
+            model,
             contents: `Update the following Deep Understanding JSON based on the student's request. Current state: ${JSON.stringify(currentData)}. Student Request: "${userRequest}".`,
             config: { 
                 systemInstruction,

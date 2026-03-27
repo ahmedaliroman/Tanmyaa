@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generateCapacityBuildingProgram, getCapacityBuildingSuggestions } from '../services/geminiService';
-import type { CapacityBuildingProgram } from '../types';
+import type { CapacityBuildingProgram, BrandingInfo } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
@@ -167,7 +167,13 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
     setProgram(null);
     
     try {
-        const generatedProgram = await generateCapacityBuildingProgram(inputs.audience, inputs.skillLevel, inputs.challenges, companyProfile);
+        const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
+            logo: profile.branding_logo,
+            colors: profile.branding_colors,
+            template: profile.branding_template
+        } : undefined;
+
+        const generatedProgram = await generateCapacityBuildingProgram(inputs.audience, inputs.skillLevel, inputs.challenges, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (generatedProgram) {
             setProgram(generatedProgram);

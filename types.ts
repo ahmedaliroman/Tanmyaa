@@ -449,3 +449,9 @@ export interface UsageHistory {
     credits_used: number;
     created_at: string;
 }
+
+export interface BrandingInfo {
+    logo?: string | null;
+    colors?: string | null;
+    template?: string | null;
+}
