@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 
 const CompanyProfileManager: React.FC = () => {
@@ -9,13 +10,13 @@ const CompanyProfileManager: React.FC = () => {
 
     const handleSave = () => {
         saveProfile(profileText);
-        alert("Your company profile has been saved!");
+        toast.success("Your company profile has been saved!");
     };
 
     const handleRemove = () => {
         removeProfile();
         setProfileText('');
-        alert("Your company profile has been removed.");
+        toast.success("Your company profile has been removed.");
     };
 
     if (!isLoaded) {

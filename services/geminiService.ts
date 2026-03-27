@@ -135,7 +135,7 @@ const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: 
     }
 };
 
-const deductCredits = async (amount: number, description: string) => {
+const deductCredits = async (amount: number, description: string, fileUrl?: string, type?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     const response = await fetch('/api/deduct-credits', {
         method: 'POST',
@@ -143,7 +143,7 @@ const deductCredits = async (amount: number, description: string) => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({ amount, description }),
+        body: JSON.stringify({ amount, description, fileUrl, type }),
     });
     
     if (!response.ok) {
@@ -192,12 +192,32 @@ export const generateImage = async (prompt: string): Promise<string> => {
             config: { imageConfig: { aspectRatio: "16:9" } }
         });
         for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            if (part.inlineData) {
+                const base64Data = part.inlineData.data;
+                const mimeType = part.inlineData.mimeType;
+                
+                // Convert base64 to Blob for upload
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: mimeType });
+                
+                // Upload to storage
+                const fileName = `image_${Date.now()}.png`;
+                const fileUrl = await uploadFileToStorage(blob, fileName);
+                
+                // Deduct credits with file URL
+                await deductCredits(5, `Generated AI Image: ${prompt.substring(0, 50)}...`, fileUrl || undefined, 'IMAGE');
+                
+                return `data:${mimeType};base64,${base64Data}`;
+            }
         }
         throw new Error("Image failed.");
     });
     
-    await deductCredits(5, `Generated AI Image: ${prompt.substring(0, 50)}...`);
     return result;
 };
 
@@ -289,7 +309,7 @@ export const generatePresentation = async (
         return filtered;
     });
 
-    await deductCredits(20, `Generated Presentation for ${projectInfo.location}`);
+    await deductCredits(20, `Generated Presentation for ${projectInfo.location}`, undefined, 'PRESENTATION');
     return slides;
 };
 
@@ -329,7 +349,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
         return filtered;
     });
 
-    await deductCredits(5, `Refined Presentation: ${userRequest.substring(0, 50)}...`);
+    await deductCredits(5, `Refined Presentation: ${userRequest.substring(0, 50)}...`, undefined, 'REFINEMENT');
     return slides;
 };
 
@@ -466,7 +486,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
         return result;
     });
     
-    await deductCredits(10, `Generated Policy Report: ${brief.substring(0, 50)}...`);
+    await deductCredits(10, `Generated Policy Report: ${brief.substring(0, 50)}...`, undefined, 'REPORT');
     return briefResult;
 };
 
@@ -547,7 +567,7 @@ export const generateRFP = async (
         return parseJsonResponse<RFPContent>(response, 'RFP');
     });
 
-    await deductCredits(10, `Generated RFP: ${taskDescription.substring(0, 50)}...`);
+    await deductCredits(10, `Generated RFP: ${taskDescription.substring(0, 50)}...`, undefined, 'RFP');
     return rfp;
 };
 
@@ -627,7 +647,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
         return parseJsonResponse<CapacityBuildingProgram>(response, 'Capacity Building Program');
     });
 
-    await deductCredits(10, `Generated Capacity Building Program for ${audience}`);
+    await deductCredits(10, `Generated Capacity Building Program for ${audience}`, undefined, 'PROGRAM');
     return program;
 };
 
@@ -693,7 +713,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
         return parseJsonResponse<VisionFramework>(response, 'Vision Framework');
     });
 
-    await deductCredits(10, `Generated Vision Framework for ${city}`);
+    await deductCredits(10, `Generated Vision Framework for ${city}`, undefined, 'VISION');
     return vision;
 };
 
@@ -784,7 +804,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
         return parseJsonResponse<StakeholderPlan>(response, 'Stakeholder Plan');
     });
 
-    await deductCredits(10, `Generated Stakeholder Plan for ${context.substring(0, 50)}...`);
+    await deductCredits(10, `Generated Stakeholder Plan for ${context.substring(0, 50)}...`, undefined, 'STAKEHOLDER');
     return plan;
 };
 
@@ -874,7 +894,7 @@ export const generateMethodology = async (task: string, companyProfile?: string)
         return parseJsonResponse<Methodology>(response, 'Methodology');
     });
     
-    await deductCredits(10, `Generated Methodology for ${task.substring(0, 50)}...`);
+    await deductCredits(10, `Generated Methodology for ${task.substring(0, 50)}...`, undefined, 'METHODOLOGY');
     return methodology;
 };
 
@@ -941,7 +961,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
         return parseJsonResponse<UrbanDeepUnderstanding>(response, 'Deep Understanding');
     });
     
-    await deductCredits(10, `Generated Deep Understanding for ${topic.substring(0, 50)}...`);
+    await deductCredits(10, `Generated Deep Understanding for ${topic.substring(0, 50)}...`, undefined, 'UNDERSTANDING');
     return result;
 };
 
@@ -971,8 +991,29 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
         return parseJsonResponse<UrbanDeepUnderstanding>(response, 'Deep Understanding Refinement');
     });
 
-    await deductCredits(5, `Refined Deep Understanding: ${userRequest.substring(0, 50)}...`);
+    await deductCredits(5, `Refined Deep Understanding: ${userRequest.substring(0, 50)}...`, undefined, 'REFINEMENT');
     return result;
+};
+
+export const uploadFileToStorage = async (file: Blob | File, fileName: string, bucket: string = 'generations'): Promise<string | null> => {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        const path = `${user.id}/${Date.now()}_${fileName}`;
+        const { error } = await supabase.storage.from(bucket).upload(path, file);
+
+        if (error) {
+            console.error('Failed to upload file to storage:', error);
+            return null;
+        }
+
+        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
+        return publicUrl;
+    } catch (err) {
+        console.error('Unexpected error during file upload:', err);
+        return null;
+    }
 };
 
 export const fetchUsageHistory = async (): Promise<UsageHistory[]> => {
@@ -985,7 +1026,8 @@ export const fetchUsageHistory = async (): Promise<UsageHistory[]> => {
     });
     
     if (!response.ok) {
-        throw new Error('Failed to fetch usage history.');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.details || 'Failed to fetch usage history.');
     }
     
     return await response.json();

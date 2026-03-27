@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
 import { PayPalButtons } from "@paypal/react-paypal-js";
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -127,7 +128,7 @@ const SubscriptionTier: React.FC<{
 
     const handleCaptureOrder = async (orderID: string) => {
         if (!user) {
-            alert('Please sign in to complete the purchase.');
+            toast.error('Please sign in to complete the purchase.');
             return;
         }
         try {
@@ -150,16 +151,16 @@ const SubscriptionTier: React.FC<{
                 if (onSuccess) {
                     onSuccess(title, data.newCredits);
                 } else {
-                    alert(`Payment successful! Your credits have been updated for the ${title} plan.`);
+                    toast.success(`Payment successful! Your credits have been updated for the ${title} plan.`);
                     window.location.reload();
                 }
             } else {
                 const error = await response.json();
-                alert(`Payment failed: ${error.error || 'Unknown error'}`);
+                toast.error(`Payment failed: ${error.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Failed to capture order:', error);
-            alert('An unexpected error occurred during payment capture.');
+            toast.error('An unexpected error occurred during payment capture.');
         }
     };
 
@@ -213,7 +214,7 @@ const SubscriptionTier: React.FC<{
                     </div>
                 ) : (
                     <button 
-                        onClick={() => alert(`This would typically lead to a checkout or contact form for the ${title} plan.`)} 
+                        onClick={() => toast.info(`This would typically lead to a checkout or contact form for the ${title} plan.`)} 
                         className={buttonClasses}
                         disabled={disabled}
                     >

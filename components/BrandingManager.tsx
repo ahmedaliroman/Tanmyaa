@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { useBranding } from '../hooks/useBranding';
 
 const BrandingManager: React.FC = () => {
@@ -27,7 +28,7 @@ const BrandingManager: React.FC = () => {
     const handleSave = () => {
         if (preview && file) {
             saveLogo(preview);
-            alert("Your custom logo has been saved!");
+            toast.success("Your custom logo has been saved!");
         } else {
             setError("Please select a file to save.");
         }
@@ -38,7 +39,7 @@ const BrandingManager: React.FC = () => {
         setPreview(null);
         setFile(null);
         setError(null);
-        alert("Your custom logo has been removed.");
+        toast.success("Your custom logo has been removed.");
     };
 
     return (

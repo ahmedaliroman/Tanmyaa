@@ -52,7 +52,7 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
         setIsLoading(true);
 
         try {
-            const success = await deductCredits(5);
+            const success = await deductCredits(5, `Instant Chat: ${currentInput.substring(0, 50)}...`, undefined, 'CHAT');
             if (!success) {
                 throw new Error("Failed to deduct credits.");
             }

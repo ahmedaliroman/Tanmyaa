@@ -98,6 +98,8 @@ create table if not exists public.usage_history (
   user_id uuid references auth.users on delete cascade not null,
   description text not null,
   credits_used integer not null,
+  file_url text,
+  type text,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 

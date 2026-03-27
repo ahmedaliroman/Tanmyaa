@@ -60,7 +60,7 @@ const AIAssistant = <T extends object>({ contextData, onRefine, onUpgrade }: AIA
 
         let accumulatedJsonString = '';
         try {
-            const success = await deductCredits(5);
+            const success = await deductCredits(5, `AI Assistant Refinement: ${currentInput.substring(0, 50)}...`, undefined, 'REFINEMENT');
             await refreshProfile();
             if (!success) {
                 throw new Error("Failed to deduct credits.");

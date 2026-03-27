@@ -16,6 +16,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -23,6 +24,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       if (view === 'signup') {
@@ -31,6 +33,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
           email,
           password,
           options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: {
               full_name: fullName,
               referral_code: referralCode
@@ -39,15 +42,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
         });
         if (error) throw error;
         
+        localStorage.removeItem('referral_code');
+        
         if (data.session) {
             // Auto-login successful (Email confirmation disabled)
-            localStorage.removeItem('referral_code');
             onClose();
         } else {
             // Email confirmation required
-            localStorage.removeItem('referral_code');
-            alert('Sign up successful! Please check your email to confirm your account.');
-            onClose();
+            setSuccessMessage('Sign up successful! Please check your email to confirm your account.');
+            // Don't close immediately so they can see the message
+            setTimeout(() => {
+                onClose();
+            }, 5000);
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -196,8 +202,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
             </div>
 
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm animate-shake">
                 {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm animate-fade-in">
+                {successMessage}
               </div>
             )}
 

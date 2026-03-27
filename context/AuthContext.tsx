@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
@@ -26,7 +26,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  deductCredits: (amount: number) => Promise<boolean>;
+  deductCredits: (amount: number, description?: string, fileUrl?: string, type?: string) => Promise<boolean>;
   addCredits: (amount: number, planName?: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -40,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const fetchingRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Get initial session
@@ -69,6 +70,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const fetchProfile = async (userId: string, email?: string) => {
+    if (fetchingRef.current === userId && profile) return;
+    fetchingRef.current = userId;
+    
     setAuthError(null);
     try {
       const { data, error } = await supabase
@@ -161,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const deductCredits = async (amount: number): Promise<boolean> => {
+  const deductCredits = async (amount: number, description?: string, fileUrl?: string, type?: string): Promise<boolean> => {
     if (!user || !profile) return false;
     if (profile.credits < amount) return false;
 
@@ -173,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount, description, fileUrl, type }),
       });
 
       if (!response.ok) {

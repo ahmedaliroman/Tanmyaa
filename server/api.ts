@@ -57,7 +57,7 @@ router.post('/deduct-credits', async (req, res) => {
             return res.status(401).json({ error: 'Invalid or expired token.' });
         }
 
-        const { amount } = req.body;
+        const { amount, description, fileUrl, type } = req.body;
         if (!amount || typeof amount !== 'number') {
             return res.status(400).json({ error: 'Invalid credit amount.' });
         }
@@ -111,8 +111,6 @@ router.post('/deduct-credits', async (req, res) => {
             return res.status(403).json({ error: 'Insufficient credits.' });
         }
 
-        const { description } = req.body;
-
         // Deduct credits and increment total_credits_used
         const { error: updateError } = await client
             .from('profiles')
@@ -134,7 +132,9 @@ router.post('/deduct-credits', async (req, res) => {
                 .insert({
                     user_id: user.id,
                     description: description,
-                    credits_used: amount
+                    credits_used: amount,
+                    file_url: fileUrl,
+                    type: type
                 });
             
             if (historyError) {

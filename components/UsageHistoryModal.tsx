@@ -115,13 +115,30 @@ const UsageHistoryModal: React.FC<UsageHistoryModalProps> = ({ isOpen, onClose }
                             <Clock className="w-3 h-3" />
                             {new Date(item.created_at).toLocaleString()}
                           </span>
+                          {item.type && (
+                            <span className="px-1.5 py-0.5 bg-zinc-800 rounded text-[10px] uppercase tracking-wider font-bold text-zinc-400 border border-zinc-700">
+                              {item.type}
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
                         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-xs font-bold border border-emerald-500/20">
                           <CreditCard className="w-3 h-3" />
                           -{item.credits_used}
                         </div>
+                        {item.file_url && (
+                          <a 
+                            href={item.file_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-emerald-500 hover:underline font-bold flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            Download
+                          </a>
+                        )}
                         <span className="text-[10px] uppercase tracking-wider text-zinc-600 font-bold">Success</span>
                       </div>
                     </div>
