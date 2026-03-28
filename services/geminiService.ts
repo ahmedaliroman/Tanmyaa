@@ -92,13 +92,19 @@ const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
         instruction += `- Follow this Presentation Template/Style Description: ${branding.presentation_template}\n`;
     }
     if (branding.presentation_template_url) {
-        instruction += `- A reference Presentation Template (PDF or Image) has been provided. Analyze its visual style, layout patterns, typography, and branding elements to replicate them in your presentation output.\n`;
+        instruction += `- A reference Presentation Template has been provided. Treat this uploaded template like a PowerPoint Master Slide theme.
+- CRITICAL: You MUST keep your default content, structure, logic, and flow exactly the same as you normally would (the default Free/Pro flow).
+- Do NOT change the JSON schema, do NOT change the slide 'layout' types, and do NOT invent new layouts.
+- Use the uploaded template ONLY as a visual design system to influence the tone, the formatting of your text (e.g., how you structure bullet points), and the visual descriptions for your image prompts.\n`;
     }
     if (branding.report_template) {
         instruction += `- Follow this Report/Document Template/Style Description: ${branding.report_template}\n`;
     }
     if (branding.report_template_url) {
-        instruction += `- A reference Report Template (PDF or Image) has been provided. Analyze its structural style, layout patterns, typography, and professional formatting to replicate them in your document output.\n`;
+        instruction += `- A reference Report Template has been provided. Treat this uploaded template like a document theme.
+- CRITICAL: You MUST keep your default content, structure, logic, and flow exactly the same as you normally would (the default Free/Pro flow).
+- Do NOT change the JSON schema, do NOT change the section types, and do NOT invent new layouts.
+- Use the uploaded template ONLY as a visual design system to influence the tone, the formatting of your text (e.g., how you structure bullet points), and the visual descriptions for your image prompts.\n`;
     }
     instruction += '- Ensure the tone and visual descriptions (for image prompts) align with this branding.\n';
     return instruction;
@@ -133,7 +139,7 @@ const addBrandingAssetsToParts = async (parts: Array<{ text?: string; inlineData
                     mimeType: fileData.mimeType
                 }
             });
-            parts.push({ text: `The attached file is the ${templateLabel} template you MUST follow for visual style and layout.` });
+            parts.push({ text: `The attached file is the ${templateLabel} template. Treat it as a visual theme/master slide. Keep your default content, structure, and logic exactly the same.` });
         } catch (e) {
             console.warn(`Failed to fetch branding ${templateLabel} template:`, e);
         }
