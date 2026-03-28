@@ -470,9 +470,10 @@ export const generatePresentation = async (
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
     - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}] }
     - SWOT: { layout: "SWOT", strengths: [{title, description}], weaknesses, opportunities, threats, analytic_reflection }
-    - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, image_prompt, analytic_reflection }
+    - Benchmarks: { layout: "Benchmarks", benchmarks: [{name: "string", location: "string", introduction: "string", interventions: ["string"], takeaway: "string", image_prompt: "string"}] }
+    - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, analytic_reflection }
     - Vision: { layout: "Vision", title, vision_statement, image_prompt }
-    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}], image_prompt }
+    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}] }
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
     - Roadmap: { layout: "Roadmap", phases: [{title, timeline, action_steps: [{action, kpi}], outcome}] }
     - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}] }
@@ -483,6 +484,19 @@ export const generatePresentation = async (
     - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}, {name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection: "string" }
     - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
     - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}] }
+    
+    VISUALS & RENDERS:
+    - DO NOT generate image_prompt or image_url for slides unless specifically requested or if it's one of the mandatory visual slides.
+    - MANDATORY VISUALS: The following slides MUST have high-quality image_prompt (and will have image_url generated):
+        * Vision (layout: "Vision"): Must have a compelling vision render.
+        * Benchmarks (layout: "Benchmarks"): Each benchmark item MUST have its own image_prompt.
+        * NodeAssessment (layout: "NodeAssessment"): MUST have both before_image_prompt and after_image_prompt for "Before and After" comparison.
+    - For all other slides, ONLY include image_prompt if it significantly adds analytical value. DO NOT use generic placeholders.
+    
+    STRICT LAYOUT REQUIREMENT: 
+    - DO NOT use vertical scrolling areas. All content must be visible within the slide boundaries.
+    - If there is a lot of information, prioritize high-level strategic insights and use concise, professional language to ensure it fits.
+    - Adjust font sizes and layout density in your descriptions to imply a well-fitted design.
     `;
 
     const prompt = `
@@ -546,7 +560,18 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     ADD/REMOVE SLIDES: You have full authority to add new slides, remove existing ones, or reorder them based on the user's request. When adding a slide, ensure it follows one of the allowed layouts and is populated with specific, high-quality content.
     
-    Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
+    Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
+    
+    VISUALS & RENDERS:
+    - DO NOT generate image_prompt or image_url for slides unless specifically requested or if it's one of the mandatory visual slides.
+    - MANDATORY VISUALS: The following slides MUST have high-quality image_prompt:
+        * Vision: Must have a compelling vision render.
+        * Benchmarks: Each benchmark item MUST have its own image_prompt.
+        * NodeAssessment: MUST have both before_image_prompt and after_image_prompt for "Before and After" comparison.
+    
+    STRICT LAYOUT REQUIREMENT: 
+    - DO NOT use vertical scrolling areas. All content must be visible within the slide boundaries.
+    - If there is a lot of information, prioritize high-level strategic insights and use concise, professional language to ensure it fits.
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
     
@@ -1234,6 +1259,15 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
+    STRICT LAYOUT REQUIREMENT: DO NOT use vertical scrolling areas. If content is heavy, reduce font size or redesign the layout to ensure all information fits within the slide boundaries.
+    VISUALS & RENDERS:
+    - DO NOT generate image_prompt or image_url for slides unless specifically requested or if it's one of the mandatory visual slides.
+    - MANDATORY VISUALS: The following slides MUST have high-quality image_prompt (and will have image_url generated):
+        * Vision (layout: "Vision"): Must have a compelling vision render.
+        * Benchmarks (layout: "Benchmarks"): Each benchmark item MUST have its own image_prompt.
+        * NodeAssessment (layout: "NodeAssessment"): MUST have both before_image_prompt and after_image_prompt for "Before and After" comparison.
+    - For all other slides, ONLY include image_prompt if it significantly adds analytical value. DO NOT use generic placeholders.
+    
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
     
     ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
@@ -1310,6 +1344,14 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
         const systemInstruction = `You are a world-class Urban Planning Professor. Update the provided "Thinking Board" JSON based on the student's request.
     
     ${getBrandingInstruction(plan, branding)}
+    
+    STRICT LAYOUT REQUIREMENT: DO NOT use vertical scrolling areas. If content is heavy, reduce font size or redesign the layout to ensure all information fits within the slide boundaries.
+    VISUALS & RENDERS:
+    - DO NOT generate image_prompt or image_url for slides unless specifically requested or if it's one of the mandatory visual slides.
+    - MANDATORY VISUALS: The following slides MUST have high-quality image_prompt:
+        * Vision: Must have a compelling vision render.
+        * Benchmarks: Each benchmark item MUST have its own image_prompt.
+        * NodeAssessment: MUST have both before_image_prompt and after_image_prompt for "Before and After" comparison.
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
     

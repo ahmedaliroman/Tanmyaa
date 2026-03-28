@@ -67,6 +67,8 @@ export interface BenchmarksSlide {
         introduction: string;
         interventions: string[];
         takeaway: string;
+        image_prompt: string;
+        image_url?: string;
     }[];
 }
 
