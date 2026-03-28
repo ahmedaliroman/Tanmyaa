@@ -100,7 +100,7 @@ const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, st
         : { ...style };
 
     return (
-        <div className={`w-full h-full bg-white text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
+        <div className={`w-full h-full bg-black text-white flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
             {/* Dark overlay if using a custom background to ensure text readability */}
             {presentationTemplateUrl && <div className="absolute inset-0 bg-black/60 z-0 pointer-events-none backdrop-blur-[2px]"></div>}
             
@@ -110,7 +110,7 @@ const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, st
             
             {/* Footer for Principal Strategist Reflection */}
             {reflectionText !== undefined && (
-                <div className="w-full p-4 border-t border-gray-200 bg-gray-50 text-[10px] text-gray-500 flex items-center gap-2 z-20">
+                <div className="w-full p-4 border-t border-white/10 bg-black/50 text-[10px] text-gray-400 flex items-center gap-2 z-20">
                     <div className="w-1 h-4 bg-[#007AB9]"></div>
                     <Editable 
                         value={reflectionText} 
@@ -464,7 +464,11 @@ const BenchmarksSlideLayout: React.FC<{ slide: BenchmarksSlide, onUpdate: (field
     const titleAnim = getAnimationStyles(isActive, 100, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="flex flex-col">
+        <SlideWrapper 
+            className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             <h2 
                 style={titleAnim}
                 className="text-4xl font-black tracking-tighter uppercase mb-12"
@@ -523,7 +527,11 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
     const contentAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="flex flex-col">
+        <SlideWrapper 
+            className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-12 lg:col-span-7 relative rounded-[40px] overflow-hidden group">
                     <EditableImage 
@@ -591,7 +599,11 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
     const pillarsAnim = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="flex flex-col">
+        <SlideWrapper 
+            className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-12 lg:col-span-5 flex flex-col justify-center">
                     <div style={titleAnim} className="flex items-center gap-4 mb-6">
@@ -654,7 +666,11 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/70";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col justify-between">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col justify-between"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls[slide.image_prompt] || ''} 
                 alt="Strategy map" 
@@ -773,7 +789,11 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
     const overlayClassAfter = designSystem?.is_light_background ? "bg-white/10" : "bg-black/75";
 
     return (
-        <SlideWrapper className="p-0 text-center flex flex-col pb-28">
+        <SlideWrapper 
+            className="p-0 text-center flex flex-col pb-28"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             <div className="w-1/2 h-full absolute left-0 top-0">
                 <EditableImage 
                     src={slide.before_image_url || imageUrls[slide.before_image_prompt] || ''} 
