@@ -452,7 +452,7 @@ export const generatePresentation = async (
     METRICS & CURRENCY: Use appropriate metrics (e.g., metric system vs imperial) and currency (e.g., local currency if specific, otherwise USD/EUR) that fit the content and location context.
     
     CRITICAL: For every slide, you MUST fill all fields with specific, data-driven content. 
-    - For Roadmap and GanttChartRoadmap (Implementation Timeline): You MUST provide a detailed, realistic timeline with specific milestones, action steps, and KPIs. DO NOT leave these blank.
+    - For Roadmap and GanttChartRoadmap (Implementation Timeline): You MUST provide a detailed, realistic timeline with specific milestones, action steps, and KPIs. DO NOT leave these blank. The GanttChartRoadmap MUST have at least 3 phases, each with at least 2 deliverables.
     - For EquityAnalysis slide: You MUST identify at least 3 distributional impacts and 3 mitigation strategies.
     - For ScenarioComparison slide: You MUST fill in the risks and costs for all scenarios.
     - For PolicyLevers slide: You MUST provide at least 3 actionable policy recommendations.
@@ -484,6 +484,7 @@ export const generatePresentation = async (
     - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}, {name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection: "string" }
     - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
     - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}] }
+    - Closing: { layout: "Closing", tagline, credits, image_prompt }
     
     VISUALS & RENDERS:
     - DO NOT generate image_prompt or image_url for slides unless specifically requested or if it's one of the mandatory visual slides.
@@ -491,6 +492,7 @@ export const generatePresentation = async (
         * Vision (layout: "Vision"): Must have a compelling vision render.
         * Benchmarks (layout: "Benchmarks"): Each benchmark item MUST have its own image_prompt.
         * NodeAssessment (layout: "NodeAssessment"): MUST have both before_image_prompt and after_image_prompt for "Before and After" comparison.
+        * Closing (layout: "Closing"): MUST have an attractive, high-quality closing image prompt.
     - For all other slides, ONLY include image_prompt if it significantly adds analytical value. DO NOT use generic placeholders.
     
     STRICT LAYOUT REQUIREMENT: 

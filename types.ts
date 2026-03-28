@@ -273,6 +273,7 @@ export interface ClosingSlide {
     layout: 'Closing';
     tagline: string;
     credits: string;
+    image_prompt?: string;
     image_url?: string;
 }
 
