@@ -1,4 +1,4 @@
-import { GoogleGenAI, GenerateContentResponse, Type, ThinkingLevel } from '@google/genai';
+import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
 import { supabase } from '../lib/supabase';
 import type { 
     PresentationSlide,
@@ -6,12 +6,99 @@ import type {
     PolicyBrief,
     RFPContent,
     CapacityBuildingProgram,
-    VisionFramework,
-    StakeholderPlan,
-    Methodology,
-    UsageHistory,
     BrandingInfo
 } from '../types';
+
+// --- Production Resilience Utilities ---
+
+/**
+ * Simple request queue to prevent concurrent API bursts that trigger 429s.
+ */
+class RequestQueue {
+    private queue: (() => Promise<void>)[] = [];
+    private running = 0;
+    private maxConcurrent = 1; // Strict limit for production stability
+
+    async add<T>(fn: () => Promise<T>): Promise<T> {
+        return new Promise((resolve, reject) => {
+            this.queue.push(async () => {
+                try {
+                    const result = await fn();
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+            this.process();
+        });
+    }
+
+    private async process() {
+        if (this.running >= this.maxConcurrent || this.queue.length === 0) return;
+        this.running++;
+        const fn = this.queue.shift()!;
+        try {
+            await fn();
+        } finally {
+            this.running--;
+            this.process();
+        }
+    }
+}
+
+const globalQueue = new RequestQueue();
+
+/**
+ * Client-side caching to avoid redundant expensive AI calls.
+ */
+const aiCache = {
+    get: <T>(key: string): T | null => {
+        const data = localStorage.getItem(`tanmyaa_ai_cache_${key}`);
+        if (!data) return null;
+        try {
+            const parsed = JSON.parse(data);
+            // Cache valid for 12 hours
+            if (Date.now() - parsed.timestamp > 12 * 60 * 60 * 1000) {
+                localStorage.removeItem(`tanmyaa_ai_cache_${key}`);
+                return null;
+            }
+            return parsed.value;
+        } catch {
+            return null;
+        }
+    },
+    set: (key: string, value: unknown) => {
+        try {
+            localStorage.setItem(`tanmyaa_ai_cache_${key}`, JSON.stringify({
+                value,
+                timestamp: Date.now()
+            }));
+        } catch (e) {
+            if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+                // Clear all AI cache if full
+                Object.keys(localStorage)
+                    .filter(k => k.startsWith('tanmyaa_ai_cache_'))
+                    .forEach(k => localStorage.removeItem(k));
+            }
+        }
+    }
+};
+
+const generateHash = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+};
+
+const getCacheKey = (fnName: string, params: unknown) => {
+    return `${fnName}_${generateHash(JSON.stringify(params))}`;
+};
+
+// --- End Resilience Utilities ---
 
 const GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION = `
 GEOGRAPHICAL NAME MAPPING (STRICT):
@@ -70,15 +157,12 @@ const getAi = () => {
     return new GoogleGenAI({ apiKey });
 };
 
-const getModelForPlan = (plan?: string, taskType: 'basic' | 'complex' = 'complex') => {
-    if (plan === 'Business') {
-        return 'gemini-3.1-pro-preview'; // Custom & Fine-Tuned (using Pro for highest quality)
+const getModelForPlan = (plan?: string) => {
+    if (plan === 'Business' || plan === 'Pro') {
+        return 'gemini-3.1-pro-preview';
     }
-    if (plan === 'Pro') {
-        return 'gemini-3.1-pro-preview'; // Enhanced
-    }
-    // Trial / Free / Default
-    return taskType === 'complex' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview'; 
+    // Trial / Free / Default - Use Flash for better resilience and higher quota
+    return 'gemini-3-flash-preview'; 
 };
 
 const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
@@ -267,58 +351,73 @@ const deductCredits = async (amount: number, description: string, fileUrl?: stri
     }
 };
 
-const withRetry = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
+const withRetry = async <T>(fn: (retryCount: number) => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
     let lastError: unknown;
     for (let i = 0; i < retries; i++) {
         try {
-            return await fn();
-        } catch (e) {
+            return await fn(i);
+        } catch (e: unknown) {
             lastError = e;
+            const errorString = e instanceof Error ? e.message : JSON.stringify(e);
+            const is429 = errorString.includes('429') || errorString.includes('RESOURCE_EXHAUSTED');
+            
             console.warn(`Retry ${i + 1}/${retries} failed:`, e);
-            if (i < retries - 1) await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+            
+            if (i < retries - 1) {
+                // Exponential backoff for 429
+                const waitTime = is429 ? delay * Math.pow(2, i) * 3 : delay * (i + 1);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
         }
     }
     throw lastError;
 };
 
 export const generateImage = async (prompt: string): Promise<string> => {
-    const ai = getAi();
-    const result = await withRetry(async () => {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}. STRICT FOCUS: Only generate images related to urban planning, architecture, or cityscapes. If the prompt is unrelated to these topics, generate a professional placeholder image related to urban design.
+    const cacheKey = getCacheKey('generateImage', { prompt });
+    const cached = aiCache.get<string>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const result = await withRetry(async () => {
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-image',
+                contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}. STRICT FOCUS: Only generate images related to urban planning, architecture, or cityscapes. If the prompt is unrelated to these topics, generate a professional placeholder image related to urban design.
             
             ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}` }] },
-            config: { imageConfig: { aspectRatio: "16:9" } }
-        });
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                const base64Data = part.inlineData.data;
-                const mimeType = part.inlineData.mimeType;
-                
-                // Convert base64 to Blob for upload
-                const byteCharacters = atob(base64Data);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                config: { imageConfig: { aspectRatio: "16:9" } }
+            });
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    const base64Data = part.inlineData.data;
+                    const mimeType = part.inlineData.mimeType;
+                    
+                    // Convert base64 to Blob for upload
+                    const byteCharacters = atob(base64Data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: mimeType });
+                    
+                    // Upload to storage
+                    const fileName = `image_${Date.now()}.png`;
+                    const fileUrl = await uploadFileToStorage(blob, fileName);
+                    
+                    // Deduct credits with file URL
+                    await deductCredits(5, `Generated AI Image: ${prompt.substring(0, 50)}...`, fileUrl || undefined, 'IMAGE');
+                    
+                    return `data:${mimeType};base64,${base64Data}`;
                 }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: mimeType });
-                
-                // Upload to storage
-                const fileName = `image_${Date.now()}.png`;
-                const fileUrl = await uploadFileToStorage(blob, fileName);
-                
-                // Deduct credits with file URL
-                await deductCredits(5, `Generated AI Image: ${prompt.substring(0, 50)}...`, fileUrl || undefined, 'IMAGE');
-                
-                return `data:${mimeType};base64,${base64Data}`;
             }
-        }
-        throw new Error("Image failed.");
+            throw new Error("Image failed.");
+        });
+        
+        aiCache.set(cacheKey, result);
+        return result;
     });
-    
-    return result;
 };
 
 export const generatePresentation = async (
@@ -328,9 +427,14 @@ export const generatePresentation = async (
     plan?: string,
     branding?: BrandingInfo
 ): Promise<PresentationSlide[]> => {
-    const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy (like McKinsey, Arup, or Foster + Partners). 
+    const cacheKey = getCacheKey('generatePresentation', { projectInfo, plan, branding });
+    const cached = aiCache.get<PresentationSlide[]>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan);
+        const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy (like McKinsey, Arup, or Foster + Partners). 
     Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
@@ -394,31 +498,35 @@ export const generatePresentation = async (
     Ensure the content is deeply relevant to ${projectInfo.location} and addresses ${projectInfo.mainChallenge} with specific, actionable strategies.
     `;
 
-    const slides = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'presentation');
+        const slides = await withRetry(async (retryCount) => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'presentation');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction, 
-                responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
-            },
+            // Fallback to flash if pro fails on retry
+            const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3-flash-preview' : model;
+
+            const response = await ai.models.generateContent({
+                model: currentModel,
+                contents: { parts },
+                config: { 
+                    systemInstruction, 
+                    responseMimeType: 'application/json',
+                    tools: [{ googleSearch: {} }]
+                },
+            });
+
+            const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
+            // Filter out any null or malformed slides that the AI might have returned
+            const filtered = (parsedSlides || []).filter(s => s && typeof s === 'object' && s.layout);
+            if (filtered.length === 0) throw new Error("No slides generated.");
+            return filtered;
         });
 
-        const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation');
-        // Filter out any null or malformed slides that the AI might have returned
-        const filtered = (parsedSlides || []).filter(s => s && typeof s === 'object' && s.layout);
-        if (filtered.length === 0) throw new Error("No slides generated.");
-        return filtered;
+        await deductCredits(20, `Generated Presentation for ${projectInfo.location}`, undefined, 'PRESENTATION');
+        aiCache.set(cacheKey, slides);
+        return slides;
     });
-
-    await deductCredits(20, `Generated Presentation for ${projectInfo.location}`, undefined, 'PRESENTATION');
-    return slides;
 };
 
 export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PresentationSlide[]> => {
@@ -446,19 +554,21 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
 
-    const slides = await withRetry(async () => {
+    const slides = await withRetry(async (retryCount) => {
         const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'presentation');
 
+        // Fallback to flash if pro fails on retry
+        const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3.1-flash-lite-preview' : model;
+
         const response = await ai.models.generateContent({
-            model,
+            model: currentModel,
             contents: { parts },
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
+                tools: [{ googleSearch: {} }]
             },
         });
         const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
@@ -472,11 +582,14 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
 };
 
 export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
-    const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
-    
-    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    const cacheKey = getCacheKey('generatePolicyReport', { brief, plan, branding });
+    const cached = aiCache.get<PolicyBrief>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan);
+        const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
     ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
@@ -524,96 +637,100 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     Your entire output MUST be a single, valid JSON object following the required schema.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
-    const briefResult = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a structured policy brief based on: ${brief}` }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+        const briefResult = await withRetry(async (retryCount) => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a structured policy brief based on: ${brief}` }];
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction,
-                responseMimeType: 'application/json',
-                tools: [{googleSearch: {}}],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title: { type: Type.STRING },
-                        executiveSummary: { type: Type.STRING },
-                        policyProblem: {
-                            type: Type.OBJECT,
-                            properties: {
-                                definition: { type: Type.STRING },
-                                affectedParties: { type: Type.STRING },
-                                urgency: { type: Type.STRING }
-                            },
-                            required: ["definition", "affectedParties", "urgency"]
-                        },
-                        evidenceAndFindings: {
-                            type: Type.OBJECT,
-                            properties: {
-                                summary: { type: Type.STRING },
-                                findings: { type: Type.ARRAY, items: { type: Type.STRING } }
-                            },
-                            required: ["summary", "findings"]
-                        },
-                        policyOptions: {
-                            type: Type.ARRAY,
-                            items: {
+            // Fallback to flash if pro fails on retry
+            const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3-flash-preview' : model;
+
+            const response = await ai.models.generateContent({
+                model: currentModel,
+                contents: { parts },
+                config: { 
+                    systemInstruction,
+                    responseMimeType: 'application/json',
+                    tools: [{googleSearch: {}}],
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            executiveSummary: { type: Type.STRING },
+                            policyProblem: {
                                 type: Type.OBJECT,
                                 properties: {
-                                    description: { type: Type.STRING },
-                                    benefits: { type: Type.STRING },
-                                    risks: { type: Type.STRING },
-                                    feasibility: { type: Type.STRING }
+                                    definition: { type: Type.STRING },
+                                    affectedParties: { type: Type.STRING },
+                                    urgency: { type: Type.STRING }
                                 },
-                                required: ["description", "benefits", "risks", "feasibility"]
-                            }
-                        },
-                        recommendedAction: {
-                            type: Type.OBJECT,
-                            properties: {
-                                option: { type: Type.STRING },
-                                justification: { type: Type.STRING },
-                                impacts: { type: Type.STRING }
+                                required: ["definition", "affectedParties", "urgency"]
                             },
-                            required: ["option", "justification", "impacts"]
-                        },
-                        implementationConsiderations: {
-                            type: Type.OBJECT,
-                            properties: {
-                                responsibility: { type: Type.STRING },
-                                capacity: { type: Type.STRING },
-                                timeline: { type: Type.STRING },
-                                risks: { type: Type.STRING }
+                            evidenceAndFindings: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    summary: { type: Type.STRING },
+                                    findings: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                },
+                                required: ["summary", "findings"]
                             },
-                            required: ["responsibility", "capacity", "timeline", "risks"]
+                            policyOptions: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        description: { type: Type.STRING },
+                                        benefits: { type: Type.STRING },
+                                        risks: { type: Type.STRING },
+                                        feasibility: { type: Type.STRING }
+                                    },
+                                    required: ["description", "benefits", "risks", "feasibility"]
+                                }
+                            },
+                            recommendedAction: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    option: { type: Type.STRING },
+                                    justification: { type: Type.STRING },
+                                    impacts: { type: Type.STRING }
+                                },
+                                required: ["option", "justification", "impacts"]
+                            },
+                            implementationConsiderations: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    responsibility: { type: Type.STRING },
+                                    capacity: { type: Type.STRING },
+                                    timeline: { type: Type.STRING },
+                                    risks: { type: Type.STRING }
+                                },
+                                required: ["responsibility", "capacity", "timeline", "risks"]
+                            },
+                            keyTakeaways: { type: Type.ARRAY, items: { type: Type.STRING } }
                         },
-                        keyTakeaways: { type: Type.ARRAY, items: { type: Type.STRING } }
-                    },
-                    required: ["title", "executiveSummary", "policyProblem", "evidenceAndFindings", "policyOptions", "recommendedAction", "implementationConsiderations", "keyTakeaways"]
+                        required: ["title", "executiveSummary", "policyProblem", "evidenceAndFindings", "policyOptions", "recommendedAction", "implementationConsiderations", "keyTakeaways"]
+                    }
                 }
+            });
+            
+            const result = parseJsonResponse<PolicyBrief>(response, 'Policy Brief');
+            const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+            if (groundingChunks) {
+                const sources = (groundingChunks as unknown as Array<{ web?: { uri: string; title?: string } }>)
+                    .filter(chunk => chunk.web && chunk.web.uri)
+                    .map(chunk => ({
+                        uri: chunk.web!.uri,
+                        title: chunk.web!.title || "Untitled Source",
+                    }));
+                (result as PolicyBrief & { groundingSources: Array<{ uri: string; title: string }> }).groundingSources = sources;
             }
+            return result;
         });
         
-        const result = parseJsonResponse<PolicyBrief>(response, 'Policy Brief');
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-        if (groundingChunks) {
-            const sources = (groundingChunks as unknown as Array<{ web?: { uri: string; title?: string } }>)
-                .filter(chunk => chunk.web && chunk.web.uri)
-                .map(chunk => ({
-                    uri: chunk.web!.uri,
-                    title: chunk.web!.title || "Untitled Source",
-                }));
-            (result as PolicyBrief & { groundingSources: Array<{ uri: string; title: string }> }).groundingSources = sources;
-        }
-        return result;
+        await deductCredits(10, `Generated Policy Report: ${brief.substring(0, 50)}...`, undefined, 'REPORT');
+        aiCache.set(cacheKey, briefResult);
+        return briefResult;
     });
-    
-    await deductCredits(10, `Generated Policy Report: ${brief.substring(0, 50)}...`, undefined, 'REPORT');
-    return briefResult;
 };
 
 export const generateRFP = async (
@@ -624,9 +741,14 @@ export const generateRFP = async (
     plan?: string,
     branding?: BrandingInfo
 ): Promise<RFPContent> => {
-    const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
+    const cacheKey = getCacheKey('generateRFP', { taskDescription, companyProfile, plan, branding });
+    const cached = aiCache.get<RFPContent>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan);
+        const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
@@ -657,59 +779,68 @@ export const generateRFP = async (
     
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
-    const rfp = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a detailed RFP for: ${taskDescription}` }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+        const rfp = await withRetry(async (retryCount) => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a detailed RFP for: ${taskDescription}` }];
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction, 
-                responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title: { type: Type.STRING },
-                        sections: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    title: { type: Type.STRING },
-                                    content: {
-                                        type: Type.ARRAY,
-                                        items: {
-                                            type: Type.OBJECT,
-                                            properties: {
-                                                paragraph: { type: Type.STRING },
-                                                list: { type: Type.ARRAY, items: { type: Type.STRING } }
+            // Fallback to flash if pro fails on retry
+            const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3-flash-preview' : model;
+
+            const response = await ai.models.generateContent({
+                model: currentModel,
+                contents: { parts },
+                config: { 
+                    systemInstruction, 
+                    responseMimeType: 'application/json',
+                    tools: [{ googleSearch: {} }],
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            sections: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        title: { type: Type.STRING },
+                                        content: {
+                                            type: Type.ARRAY,
+                                            items: {
+                                                type: Type.OBJECT,
+                                                properties: {
+                                                    paragraph: { type: Type.STRING },
+                                                    list: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                                }
                                             }
                                         }
-                                    }
-                                },
-                                required: ["title", "content"]
+                                    },
+                                    required: ["title", "content"]
+                                }
                             }
-                        }
-                    },
-                    required: ["title", "sections"]
+                        },
+                        required: ["title", "sections"]
+                    }
                 }
-            }
+            });
+            return parseJsonResponse<RFPContent>(response, 'RFP');
         });
-        return parseJsonResponse<RFPContent>(response, 'RFP');
-    });
 
-    await deductCredits(10, `Generated RFP: ${taskDescription.substring(0, 50)}...`, undefined, 'RFP');
-    return rfp;
+        await deductCredits(10, `Generated RFP: ${taskDescription.substring(0, 50)}...`, undefined, 'RFP');
+        aiCache.set(cacheKey, rfp);
+        return rfp;
+    });
 };
 
 export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<CapacityBuildingProgram> => {
-    const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
+    const cacheKey = getCacheKey('generateCapacityBuildingProgram', { audience, skillLevel, challenges, companyProfile, plan, branding });
+    const cached = aiCache.get<CapacityBuildingProgram>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan);
+        const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
     Your task is to generate a comprehensive, tailored Capacity Building Program.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
@@ -745,59 +876,68 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
-    const program = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a capacity building program for: ${audience}. 
+        const program = await withRetry(async (retryCount) => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a capacity building program for: ${audience}. 
             Skill Level: ${skillLevel}. 
             Challenges to address: ${challenges}.` }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction, 
-                responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        programTitle: { type: Type.STRING },
-                        targetAudience: { type: Type.STRING },
-                        learningObjectives: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        modules: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    title: { type: Type.STRING },
-                                    objective: { type: Type.STRING },
-                                    topics: { type: Type.ARRAY, items: { type: Type.STRING } },
-                                    methodology: { type: Type.STRING },
-                                    outcome: { type: Type.STRING }
-                                },
-                                required: ["title", "objective", "topics", "methodology", "outcome"]
-                            }
+            // Fallback to flash if pro fails on retry
+            const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3-flash-preview' : model;
+
+            const response = await ai.models.generateContent({
+                model: currentModel,
+                contents: { parts },
+                config: { 
+                    systemInstruction, 
+                    responseMimeType: 'application/json',
+                    tools: [{ googleSearch: {} }],
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            programTitle: { type: Type.STRING },
+                            targetAudience: { type: Type.STRING },
+                            learningObjectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+                            modules: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        title: { type: Type.STRING },
+                                        objective: { type: Type.STRING },
+                                        topics: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                        methodology: { type: Type.STRING },
+                                        outcome: { type: Type.STRING }
+                                    },
+                                    required: ["title", "objective", "topics", "methodology", "outcome"]
+                                }
+                            },
+                            deliveryMethod: { type: Type.STRING },
+                            evaluationPlan: { type: Type.STRING }
                         },
-                        deliveryMethod: { type: Type.STRING },
-                        evaluationPlan: { type: Type.STRING }
-                    },
-                    required: ["programTitle", "targetAudience", "learningObjectives", "modules", "deliveryMethod", "evaluationPlan"]
+                        required: ["programTitle", "targetAudience", "learningObjectives", "modules", "deliveryMethod", "evaluationPlan"]
+                    }
                 }
-            }
+            });
+            return parseJsonResponse<CapacityBuildingProgram>(response, 'Capacity Building Program');
         });
-        return parseJsonResponse<CapacityBuildingProgram>(response, 'Capacity Building Program');
-    });
 
-    await deductCredits(10, `Generated Capacity Building Program for ${audience}`, undefined, 'PROGRAM');
-    return program;
+        await deductCredits(10, `Generated Capacity Building Program for ${audience}`, undefined, 'PROGRAM');
+        aiCache.set(cacheKey, program);
+        return program;
+    });
 };
 
 export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<VisionFramework> => {
-    const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
+    const cacheKey = getCacheKey('generateVisionFramework', { city, aspirations, timeframe, companyProfile, plan, branding });
+    const cached = aiCache.get<VisionFramework>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan, 'complex');
+        const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
     Your task is to generate a cohesive and inspiring Vision Framework.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
@@ -826,52 +966,58 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
-    const vision = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"` }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+        const vision = await withRetry(async () => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"` }];
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction, 
-                responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        visionStatement: { type: Type.STRING },
-                        tagline: { type: Type.STRING },
-                        strategicPillars: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    title: { type: Type.STRING },
-                                    description: { type: Type.STRING },
-                                    keyInitiatives: { type: Type.ARRAY, items: { type: Type.STRING } }
-                                },
-                                required: ["title", "description", "keyInitiatives"]
+            const response = await ai.models.generateContent({
+                model,
+                contents: { parts },
+                config: { 
+                    systemInstruction, 
+                    responseMimeType: 'application/json',
+                    tools: [{ googleSearch: {} }],
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            visionStatement: { type: Type.STRING },
+                            tagline: { type: Type.STRING },
+                            strategicPillars: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        title: { type: Type.STRING },
+                                        description: { type: Type.STRING },
+                                        keyInitiatives: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                    },
+                                    required: ["title", "description", "keyInitiatives"]
+                                }
                             }
-                        }
-                    },
-                    required: ["visionStatement", "tagline", "strategicPillars"]
+                        },
+                        required: ["visionStatement", "tagline", "strategicPillars"]
+                    }
                 }
-            }
+            });
+            return parseJsonResponse<VisionFramework>(response, 'Vision Framework');
         });
-        return parseJsonResponse<VisionFramework>(response, 'Vision Framework');
-    });
 
-    await deductCredits(10, `Generated Vision Framework for ${city}`, undefined, 'VISION');
-    return vision;
+        await deductCredits(10, `Generated Vision Framework for ${city}`, undefined, 'VISION');
+        aiCache.set(cacheKey, vision);
+        return vision;
+    });
 };
 
 export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<StakeholderPlan> => {
-    const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class public engagement strategist. 
+    const cacheKey = getCacheKey('generateStakeholderPlan', { context, goals, companyProfile, plan, branding });
+    const cached = aiCache.get<StakeholderPlan>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan, 'complex');
+        const systemInstruction = `You are a world-class public engagement strategist. 
     Your task is to generate a detailed Stakeholder Engagement Plan.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
@@ -910,67 +1056,73 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
-    const planResult = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"` }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+        const planResult = await withRetry(async () => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"` }];
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction, 
-                responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        planTitle: { type: Type.STRING },
-                        engagementGoals: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        stakeholderGroups: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    name: { type: Type.STRING },
-                                    category: { type: Type.STRING, description: "Government, Community, Private Sector, Expert/NGO, or Other" },
-                                    interest: { type: Type.STRING, description: "High, Medium, or Low" },
-                                    influence: { type: Type.STRING, description: "High, Medium, or Low" },
-                                    engagementStrategy: { type: Type.STRING },
-                                    communicationMethods: { type: Type.ARRAY, items: { type: Type.STRING } }
-                                },
-                                required: ["name", "category", "interest", "influence", "engagementStrategy", "communicationMethods"]
+            const response = await ai.models.generateContent({
+                model,
+                contents: { parts },
+                config: { 
+                    systemInstruction, 
+                    responseMimeType: 'application/json',
+                    tools: [{ googleSearch: {} }],
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            planTitle: { type: Type.STRING },
+                            engagementGoals: { type: Type.ARRAY, items: { type: Type.STRING } },
+                            stakeholderGroups: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        name: { type: Type.STRING },
+                                        category: { type: Type.STRING, description: "Government, Community, Private Sector, Expert/NGO, or Other" },
+                                        interest: { type: Type.STRING, description: "High, Medium, or Low" },
+                                        influence: { type: Type.STRING, description: "High, Medium, or Low" },
+                                        engagementStrategy: { type: Type.STRING },
+                                        communicationMethods: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                    },
+                                    required: ["name", "category", "interest", "influence", "engagementStrategy", "communicationMethods"]
+                                }
+                            },
+                            timeline: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        phase: { type: Type.STRING },
+                                        duration: { type: Type.STRING },
+                                        activities: { type: Type.STRING }
+                                    },
+                                    required: ["phase", "duration", "activities"]
+                                }
                             }
                         },
-                        timeline: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    phase: { type: Type.STRING },
-                                    duration: { type: Type.STRING },
-                                    activities: { type: Type.STRING }
-                                },
-                                required: ["phase", "duration", "activities"]
-                            }
-                        }
-                    },
-                    required: ["planTitle", "engagementGoals", "stakeholderGroups", "timeline"]
+                        required: ["planTitle", "engagementGoals", "stakeholderGroups", "timeline"]
+                    }
                 }
-            }
+            });
+            return parseJsonResponse<StakeholderPlan>(response, 'Stakeholder Plan');
         });
-        return parseJsonResponse<StakeholderPlan>(response, 'Stakeholder Plan');
-    });
 
-    await deductCredits(10, `Generated Stakeholder Plan for ${context.substring(0, 50)}...`, undefined, 'STAKEHOLDER');
-    return planResult;
+        await deductCredits(10, `Generated Stakeholder Plan for ${context.substring(0, 50)}...`, undefined, 'STAKEHOLDER');
+        aiCache.set(cacheKey, planResult);
+        return planResult;
+    });
 };
 
 export const generateMethodology = async (task: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<Methodology> => {
-    const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a Senior Urban Project Manager. 
+    const cacheKey = getCacheKey('generateMethodology', { task, companyProfile, plan, branding });
+    const cached = aiCache.get<Methodology>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan, 'complex');
+        const systemInstruction = `You are a Senior Urban Project Manager. 
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
@@ -1009,68 +1161,74 @@ export const generateMethodology = async (task: string, companyProfile?: string,
     Your entire output MUST be a single, valid JSON object following the schema above.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
-    const methodology = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a methodology for the following task: "${task}"` }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+        const methodology = await withRetry(async () => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a methodology for the following task: "${task}"` }];
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction, 
-                responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title: { type: Type.STRING },
-                        introduction: { type: Type.STRING },
-                        phases: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    phase_number: { type: Type.INTEGER },
-                                    title: { type: Type.STRING },
-                                    description: { type: Type.STRING },
-                                    steps: {
-                                        type: Type.ARRAY,
-                                        items: {
-                                            type: Type.OBJECT,
-                                            properties: {
-                                                step_number: { type: Type.STRING },
-                                                title: { type: Type.STRING },
-                                                description: { type: Type.STRING },
-                                                deliverable: { type: Type.STRING },
-                                                tools_and_techniques: { type: Type.ARRAY, items: { type: Type.STRING } }
-                                            },
-                                            required: ["step_number", "title", "description", "deliverable", "tools_and_techniques"]
+            const response = await ai.models.generateContent({
+                model,
+                contents: { parts },
+                config: { 
+                    systemInstruction, 
+                    responseMimeType: 'application/json',
+                    tools: [{ googleSearch: {} }],
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            introduction: { type: Type.STRING },
+                            phases: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        phase_number: { type: Type.INTEGER },
+                                        title: { type: Type.STRING },
+                                        description: { type: Type.STRING },
+                                        steps: {
+                                            type: Type.ARRAY,
+                                            items: {
+                                                type: Type.OBJECT,
+                                                properties: {
+                                                    step_number: { type: Type.STRING },
+                                                    title: { type: Type.STRING },
+                                                    description: { type: Type.STRING },
+                                                    deliverable: { type: Type.STRING },
+                                                    tools_and_techniques: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                                },
+                                                required: ["step_number", "title", "description", "deliverable", "tools_and_techniques"]
+                                            }
                                         }
-                                    }
-                                },
-                                required: ["phase_number", "title", "description", "steps"]
+                                    },
+                                    required: ["phase_number", "title", "description", "steps"]
+                                }
                             }
-                        }
-                    },
-                    required: ["title", "introduction", "phases"]
+                        },
+                        required: ["title", "introduction", "phases"]
+                    }
                 }
-            }
+            });
+            return parseJsonResponse<Methodology>(response, 'Methodology');
         });
-        return parseJsonResponse<Methodology>(response, 'Methodology');
+        
+        await deductCredits(10, `Generated Methodology for ${task.substring(0, 50)}...`, undefined, 'METHODOLOGY');
+        aiCache.set(cacheKey, methodology);
+        return methodology;
     });
-    
-    await deductCredits(10, `Generated Methodology for ${task.substring(0, 50)}...`, undefined, 'METHODOLOGY');
-    return methodology;
 };
 
 
 
 export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
-    const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Urban Planning Professor. 
+    const cacheKey = getCacheKey('generateDeepUnderstanding', { topic, context, companyProfile, plan, branding });
+    const cached = aiCache.get<UrbanDeepUnderstanding>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan, 'complex');
+        const systemInstruction = `You are a world-class Urban Planning Professor. 
     Your task is to teach a student about a specific urban topic using a "Thinking Board" approach.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
@@ -1117,33 +1275,39 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     Your entire output MUST be a single, valid JSON object following the required schema.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
-    const result = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Teach me about: "${topic}". Context: "${context}"` }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+        const result = await withRetry(async () => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Teach me about: "${topic}". Context: "${context}"` }];
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction,
-                responseMimeType: 'application/json',
-                tools: [{googleSearch: {}}],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
-            }
+            const response = await ai.models.generateContent({
+                model,
+                contents: { parts },
+                config: { 
+                    systemInstruction,
+                    responseMimeType: 'application/json',
+                    tools: [{googleSearch: {}}]
+                }
+            });
+            
+            return parseJsonResponse<UrbanDeepUnderstanding>(response, 'Deep Understanding');
         });
         
-        return parseJsonResponse<UrbanDeepUnderstanding>(response, 'Deep Understanding');
+        await deductCredits(10, `Generated Deep Understanding for ${topic.substring(0, 50)}...`, undefined, 'UNDERSTANDING');
+        aiCache.set(cacheKey, result);
+        return result;
     });
-    
-    await deductCredits(10, `Generated Deep Understanding for ${topic.substring(0, 50)}...`, undefined, 'UNDERSTANDING');
-    return result;
 };
 
 export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
-    const ai = getAi();
-    const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
-    const systemInstruction = `You are a world-class Urban Planning Professor. Update the provided "Thinking Board" JSON based on the student's request.
+    const cacheKey = getCacheKey('refineDeepUnderstanding', { currentData, userRequest, companyProfile, plan, branding });
+    const cached = aiCache.get<UrbanDeepUnderstanding>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = plan === 'Free' || !plan ? 'gemini-3-flash-preview' : 'gemini-3.1-pro-preview';
+        const systemInstruction = `You are a world-class Urban Planning Professor. Update the provided "Thinking Board" JSON based on the student's request.
     
     ${getBrandingInstruction(plan, branding)}
     
@@ -1156,25 +1320,27 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     Your entire output must be only the valid JSON object, with no other text.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
-    const result = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Update the following Deep Understanding JSON based on the student's request. Current state: ${JSON.stringify(currentData)}. Student Request: "${userRequest}".` }];
-        
-        await addBrandingAssetsToParts(parts, plan, branding, 'report');
+        const result = await withRetry(async () => {
+            const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Update the following Deep Understanding JSON based on the student's request. Current state: ${JSON.stringify(currentData)}. Student Request: "${userRequest}".` }];
+            
+            await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
-        const response = await ai.models.generateContent({
-            model,
-            contents: { parts },
-            config: { 
-                systemInstruction,
-                responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }]
-            },
+            const response = await ai.models.generateContent({
+                model,
+                contents: { parts },
+                config: { 
+                    systemInstruction,
+                    responseMimeType: 'application/json',
+                    tools: [{ googleSearch: {} }]
+                },
+            });
+            return parseJsonResponse<UrbanDeepUnderstanding>(response, 'Deep Understanding Refinement');
         });
-        return parseJsonResponse<UrbanDeepUnderstanding>(response, 'Deep Understanding Refinement');
-    });
 
-    await deductCredits(5, `Refined Deep Understanding: ${userRequest.substring(0, 50)}...`, undefined, 'REFINEMENT');
-    return result;
+        await deductCredits(5, `Refined Deep Understanding: ${userRequest.substring(0, 50)}...`, undefined, 'REFINEMENT');
+        aiCache.set(cacheKey, result);
+        return result;
+    });
 };
 
 export const uploadFileToStorage = async (file: Blob | File, fileName: string, bucket: string = 'generations'): Promise<string | null> => {
@@ -1216,27 +1382,35 @@ export const fetchUsageHistory = async (): Promise<UsageHistory[]> => {
 };
 
 const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
-    const ai = getAi();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
-        contents: prompt,
-        config: { 
-            systemInstruction: `You are a professional urban planning assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. Provide highly relevant, specific, and creative suggestions related to urban development. Avoid generic answers. Return ONLY a JSON array of strings.
-            
-            ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
-            responseMimeType: 'application/json', 
-            responseSchema: { 
-                type: Type.ARRAY,
-                items: { type: Type.STRING }
-            } 
+    const cacheKey = getCacheKey('generateInputSuggestions', { prompt });
+    const cached = aiCache.get<string[]>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: { 
+                systemInstruction: `You are a professional urban planning assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. Provide highly relevant, specific, and creative suggestions related to urban development. Avoid generic answers. Return ONLY a JSON array of strings.
+                
+                ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
+                responseMimeType: 'application/json', 
+                responseSchema: { 
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING }
+                } 
+            }
+        });
+        try {
+            const result = JSON.parse(response.text || '[]');
+            aiCache.set(cacheKey, result);
+            return result;
+        } catch (e: unknown) {
+            console.error("Failed to parse suggestions:", e);
+            return [];
         }
     });
-    try {
-        return JSON.parse(response.text || '[]');
-    } catch (e: unknown) {
-        console.error("Failed to parse suggestions:", e);
-        return [];
-    }
 };
 
 export const getSceneSuggestions = async (): Promise<string[]> => {

@@ -5,6 +5,24 @@ interface ErrorMessageProps {
 }
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
+  let displayMessage = message;
+  let isQuotaError = false;
+
+  try {
+    if (typeof message === 'string' && message.trim().startsWith('{')) {
+      const parsed = JSON.parse(message);
+      if (parsed.error && parsed.error.message) {
+        displayMessage = parsed.error.message;
+        if (parsed.error.code === 429 || parsed.error.status === 'RESOURCE_EXHAUSTED') {
+          isQuotaError = true;
+          displayMessage = "The AI service is currently under heavy load or you've reached a temporary rate limit. We've attempted to retry automatically, but the limit persists. Please wait 30-60 seconds and try again.";
+        }
+      }
+    }
+  } catch {
+    // Not a JSON string or parsing failed, use original message
+  }
+
   return (
     <div className="bg-rose-900/40 border border-rose-500/50 text-rose-200 p-4 rounded-xl flex items-start space-x-4 animate-fade-in" role="alert">
       <div className="flex-shrink-0">
@@ -13,8 +31,8 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
         </svg>
       </div>
       <div>
-        <p className="font-bold text-white">An Error Occurred</p>
-        <p className="text-sm mt-1">{message}</p>
+        <p className="font-bold text-white">{isQuotaError ? 'Service Temporarily Busy' : 'An Error Occurred'}</p>
+        <p className="text-sm mt-1">{displayMessage}</p>
       </div>
     </div>
   );
