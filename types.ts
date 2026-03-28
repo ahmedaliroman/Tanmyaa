@@ -51,6 +51,7 @@ export interface CrisisSlide {
 
 export interface SWOTSlide {
     layout: 'SWOT';
+    title?: string;
     strengths: { title: string; description: string; }[];
     weaknesses: { title: string; description: string; }[];
     opportunities: { title: string; description: string; }[];
@@ -61,6 +62,7 @@ export interface SWOTSlide {
 
 export interface BenchmarksSlide {
     layout: 'Benchmarks';
+    title?: string;
     benchmarks: {
         name: string;
         location: string;
@@ -169,6 +171,7 @@ export interface RiskAssessmentSlide {
 
 export interface RoadmapSlide {
     layout: 'Roadmap';
+    title: string;
     phases: {
         title: string;
         timeline: string;
@@ -230,6 +233,7 @@ export interface FiscalFrameworkSlide {
 
 export interface PolicyLeversSlide {
     layout: 'PolicyLevers';
+    title?: string;
     recommendations: {
         title: string;
         strategy: string;

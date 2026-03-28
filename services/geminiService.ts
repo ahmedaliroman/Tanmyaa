@@ -427,14 +427,7 @@ export const generatePresentation = async (
     plan?: string,
     branding?: BrandingInfo
 ): Promise<PresentationSlide[]> => {
-    const cacheKey = getCacheKey('generatePresentation', { projectInfo, plan, branding });
-    const cached = aiCache.get<PresentationSlide[]>(cacheKey);
-    if (cached) return cached;
-
-    return globalQueue.add(async () => {
-        const ai = getAi();
-        const model = getModelForPlan(plan);
-        const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy (like McKinsey, Arup, or Foster + Partners). 
+    const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy (like McKinsey, Arup, or Foster + Partners). 
     Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
@@ -461,7 +454,7 @@ export const generatePresentation = async (
     If specific real-world data is unavailable, use your expert knowledge to synthesize highly plausible, technically sound, and data-driven estimates based on similar global benchmarks. DO NOT leave any field blank or use placeholder text.
     Every field in the JSON must be filled with high-quality, professional, and specific content.
     The output MUST be a JSON array of slide objects.
-    Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
+    Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     TECHNICAL DEPTH: Provide rigorous, data-driven analysis. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
     NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
@@ -469,20 +462,22 @@ export const generatePresentation = async (
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (REQUIRED, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
     - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}] }
-    - SWOT: { layout: "SWOT", strengths: [{title, description}], weaknesses, opportunities, threats, analytic_reflection }
-    - Benchmarks: { layout: "Benchmarks", benchmarks: [{name: "string", location: "string", introduction: "string", interventions: ["string"], takeaway: "string", image_prompt: "string"}] }
-    - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, analytic_reflection }
-    - Vision: { layout: "Vision", title, vision_statement, image_prompt }
+    - SWOT: { layout: "SWOT", title, strengths: [{title, description}], weaknesses: [{title, description}], opportunities: [{title, description}], threats: [{title, description}], analytic_reflection }
+    - Benchmarks: { layout: "Benchmarks", title, benchmarks: [{name: "string", location: "string", introduction: "string", interventions: ["string"], takeaway: "string", image_prompt: "string"}] }
+    - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, data_source, image_prompt, analytic_reflection }
+    - Vision: { layout: "Vision", title, vision_statement, strategic_pillars: [{title, initiatives: []}], image_prompt }
     - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}] }
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
-    - Roadmap: { layout: "Roadmap", phases: [{title, timeline, action_steps: [{action, kpi}], outcome}] }
+    - Roadmap: { layout: "Roadmap", title, phases: [{title, timeline, action_steps: [{action, kpi}], outcome}] }
     - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}] }
     - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
     - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
     - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], analytic_reflection }
-    - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [{group: "string", impact: "string"}, {group: "string", impact: "string"}, {group: "string", impact: "string"}], mitigation_strategies: ["strategy1", "strategy2", "strategy3"], analytic_reflection: "string" }
-    - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}, {name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection: "string" }
-    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
+    - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [{group: "string", impact: "string"}], mitigation_strategies: [], analytic_reflection }
+    - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection }
+    - RiskAssessment: { layout: "RiskAssessment", title, risks: [{category: "string", description: "string", mitigation: "string"}], analytic_reflection }
+    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
+    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency: {name: "string", rationale: "string"}, stakeholders: [{name: "string", role: "string"}], funding_model: "string", regulatory_changes: ["string"] }
     - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}] }
     - Closing: { layout: "Closing", tagline, credits, image_prompt }
     
@@ -500,6 +495,14 @@ export const generatePresentation = async (
     - If there is a lot of information, prioritize high-level strategic insights and use concise, professional language to ensure it fits.
     - Adjust font sizes and layout density in your descriptions to imply a well-fitted design.
     `;
+
+    const cacheKey = getCacheKey('generatePresentation', { projectInfo, plan, branding, systemInstruction });
+    const cached = aiCache.get<PresentationSlide[]>(cacheKey);
+    if (cached) return cached;
+
+    return globalQueue.add(async () => {
+        const ai = getAi();
+        const model = getModelForPlan(plan);
 
     const prompt = `
     Generate a 12-15 slide strategic urban planning doctrine for:
@@ -562,7 +565,30 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     ADD/REMOVE SLIDES: You have full authority to add new slides, remove existing ones, or reorder them based on the user's request. When adding a slide, ensure it follows one of the allowed layouts and is populated with specific, high-quality content.
     
-    Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
+    Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
+    
+    SCHEMA GUIDANCE:
+    - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg, design_system }
+    - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
+    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [] }
+    - SWOT: { layout: "SWOT", title, strengths: [], weaknesses: [], opportunities: [], threats: [], analytic_reflection }
+    - Benchmarks: { layout: "Benchmarks", title, benchmarks: [] }
+    - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, data_source, image_prompt, analytic_reflection }
+    - Vision: { layout: "Vision", title, vision_statement, strategic_pillars: [], image_prompt }
+    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [] }
+    - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
+    - Roadmap: { layout: "Roadmap", title, phases: [] }
+    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [] }
+    - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [], analytic_reflection }
+    - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [], analytic_reflection }
+    - Process: { layout: "Process", title, subtitle, steps: [], analytic_reflection }
+    - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [], mitigation_strategies: [], analytic_reflection }
+    - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [], analytic_reflection }
+    - RiskAssessment: { layout: "RiskAssessment", title, risks: [], analytic_reflection }
+    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [] }
+    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency, stakeholders: [], funding_model, regulatory_changes: [] }
+    - References: { layout: "References", title, sources: [] }
+    - Closing: { layout: "Closing", tagline, credits, image_prompt }
     
     VISUALS & RENDERS:
     - DO NOT generate image_prompt or image_url for slides unless specifically requested or if it's one of the mandatory visual slides.
@@ -570,9 +596,14 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
         * Vision: Must have a compelling vision render.
         * Benchmarks: Each benchmark item MUST have its own image_prompt.
         * NodeAssessment: MUST have both before_image_prompt and after_image_prompt for "Before and After" comparison.
+        * Closing: MUST have an attractive, high-quality closing image prompt.
     
     STRICT LAYOUT REQUIREMENT: 
     - DO NOT use vertical scrolling areas. All content must be visible within the slide boundaries.
+    - Cover slide title: Keep it under 60 characters to avoid overflow.
+    - Closing slide tagline: Keep it under 80 characters.
+    - Bullet points: Maximum 5 per list, maximum 15 words per point.
+    - Tables: Maximum 5 rows, maximum 5 columns.
     - If there is a lot of information, prioritize high-level strategic insights and use concise, professional language to ensure it fits.
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
