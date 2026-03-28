@@ -458,6 +458,17 @@ export const generatePresentation = async (
     TECHNICAL DEPTH: Provide rigorous, data-driven analysis. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
     NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
+    DESIGN PRINCIPLES (MANDATORY):
+    1. READABILITY FIRST: Use high-contrast color pairings. Ensure text is concise and well-structured.
+    2. VISUAL COHERENCE: All slides must feel part of the same "Design System". 
+    3. PROFESSIONAL LAYOUT: Use generous white space. Avoid crowding. Align elements strictly.
+    4. DATA VISUALIZATION: When describing metrics, use formats that imply clear charts or grids.
+    
+    FIXED TEMPLATE REQUIREMENTS:
+    - Cover: Must establish the visual theme. Generate a 'design_system_svg' that is sophisticated and abstract.
+    - Typography: Use 'Inter' or 'Helvetica Neue' as the base font family.
+    - Colors: If no branding is provided, use a "Premium Dark" theme: Background #0A0A0A, Primary Text #FFFFFF, Secondary Text #A1A1AA, Accent #3B82F6.
+    
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (REQUIRED, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
@@ -494,8 +505,9 @@ export const generatePresentation = async (
     - DO NOT use vertical scrolling areas. All content must be visible within the slide boundaries.
     - If there is a lot of information, prioritize high-level strategic insights and use concise, professional language to ensure it fits.
     - Adjust font sizes and layout density in your descriptions to imply a well-fitted design.
-    - CONCISENESS: Be extremely concise. Avoid wordiness. Ensure the entire JSON response is under 8,000 tokens.
+    - CONCISENESS: Be extremely concise. Avoid wordiness. Ensure the entire JSON response is under 10,000 tokens.
     `;
+
 
     const cacheKey = getCacheKey('generatePresentation', { projectInfo, plan, branding, systemInstruction });
     const cached = aiCache.get<PresentationSlide[]>(cacheKey);
@@ -569,6 +581,17 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
+    DESIGN PRINCIPLES (MANDATORY):
+    1. READABILITY FIRST: Use high-contrast color pairings. Ensure text is concise and well-structured.
+    2. VISUAL COHERENCE: All slides must feel part of the same "Design System". 
+    3. PROFESSIONAL LAYOUT: Use generous white space. Avoid crowding. Align elements strictly.
+    4. DATA VISUALIZATION: When describing metrics, use formats that imply clear charts or grids.
+    
+    FIXED TEMPLATE REQUIREMENTS:
+    - Cover: Must establish the visual theme. Generate a 'design_system_svg' that is sophisticated and abstract.
+    - Typography: Use 'Inter' or 'Helvetica Neue' as the base font family.
+    - Colors: If no branding is provided, use a "Premium Dark" theme: Background #0A0A0A, Primary Text #FFFFFF, Secondary Text #A1A1AA, Accent #3B82F6.
+
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg, design_system }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
@@ -613,6 +636,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     IMPORTANT: You MUST preserve the 'design_system' and 'design_system_svg' fields in the Cover slide if they exist, unless the user explicitly asks to change the design.
     
     IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
+
 
     const slides = await withRetry(async (retryCount) => {
         const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".` }];
