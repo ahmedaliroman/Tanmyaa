@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
+import Preloader from '../components/Preloader';
 
 interface Profile {
   id: string;
@@ -45,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const fetchingRef = useRef<string | null>(null);
 
@@ -275,8 +277,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    setIsLoggingOut(true);
+    
+    // Clear local storage branding keys so the next user doesn't see them
+    localStorage.removeItem('tanmyaaCustomLogo');
+    localStorage.removeItem('tanmyaaCustomColors');
+    localStorage.removeItem('tanmyaaCustomPresentationTemplate');
+    localStorage.removeItem('tanmyaaCustomPresentationTemplateUrl');
+    localStorage.removeItem('tanmyaaCustomReportTemplate');
+    localStorage.removeItem('tanmyaaCustomReportTemplateUrl');
+    
+    // Wait for the Lottie animation to play a bit before hard refreshing
+    setTimeout(async () => {
+        await supabase.auth.signOut();
+        setProfile(null);
+        // Force a hard reload to clear all React state and reset the URL to the root domain
+        window.location.href = '/';
+    }, 1500);
   };
 
   const resetPassword = async (email: string) => {
@@ -306,7 +323,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetPassword,
       updatePassword
     }}>
-      {children}
+      {loading && <Preloader message="Loading Tanmyaa..." />}
+      {!loading && children}
+      {isLoggingOut && <Preloader message="Signing out securely..." />}
     </AuthContext.Provider>
   );
 };
