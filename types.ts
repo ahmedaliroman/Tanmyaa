@@ -26,6 +26,7 @@ export interface CoverSlide {
     image_url?: string;
     design_system_svg?: string;
     design_system?: DesignSystem;
+    analytic_reflection: string;
 }
 
 export interface ExecutiveOverviewSlide {
@@ -47,6 +48,7 @@ export interface CrisisSlide {
         description: string;
     }[];
     image_url?: string;
+    analytic_reflection: string;
 }
 
 export interface SWOTSlide {
@@ -72,6 +74,7 @@ export interface BenchmarksSlide {
         image_prompt: string;
         image_url?: string;
     }[];
+    analytic_reflection: string;
 }
 
 export interface CaseStudyDeepDiveSlide {
@@ -96,6 +99,7 @@ export interface VisionSlide {
     }[];
     image_prompt: string;
     image_url?: string;
+    analytic_reflection: string;
 }
 
 export interface MacroStrategySlide {
@@ -109,6 +113,7 @@ export interface MacroStrategySlide {
     }[];
     image_prompt: string;
     image_url?: string;
+    analytic_reflection: string;
 }
 
 export interface EquityAnalysisSlide {
@@ -182,6 +187,7 @@ export interface RoadmapSlide {
         outcome: string;
     }[];
     image_url?: string;
+    analytic_reflection: string;
 }
 
 export interface GanttChartRoadmapSlide {
@@ -199,6 +205,7 @@ export interface GanttChartRoadmapSlide {
         }[];
     }[];
     image_url?: string;
+    analytic_reflection: string;
 }
 
 
@@ -241,6 +248,7 @@ export interface PolicyLeversSlide {
         measurement_framework: string;
     }[];
     image_url?: string;
+    analytic_reflection: string;
 }
 
 export interface GovernanceFrameworkSlide {
@@ -257,6 +265,7 @@ export interface GovernanceFrameworkSlide {
     funding_model: string;
     regulatory_changes: string[];
     image_url?: string;
+    analytic_reflection: string;
 }
 
 
@@ -271,6 +280,7 @@ export interface ReferencesSlide {
         relevance: string;
     }[];
     image_url?: string;
+    analytic_reflection: string;
 }
 
 export interface ClosingSlide {
@@ -279,6 +289,7 @@ export interface ClosingSlide {
     credits: string;
     image_prompt?: string;
     image_url?: string;
+    analytic_reflection: string;
 }
 
 export interface ProcessSlide {

@@ -91,7 +91,7 @@ const parseNumericValue = (value: string): { number: number; prefix: string; suf
 const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(val) ? val : [];
 
 // Fix: Added 'style' prop to allow inline styling for components like Gantt charts that need specific backgrounds.
-const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties }> = ({ children, className = '', style }) => {
+const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties, reflectionText?: string, onReflectionUpdate?: (val: string) => void }> = ({ children, className = '', style, reflectionText, onReflectionUpdate }) => {
     const { presentationTemplateUrl } = useBranding();
     
     // If a template URL is provided (and it's an image), use it as the background
@@ -100,12 +100,25 @@ const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, st
         : { ...style };
 
     return (
-        <div className={`w-full h-full text-[var(--color-accent-cream)] flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
+        <div className={`w-full h-full bg-white text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
             {/* Dark overlay if using a custom background to ensure text readability */}
             {presentationTemplateUrl && <div className="absolute inset-0 bg-black/60 z-0 pointer-events-none backdrop-blur-[2px]"></div>}
-            <div className="relative z-10 w-full h-full flex flex-col p-12 lg:p-16">
+            
+            <div className="relative z-10 w-full flex-grow flex flex-col p-8 lg:p-12 overflow-y-auto">
                 {children}
             </div>
+            
+            {/* Footer for Principal Strategist Reflection */}
+            {reflectionText !== undefined && (
+                <div className="w-full p-4 border-t border-gray-200 bg-gray-50 text-[10px] text-gray-500 flex items-center gap-2 z-20">
+                    <div className="w-1 h-4 bg-[#007AB9]"></div>
+                    <Editable 
+                        value={reflectionText} 
+                        onUpdate={onReflectionUpdate || (() => {})} 
+                        className="italic"
+                    />
+                </div>
+            )}
         </div>
     );
 };
@@ -241,7 +254,11 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
     const metaAnim = getAnimationStyles(isActive, 600, 'fade-in', disableAnimations);
 
     return (
-        <SlideWrapper className="justify-center items-start relative overflow-hidden">
+        <SlideWrapper 
+            className="justify-center items-start relative overflow-hidden"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             {slide.design_system_svg && (
                 <div className="absolute inset-0 z-0 opacity-40" dangerouslySetInnerHTML={{ __html: slide.design_system_svg }} />
             )}
@@ -291,7 +308,11 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
     const pointsAnim = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="flex flex-col">
+        <SlideWrapper 
+            className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-7 flex flex-col justify-center">
                     <h2 
@@ -343,7 +364,11 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
     const dataAnim = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="flex flex-col justify-center">
+        <SlideWrapper 
+            className="flex flex-col justify-center"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             <div className="max-w-4xl mb-16">
                 <div style={titleAnim} className="flex items-center gap-4 mb-6">
                     <div className="h-px w-12 bg-red-500"></div>
@@ -414,7 +439,11 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
     const gridAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="flex flex-col">
+        <SlideWrapper 
+            className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+        >
             <h2 
                 style={titleAnim}
                 className="text-4xl font-black tracking-tighter uppercase mb-12"

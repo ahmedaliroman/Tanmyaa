@@ -458,16 +458,18 @@ export const generatePresentation = async (
     TECHNICAL DEPTH: Provide rigorous, data-driven analysis. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
     NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
-    DESIGN PRINCIPLES (MANDATORY):
-    1. READABILITY FIRST: Use high-contrast color pairings. Ensure text is concise and well-structured.
-    2. VISUAL COHERENCE: All slides must feel part of the same "Design System". 
-    3. PROFESSIONAL LAYOUT: Use generous white space. Avoid crowding. Align elements strictly.
-    4. DATA VISUALIZATION: When describing metrics, use formats that imply clear charts or grids.
+    DESIGN PRINCIPLES (MANDATORY - iOS INSPIRED):
+    1. AESTHETIC: Clean, minimalist, modern iOS-inspired design. Use a palette of White, Grey, and Black.
+    2. ACCENT: Use the Tanmyaa brand color #007AB9 as a subtle accent (maximum 10% of slide area).
+    3. LAYOUT: Full-screen, edge-to-edge components. Use rounded corners (iOS style).
+    4. TYPOGRAPHY: Clean, standard sans-serif (Inter or Helvetica Neue). NO excessive letter spacing. NO "AI style" writing.
+    5. READABILITY: High-contrast, concise, professional, and well-structured content.
+    6. FOOTER: Every slide MUST have a footer containing the "Principal Strategist Reflection".
     
     FIXED TEMPLATE REQUIREMENTS:
     - Cover: Must establish the visual theme. Generate a 'design_system_svg' that is sophisticated and abstract.
     - Typography: Use 'Inter' or 'Helvetica Neue' as the base font family.
-    - Colors: If no branding is provided, use a "Premium Dark" theme: Background #0A0A0A, Primary Text #FFFFFF, Secondary Text #A1A1AA, Accent #3B82F6.
+    - Colors: Use White/Grey/Black palette with #007AB9 accent.
     
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (REQUIRED, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
@@ -581,16 +583,18 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
-    DESIGN PRINCIPLES (MANDATORY):
-    1. READABILITY FIRST: Use high-contrast color pairings. Ensure text is concise and well-structured.
-    2. VISUAL COHERENCE: All slides must feel part of the same "Design System". 
-    3. PROFESSIONAL LAYOUT: Use generous white space. Avoid crowding. Align elements strictly.
-    4. DATA VISUALIZATION: When describing metrics, use formats that imply clear charts or grids.
+    DESIGN PRINCIPLES (MANDATORY - iOS INSPIRED):
+    1. AESTHETIC: Clean, minimalist, modern iOS-inspired design. Use a palette of White, Grey, and Black.
+    2. ACCENT: Use the Tanmyaa brand color #007AB9 as a subtle accent (maximum 10% of slide area).
+    3. LAYOUT: Full-screen, edge-to-edge components. Use rounded corners (iOS style).
+    4. TYPOGRAPHY: Clean, standard sans-serif (Inter or Helvetica Neue). NO excessive letter spacing. NO "AI style" writing.
+    5. READABILITY: High-contrast, concise, professional, and well-structured content.
+    6. FOOTER: Every slide MUST have a footer containing the "Principal Strategist Reflection".
     
     FIXED TEMPLATE REQUIREMENTS:
     - Cover: Must establish the visual theme. Generate a 'design_system_svg' that is sophisticated and abstract.
     - Typography: Use 'Inter' or 'Helvetica Neue' as the base font family.
-    - Colors: If no branding is provided, use a "Premium Dark" theme: Background #0A0A0A, Primary Text #FFFFFF, Secondary Text #A1A1AA, Accent #3B82F6.
+    - Colors: Use White/Grey/Black palette with #007AB9 accent.
 
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg, design_system }
