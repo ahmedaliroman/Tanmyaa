@@ -304,6 +304,22 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
 
         const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
         const globalBgSvg = coverSlide?.design_system_svg;
+        const designSystem = coverSlide?.design_system;
+
+        if (designSystem) {
+            if (designSystem.text_color_primary) primaryColor = designSystem.text_color_primary.replace('#', '');
+            if (designSystem.text_color_secondary) textColor = designSystem.text_color_secondary.replace('#', '');
+            // We keep secondaryColor (accent) from user's branding colors if available, as per instructions
+        }
+
+        const fontFace = designSystem?.font_family?.split(',')[0]?.replace(/['"]/g, '') || 'Arial';
+        const alignMap: Record<string, 'left' | 'center' | 'right' | 'justify'> = {
+            'left': 'left',
+            'center': 'center',
+            'right': 'right',
+            'justify': 'justify'
+        };
+        const textAlign = designSystem?.text_alignment ? alignMap[designSystem.text_alignment] || 'center' : 'center';
 
         slides.forEach((slide, index) => {
             const pptxSlide = pptx.addSlide();
@@ -326,7 +342,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 fontSize: 32,
                 color: primaryColor,
                 bold: true,
-                fontFace: 'Arial',
+                fontFace: fontFace,
+                align: textAlign,
                 // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
                 anim: { type: 'fade', duration: 1 }
             });
@@ -340,7 +357,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                     w: '90%',
                     fontSize: 18,
                     color: secondaryColor,
-                    fontFace: 'Arial',
+                    fontFace: fontFace,
+                    align: textAlign,
                     // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
                     anim: { type: 'fly', dir: 'b', duration: 1, delay: 0.5 }
                 });
@@ -354,7 +372,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                     w: '90%',
                     fontSize: 14,
                     color: textColor,
-                    fontFace: 'Arial',
+                    fontFace: fontFace,
+                    align: textAlign,
                     // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
                     anim: { type: 'fade', duration: 1.5, delay: 1 }
                 });
@@ -467,6 +486,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                   {slides.map((slide, index) => {
                       const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
                       const globalBgSvg = coverSlide?.design_system_svg;
+                      const designSystem = coverSlide?.design_system;
                       return (
                       <div key={`export-${index}`} id={`export-slide-container-${index}`} style={{ width: '1280px', height: '720px' }}>
                           <UrbanStudySlide 
@@ -477,6 +497,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                               isActive={true} // Force active state for consistent export rendering
                               disableAnimations={true}
                               globalBgSvg={globalBgSvg}
+                              designSystem={designSystem}
                           />
                       </div>
                       );
@@ -560,6 +581,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         {slides.map((slide, index) => {
                             const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
                             const globalBgSvg = coverSlide?.design_system_svg;
+                            const designSystem = coverSlide?.design_system;
                             return (
                             <div key={index} id={`study-slide-container-${index}`} className="w-full flex-shrink-0 h-full">
                                 <UrbanStudySlide 
@@ -568,7 +590,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                                     imageUrls={imageUrls} 
                                     onUpdate={(fieldPath, value) => handleSlideUpdate(index, fieldPath, value)}
                                     isActive={index === currentIndex}
-                                    globalBgSvg={globalBgSvg} />
+                                    globalBgSvg={globalBgSvg}
+                                    designSystem={designSystem} />
                             </div>
                             );
                         })}

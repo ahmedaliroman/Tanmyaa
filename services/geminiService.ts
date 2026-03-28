@@ -96,7 +96,8 @@ const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
 - CRITICAL: You MUST keep your default content, structure, logic, and flow exactly the same as you normally would (the default Free/Pro flow).
 - Do NOT change the JSON schema, do NOT change the slide 'layout' types, and do NOT invent new layouts.
 - Use the uploaded template ONLY as a visual design system to influence the tone, the formatting of your text (e.g., how you structure bullet points), and the visual descriptions for your image prompts.
-- IMPORTANT VISUAL REQUIREMENT: You MUST generate a 'design_system_svg' field in the Cover slide JSON. This SVG must be a single, responsive, abstract background graphic that replicates the geometric shapes, borders, and background colors of the uploaded template. Do NOT include any text in the SVG. This SVG will be used as the background for all slides in the React app.\n`;
+- IMPORTANT VISUAL REQUIREMENT: You MUST generate a 'design_system_svg' field in the Cover slide JSON. This SVG must be a single, responsive, abstract background graphic that replicates the geometric shapes, borders, and background colors of the uploaded template. Do NOT include any text in the SVG. This SVG will be used as the background for all slides in the React app.
+- IMPORTANT TYPOGRAPHY REQUIREMENT: You MUST generate a 'design_system' object in the Cover slide JSON. Analyze the uploaded template and provide: 'font_family' (e.g., 'Arial, sans-serif'), 'text_color_primary' (hex code, MUST have high contrast with the template background), 'text_color_secondary' (hex code), 'text_alignment' ('left', 'center', 'right', or 'justify'), and 'is_light_background' (boolean, true if the template background is mostly light/white). If the user provided custom colors, apply them to shapes, diagrams, and lines, but NOT to the primary text font (unless it matches the template's style).\n`;
     }
     if (branding.report_template) {
         instruction += `- Follow this Report/Document Template/Style Description: ${branding.report_template}\n`;
@@ -361,7 +362,7 @@ export const generatePresentation = async (
     NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
     SCHEMA GUIDANCE:
-    - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (optional, SVG code for background)" }
+    - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (optional, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
     - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}] }
     - SWOT: { layout: "SWOT", strengths: [{title, description}], weaknesses, opportunities, threats, analytic_reflection }

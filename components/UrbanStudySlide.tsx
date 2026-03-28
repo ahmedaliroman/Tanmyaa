@@ -1235,7 +1235,7 @@ const ClosingSlideLayout: React.FC<{ slide: ClosingSlide, onUpdate: (field: stri
     );
 };
 
-const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; imageUrls?: Record<string, string>; onUpdate: (field: string, val: string | unknown) => void, slideNumber: number, isActive: boolean, disableAnimations?: boolean, globalBgSvg?: string }> = ({ slide, imageUrls, onUpdate, slideNumber, isActive, disableAnimations, globalBgSvg }) => {
+const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; imageUrls?: Record<string, string>; onUpdate: (field: string, val: string | unknown) => void, slideNumber: number, isActive: boolean, disableAnimations?: boolean, globalBgSvg?: string, designSystem?: CoverSlide['design_system'] }> = ({ slide, imageUrls, onUpdate, slideNumber, isActive, disableAnimations, globalBgSvg, designSystem }) => {
   if (!slide) {
     return (
         <div className="w-full h-full bg-[var(--color-primary-dark)] flex items-center justify-center text-white/40 italic">
@@ -1284,12 +1284,20 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
     ? { backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(globalBgSvg)}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: 'transparent' }
     : {};
 
+  if (designSystem) {
+      if (designSystem.font_family) bgStyle.fontFamily = designSystem.font_family;
+      if (designSystem.text_alignment) bgStyle.textAlign = designSystem.text_alignment;
+  }
+
+  const themeClass = designSystem?.is_light_background ? 'theme-light' : '';
+  const alignClass = designSystem?.text_alignment ? `force-align-${designSystem.text_alignment}` : '';
+
   return (
-    <div className="w-full h-full bg-[var(--color-primary-dark)] relative" style={bgStyle}>
-        <div className="absolute bottom-6 left-12 text-xs font-bold text-white/30 z-30">
+    <div className={`w-full h-full bg-[var(--color-primary-dark)] relative ${themeClass} ${alignClass}`} style={bgStyle}>
+        <div className="absolute bottom-6 left-12 text-xs font-bold text-white/30 z-30 slide-footer-text">
             SLIDE {String(slideNumber).padStart(2, '0')}
         </div>
-        <div className="absolute bottom-4 right-12 z-30 opacity-20">
+        <div className="absolute bottom-4 right-12 z-30 opacity-20 slide-footer-logo">
             <TanmyaaLogoPPTX className="!text-white" />
         </div>
         {renderLayout()}
