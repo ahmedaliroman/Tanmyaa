@@ -16,6 +16,7 @@ export interface CoverSlide {
     project_code: string;
     year: string;
     image_url?: string;
+    design_system_svg?: string;
 }
 
 export interface ExecutiveOverviewSlide {

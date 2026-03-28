@@ -302,12 +302,18 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             if (matches.length > 2) textColor = matches[2];
         }
 
+        const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
+        const globalBgSvg = coverSlide?.design_system_svg;
+
         slides.forEach((slide, index) => {
             const pptxSlide = pptx.addSlide();
             
             // Apply branded template background if available and is an image
             if (presentationTemplateUrl && (presentationTemplateUrl.endsWith('.png') || presentationTemplateUrl.endsWith('.jpg') || presentationTemplateUrl.endsWith('.jpeg'))) {
                 pptxSlide.background = { path: presentationTemplateUrl };
+            } else if (globalBgSvg) {
+                const svgBase64 = btoa(unescape(encodeURIComponent(globalBgSvg)));
+                pptxSlide.background = { data: `image/svg+xml;base64,${svgBase64}` };
             } else {
                 pptxSlide.background = { color: '0A0A0A' };
             }
@@ -458,7 +464,10 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
       {isExportingPdf && slides && (
           <div style={{ position: 'fixed', top: '100vh', left: 0, zIndex: -1, pointerEvents: 'none', opacity: 0 }}>
               <div style={{ width: '1280px' }}>
-                  {slides.map((slide, index) => (
+                  {slides.map((slide, index) => {
+                      const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
+                      const globalBgSvg = coverSlide?.design_system_svg;
+                      return (
                       <div key={`export-${index}`} id={`export-slide-container-${index}`} style={{ width: '1280px', height: '720px' }}>
                           <UrbanStudySlide 
                               slide={slide} 
@@ -467,9 +476,11 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                               onUpdate={() => {}} // Disable updates during export
                               isActive={true} // Force active state for consistent export rendering
                               disableAnimations={true}
+                              globalBgSvg={globalBgSvg}
                           />
                       </div>
-                  ))}
+                      );
+                  })}
               </div>
           </div>
       )}
@@ -546,16 +557,21 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 <div className="w-full h-full max-w-7xl relative group">
                     <div className="aspect-[16/9] w-full mx-auto relative overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-gray-800">
                         <div className="flex transition-transform duration-700 cubic-bezier(0.23, 1, 0.32, 1) h-full" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
-                        {slides.map((slide, index) => (
+                        {slides.map((slide, index) => {
+                            const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
+                            const globalBgSvg = coverSlide?.design_system_svg;
+                            return (
                             <div key={index} id={`study-slide-container-${index}`} className="w-full flex-shrink-0 h-full">
                                 <UrbanStudySlide 
                                     slide={slide} 
                                     slideNumber={index+1} 
                                     imageUrls={imageUrls} 
                                     onUpdate={(fieldPath, value) => handleSlideUpdate(index, fieldPath, value)}
-                                    isActive={index === currentIndex} />
+                                    isActive={index === currentIndex}
+                                    globalBgSvg={globalBgSvg} />
                             </div>
-                        ))}
+                            );
+                        })}
                         </div>
                     </div>
                     {slides.length > 1 && !isExportingPdf && (
