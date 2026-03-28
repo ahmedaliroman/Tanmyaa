@@ -91,7 +91,7 @@ const parseNumericValue = (value: string): { number: number; prefix: string; suf
 const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(val) ? val : [];
 
 // Fix: Added 'style' prop to allow inline styling for components like Gantt charts that need specific backgrounds.
-const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties, reflectionText?: string, onReflectionUpdate?: (val: string) => void }> = ({ children, className = '', style, reflectionText, onReflectionUpdate }) => {
+const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties }> = ({ children, className = '', style }) => {
     const { presentationTemplateUrl } = useBranding();
     
     // If a template URL is provided (and it's an image), use it as the background
@@ -100,25 +100,13 @@ const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, st
         : { ...style };
 
     return (
-        <div className={`w-full h-full bg-black text-white flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
+        <div className={`w-full h-full bg-white text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
             {/* Dark overlay if using a custom background to ensure text readability */}
             {presentationTemplateUrl && <div className="absolute inset-0 bg-black/60 z-0 pointer-events-none backdrop-blur-[2px]"></div>}
             
             <div className="relative z-10 w-full flex-grow flex flex-col p-8 lg:p-12 overflow-y-auto">
                 {children}
             </div>
-            
-            {/* Footer for Principal Strategist Reflection */}
-            {reflectionText !== undefined && (
-                <div className="w-full p-4 border-t border-white/10 bg-black/50 text-[10px] text-gray-400 flex items-center gap-2 z-20">
-                    <div className="w-1 h-4 bg-[#007AB9]"></div>
-                    <Editable 
-                        value={reflectionText} 
-                        onUpdate={onReflectionUpdate || (() => {})} 
-                        className="italic"
-                    />
-                </div>
-            )}
         </div>
     );
 };
@@ -256,8 +244,6 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
     return (
         <SlideWrapper 
             className="justify-center items-start relative overflow-hidden"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             {slide.design_system_svg && (
                 <div className="absolute inset-0 z-0 opacity-40" dangerouslySetInnerHTML={{ __html: slide.design_system_svg }} />
@@ -310,8 +296,6 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
     return (
         <SlideWrapper 
             className="flex flex-col"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-7 flex flex-col justify-center">
@@ -366,8 +350,6 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
     return (
         <SlideWrapper 
             className="flex flex-col justify-center"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             <div className="max-w-4xl mb-16">
                 <div style={titleAnim} className="flex items-center gap-4 mb-6">
@@ -441,8 +423,6 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
     return (
         <SlideWrapper 
             className="flex flex-col"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             <h2 
                 style={titleAnim}
@@ -466,8 +446,6 @@ const BenchmarksSlideLayout: React.FC<{ slide: BenchmarksSlide, onUpdate: (field
     return (
         <SlideWrapper 
             className="flex flex-col"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             <h2 
                 style={titleAnim}
@@ -529,8 +507,6 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
     return (
         <SlideWrapper 
             className="flex flex-col"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-12 lg:col-span-7 relative rounded-[40px] overflow-hidden group">
@@ -601,8 +577,6 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
     return (
         <SlideWrapper 
             className="flex flex-col"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-12 lg:col-span-5 flex flex-col justify-center">
@@ -668,8 +642,6 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
     return (
         <SlideWrapper 
             className="p-12 pb-28 flex flex-col justify-between"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             <EditableImage 
                 src={slide.image_url || imageUrls[slide.image_prompt] || ''} 
@@ -791,8 +763,6 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
     return (
         <SlideWrapper 
             className="p-0 text-center flex flex-col pb-28"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             <div className="w-1/2 h-full absolute left-0 top-0">
                 <EditableImage 

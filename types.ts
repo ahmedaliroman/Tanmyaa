@@ -26,7 +26,6 @@ export interface CoverSlide {
     image_url?: string;
     design_system_svg?: string;
     design_system?: DesignSystem;
-    analytic_reflection: string;
 }
 
 export interface ExecutiveOverviewSlide {
@@ -34,7 +33,6 @@ export interface ExecutiveOverviewSlide {
     title: string;
     narrative: string;
     key_points: string[];
-    analytic_reflection: string;
     image_url?: string;
 }
 
@@ -48,7 +46,6 @@ export interface CrisisSlide {
         description: string;
     }[];
     image_url?: string;
-    analytic_reflection: string;
 }
 
 export interface SWOTSlide {
@@ -58,7 +55,6 @@ export interface SWOTSlide {
     weaknesses: { title: string; description: string; }[];
     opportunities: { title: string; description: string; }[];
     threats: { title: string; description: string; }[];
-    analytic_reflection: string;
     image_url?: string;
 }
 
@@ -74,7 +70,6 @@ export interface BenchmarksSlide {
         image_prompt: string;
         image_url?: string;
     }[];
-    analytic_reflection: string;
 }
 
 export interface CaseStudyDeepDiveSlide {
@@ -86,7 +81,6 @@ export interface CaseStudyDeepDiveSlide {
     image_prompt: string;
     image_url?: string;
     data_source?: string;
-    analytic_reflection: string;
 }
 
 export interface VisionSlide {
@@ -124,7 +118,6 @@ export interface EquityAnalysisSlide {
         impact: string;
     }[];
     mitigation_strategies: string[];
-    analytic_reflection: string;
     image_url?: string;
 }
 
@@ -138,9 +131,6 @@ export interface NodeAssessmentSlide {
         label: string;
     }[];
     conclusion: string;
-    analytic_reflection: string;
-    before_image_prompt: string;
-    after_image_prompt: string;
     before_image_url?: string;
     after_image_url?: string;
 }
@@ -289,7 +279,6 @@ export interface ClosingSlide {
     credits: string;
     image_prompt?: string;
     image_url?: string;
-    analytic_reflection: string;
 }
 
 export interface ProcessSlide {

@@ -583,19 +583,6 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
-    DESIGN PRINCIPLES (MANDATORY - iOS INSPIRED):
-    1. AESTHETIC: Clean, minimalist, modern iOS-inspired design. Use a palette of White, Grey, and Black.
-    2. ACCENT: Use the Tanmyaa brand color #007AB9 as a subtle accent (maximum 10% of slide area).
-    3. LAYOUT: Full-screen, edge-to-edge components. Use rounded corners (iOS style).
-    4. TYPOGRAPHY: Clean, standard sans-serif (Inter or Helvetica Neue). NO excessive letter spacing. NO "AI style" writing.
-    5. READABILITY: High-contrast, concise, professional, and well-structured content.
-    6. FOOTER: Every slide MUST have a footer containing the "Principal Strategist Reflection".
-    
-    FIXED TEMPLATE REQUIREMENTS:
-    - Cover: Must establish the visual theme. Generate a 'design_system_svg' that is sophisticated and abstract.
-    - Typography: Use 'Inter' or 'Helvetica Neue' as the base font family.
-    - Colors: Use White/Grey/Black palette with #007AB9 accent.
-
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg, design_system }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
