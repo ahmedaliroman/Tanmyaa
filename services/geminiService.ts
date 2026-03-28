@@ -494,6 +494,7 @@ export const generatePresentation = async (
     - DO NOT use vertical scrolling areas. All content must be visible within the slide boundaries.
     - If there is a lot of information, prioritize high-level strategic insights and use concise, professional language to ensure it fits.
     - Adjust font sizes and layout density in your descriptions to imply a well-fitted design.
+    - CONCISENESS: Be extremely concise. Avoid wordiness. Ensure the entire JSON response is under 8,000 tokens.
     `;
 
     const cacheKey = getCacheKey('generatePresentation', { projectInfo, plan, branding, systemInstruction });
@@ -523,7 +524,7 @@ export const generatePresentation = async (
             await addBrandingAssetsToParts(parts, plan, branding, 'presentation');
 
             // Fallback to flash if pro fails on retry
-            const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3-flash-preview' : model;
+            const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3.1-flash-lite-preview' : model;
 
             const response = await ai.models.generateContent({
                 model: currentModel,
@@ -531,6 +532,7 @@ export const generatePresentation = async (
                 config: { 
                     systemInstruction, 
                     responseMimeType: 'application/json',
+                    maxOutputTokens: 12000,
                     tools: [{ googleSearch: {} }]
                 },
             });
@@ -626,6 +628,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
+                maxOutputTokens: 12000,
                 tools: [{ googleSearch: {} }]
             },
         });

@@ -333,7 +333,7 @@ const SWOTCategory: React.FC<{ title: string; items: { title: string; descriptio
             {ensureArray(items).map((item, i) => (
                 <div key={i}>
                     <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-semibold text-white text-sm" useMarkdown/>
-                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${item.description.length > 100 ? 'text-[10px]' : 'text-xs'} text-white/70 mt-1`} />
+                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${(item.description || '').length > 100 ? 'text-[10px]' : 'text-xs'} text-white/70 mt-1`} />
                 </div>
             ))}
         </div>
@@ -1000,7 +1000,7 @@ const parseQuarter = (quarterStr: string): number => {
                                             
                                             const duration = endIndex - startIndex + 1;
                                             const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
-                                            const deliverableAnimation = getAnimationStyles(isActive, 400 + (pIndex * (phase.deliverables.length) + dIndex) * 50, 'fade-in-up', disableAnimations);
+                                            const deliverableAnimation = getAnimationStyles(isActive, 400 + (pIndex * (ensureArray(phase.deliverables).length) + dIndex) * 50, 'fade-in-up', disableAnimations);
             
                                             return (
                                                 <div key={`${pIndex}-${dIndex}`} className="flex items-center h-8 relative group" style={deliverableAnimation}>

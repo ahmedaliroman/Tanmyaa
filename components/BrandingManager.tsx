@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { FileText, Upload, X, Check, Image as ImageIcon } from 'lucide-react';
 
 const BrandingManager: React.FC = () => {
-    const { profile } = useAuth();
+    const { profile, refreshProfile } = useAuth();
     const { 
         logo, saveLogo, removeLogo, 
         colors, saveColors, removeColors,
@@ -158,6 +158,7 @@ const BrandingManager: React.FC = () => {
 
             if (syncError) throw syncError;
 
+            await refreshProfile();
             toast.success("Your branding settings have been saved and synced!");
         } catch (err: unknown) {
             console.error("Error saving branding:", err);

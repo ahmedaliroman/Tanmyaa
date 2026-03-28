@@ -50,8 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authError, setAuthError] = useState<string | null>(null);
   const fetchingRef = useRef<string | null>(null);
 
-  const fetchProfile = useCallback(async (userId: string, email?: string) => {
-    if (fetchingRef.current === userId && profile) return;
+  const fetchProfile = useCallback(async (userId: string, email?: string, force: boolean = false) => {
+    if (!force && fetchingRef.current === userId && profile) return;
     fetchingRef.current = userId;
     
     setAuthError(null);
@@ -167,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id, user.email);
+      await fetchProfile(user.id, user.email, true);
     }
   };
 

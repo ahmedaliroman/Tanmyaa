@@ -11,7 +11,6 @@ import GeneratorWelcome from './Welcome';
 
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
-import { useBranding } from '../hooks/useBranding';
 import jsPDF from 'jspdf';
 import { toJpeg } from 'html-to-image';
 import pptxgen from 'pptxgenjs';
@@ -40,7 +39,6 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   
   const { companyProfile } = useCompanyProfile();
   const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
-  const { colors, presentationTemplateUrl } = useBranding();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,31 +130,35 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   }, [slides, projectInfo]);
 
   const handleGenerate = useCallback(async (finalProjectInfo: UrbanPlanningProjectInfo) => {
-    if (profile && profile.credits < 20) {
-        setError("Insufficient credits. Please upgrade your plan.");
-        onUpgrade();
-        return;
-    }
-
     setIsLoading(true);
     setError(null);
     setSlides(null);
     setImageUrls({});
-    setProjectInfo(finalProjectInfo);
-    setChatMessages([{sender: 'ai', text: "Strategic deck generated. I can refine any slide or add technical depth upon request."}]);
-
+    
     try {
-        const branding: BrandingInfo | undefined = profile ? {
-            logo: profile.branding_logo || '',
-            colors: profile.branding_colors || '',
-            presentation_template: profile.branding_presentation_template || '',
-            presentation_template_url: profile.branding_presentation_template_url || '',
-            report_template: profile.branding_report_template || '',
-            report_template_url: profile.branding_report_template_url || ''
+        // 1. Refresh profile to get latest credits and branding
+        const freshProfile = await refreshProfile();
+        
+        if (freshProfile && freshProfile.credits < 20) {
+            setError("Insufficient credits. Please upgrade your plan.");
+            onUpgrade();
+            setIsLoading(false);
+            return;
+        }
+
+        setProjectInfo(finalProjectInfo);
+        setChatMessages([{sender: 'ai', text: "Strategic deck generated. I can refine any slide or add technical depth upon request."}]);
+
+        const branding: BrandingInfo | undefined = freshProfile ? {
+            logo: freshProfile.branding_logo || '',
+            colors: freshProfile.branding_colors || '',
+            presentation_template: freshProfile.branding_presentation_template || '',
+            presentation_template_url: freshProfile.branding_presentation_template_url || '',
+            report_template: freshProfile.branding_report_template || '',
+            report_template_url: freshProfile.branding_report_template_url || ''
         } : undefined;
 
-        const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile, profile?.plan, branding);
-        await refreshProfile();
+        const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile, freshProfile?.plan, branding);
         if (generatedSlides && generatedSlides.length > 0) {
             setSlides(generatedSlides);
             setCurrentIndex(0);
@@ -169,17 +171,11 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     } finally {
         setIsLoading(false);
     }
-  }, [files, companyProfile, profile, onUpgrade, refreshProfile]);
-  
+  }, [files, companyProfile, refreshProfile, onUpgrade]);
+
   const handleChatSend = useCallback(async (message?: string) => {
     const messageToSend = message || chatInput;
     if (!messageToSend.trim() || !slides) return;
-
-    if (profile && profile.credits < 5) {
-        setChatMessages(prev => [...prev, { sender: 'user', text: messageToSend }, { sender: 'ai', text: "Insufficient credits. Please upgrade your plan." }]);
-        onUpgrade();
-        return;
-    }
 
     const userMessage: ChatMessage = { sender: 'user', text: messageToSend };
     setChatMessages(prev => [...prev, userMessage]);
@@ -188,25 +184,35 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     setIsChatLoading(true);
 
     try {
-        const branding: BrandingInfo | undefined = profile ? {
-            logo: profile.branding_logo || '',
-            colors: profile.branding_colors || '',
-            presentation_template: profile.branding_presentation_template || '',
-            presentation_template_url: profile.branding_presentation_template_url || '',
-            report_template: profile.branding_report_template || '',
-            report_template_url: profile.branding_report_template_url || ''
+        // Refresh profile before refinement too
+        const freshProfile = await refreshProfile();
+
+        if (freshProfile && freshProfile.credits < 5) {
+            setChatMessages(prev => [...prev, { sender: 'ai', text: "Insufficient credits. Please upgrade your plan." }]);
+            onUpgrade();
+            setIsChatLoading(false);
+            return;
+        }
+
+        const branding: BrandingInfo | undefined = freshProfile ? {
+            logo: freshProfile.branding_logo || '',
+            colors: freshProfile.branding_colors || '',
+            presentation_template: freshProfile.branding_presentation_template || '',
+            presentation_template_url: freshProfile.branding_presentation_template_url || '',
+            report_template: freshProfile.branding_report_template || '',
+            report_template_url: freshProfile.branding_report_template_url || ''
         } : undefined;
 
-        const newSlides = await refinePresentation(slides, messageToSend, currentIndex, companyProfile, profile?.plan, branding);
-        await refreshProfile();
+        const newSlides = await refinePresentation(slides, messageToSend, currentIndex, companyProfile, freshProfile?.plan, branding);
         setSlides(newSlides);
         setChatMessages(prev => [...prev, { sender: 'ai', text: "Technical updates processed." }]);
-    } catch {
-        setChatMessages(prev => [...prev, { sender: 'ai', text: "Refinement error."}]);
+    } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : "Refinement error.";
+        setChatMessages(prev => [...prev, { sender: 'ai', text: `Error: ${errorMsg}`}]);
     } finally {
         setIsChatLoading(false);
     }
-  }, [chatInput, slides, currentIndex, companyProfile, refreshProfile, profile, onUpgrade]);
+  }, [chatInput, slides, currentIndex, companyProfile, refreshProfile, onUpgrade]);
 
   const fetchSuggestions = useCallback(async () => {
     if (isChatOpen && slides && slides[currentIndex]) {
