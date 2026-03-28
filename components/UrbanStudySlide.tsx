@@ -91,7 +91,7 @@ const parseNumericValue = (value: string): { number: number; prefix: string; suf
 const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(val) ? val : [];
 
 // Fix: Added 'style' prop to allow inline styling for components like Gantt charts that need specific backgrounds.
-const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties }> = ({ children, className = '', style }) => {
+const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties, reflectionText?: string, onReflectionUpdate?: (val: string) => void }> = ({ children, className = '', style, reflectionText, onReflectionUpdate }) => {
     const { presentationTemplateUrl } = useBranding();
     
     // If a template URL is provided (and it's an image), use it as the background
@@ -100,13 +100,21 @@ const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, st
         : { ...style };
 
     return (
-        <div className={`w-full h-full bg-white text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
+        <div className={`w-full h-full bg-gray-100 text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
             {/* Dark overlay if using a custom background to ensure text readability */}
             {presentationTemplateUrl && <div className="absolute inset-0 bg-black/60 z-0 pointer-events-none backdrop-blur-[2px]"></div>}
             
             <div className="relative z-10 w-full flex-grow flex flex-col p-8 lg:p-12 overflow-y-auto">
                 {children}
             </div>
+            {reflectionText !== undefined && (
+                <div className="absolute bottom-4 left-8 right-8 z-20">
+                    <div className="bg-white border border-gray-300 rounded-lg p-3 flex items-center shadow-sm">
+                        <div className="bg-[#007AB9] text-white text-xs font-bold px-2 py-1 rounded mr-3">REFLECTION</div>
+                        <Editable value={reflectionText} onUpdate={onReflectionUpdate} className="text-sm text-gray-700 italic" />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -244,6 +252,8 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
     return (
         <SlideWrapper 
             className="justify-center items-start relative overflow-hidden"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
         >
             {slide.design_system_svg && (
                 <div className="absolute inset-0 z-0 opacity-40" dangerouslySetInnerHTML={{ __html: slide.design_system_svg }} />
