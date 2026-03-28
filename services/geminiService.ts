@@ -362,7 +362,7 @@ export const generatePresentation = async (
     NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
     SCHEMA GUIDANCE:
-    - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (optional, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
+    - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (REQUIRED, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
     - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}] }
     - SWOT: { layout: "SWOT", strengths: [{title, description}], weaknesses, opportunities, threats, analytic_reflection }
@@ -442,6 +442,8 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
     
+    IMPORTANT: You MUST preserve the 'design_system' and 'design_system_svg' fields in the Cover slide if they exist, unless the user explicitly asks to change the design.
+    
     IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
 
     const slides = await withRetry(async () => {
@@ -455,7 +457,8 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }]
+                tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
             },
         });
         const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');

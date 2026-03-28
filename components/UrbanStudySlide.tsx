@@ -1293,12 +1293,34 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
   const alignClass = designSystem?.text_alignment ? `force-align-${designSystem.text_alignment}` : '';
 
   return (
-    <div className={`w-full h-full bg-[var(--color-primary-dark)] relative ${themeClass} ${alignClass}`} style={bgStyle}>
+    <div id={`slide-container-${slideNumber}`} className={`w-full h-full bg-[var(--color-primary-dark)] relative ${themeClass} ${alignClass}`} style={bgStyle}>
+        {designSystem && (
+            <style>{`
+                #slide-container-${slideNumber} h1, 
+                #slide-container-${slideNumber} h2, 
+                #slide-container-${slideNumber} h3, 
+                #slide-container-${slideNumber} p, 
+                #slide-container-${slideNumber} span, 
+                #slide-container-${slideNumber} div, 
+                #slide-container-${slideNumber} li {
+                    ${designSystem.text_color_primary ? `color: ${designSystem.text_color_primary.startsWith('#') ? designSystem.text_color_primary : '#' + designSystem.text_color_primary} !important;` : ''}
+                }
+                #slide-container-${slideNumber} .text-white\\/60, 
+                #slide-container-${slideNumber} .text-white\\/70, 
+                #slide-container-${slideNumber} .text-white\\/50,
+                #slide-container-${slideNumber} .text-white\\/40,
+                #slide-container-${slideNumber} .text-white\\/30,
+                #slide-container-${slideNumber} .text-white\\/80,
+                #slide-container-${slideNumber} .text-white\\/90 {
+                    ${designSystem.text_color_secondary ? `color: ${designSystem.text_color_secondary.startsWith('#') ? designSystem.text_color_secondary : '#' + designSystem.text_color_secondary} !important;` : ''}
+                }
+            `}</style>
+        )}
         <div className="absolute bottom-6 left-12 text-xs font-bold text-white/30 z-30 slide-footer-text">
             SLIDE {String(slideNumber).padStart(2, '0')}
         </div>
         <div className="absolute bottom-4 right-12 z-30 opacity-20 slide-footer-logo">
-            <TanmyaaLogoPPTX className="!text-white" />
+            <TanmyaaLogoPPTX className={designSystem?.is_light_background ? "!text-black" : "!text-white"} />
         </div>
         {renderLayout()}
     </div>
