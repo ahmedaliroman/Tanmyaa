@@ -279,16 +279,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setIsLoggingOut(true);
     
-    // Clear local storage branding keys so the next user doesn't see them
-    localStorage.removeItem('tanmyaaCustomLogo');
-    localStorage.removeItem('tanmyaaCustomColors');
-    localStorage.removeItem('tanmyaaCustomPresentationTemplate');
-    localStorage.removeItem('tanmyaaCustomPresentationTemplateUrl');
-    localStorage.removeItem('tanmyaaCustomReportTemplate');
-    localStorage.removeItem('tanmyaaCustomReportTemplateUrl');
-    
     // Wait for the Lottie animation to play a bit before hard refreshing
     setTimeout(async () => {
+        // Clear local storage branding keys so the next user doesn't see them
+        localStorage.removeItem('tanmyaaCustomLogo');
+        localStorage.removeItem('tanmyaaCustomColors');
+        localStorage.removeItem('tanmyaaCustomPresentationTemplate');
+        localStorage.removeItem('tanmyaaCustomPresentationTemplateUrl');
+        localStorage.removeItem('tanmyaaCustomReportTemplate');
+        localStorage.removeItem('tanmyaaCustomReportTemplateUrl');
+
         await supabase.auth.signOut();
         setProfile(null);
         // Force a hard reload to clear all React state and reset the URL to the root domain

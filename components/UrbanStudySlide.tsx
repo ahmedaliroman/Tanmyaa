@@ -1,4 +1,5 @@
 import React, { CSSProperties, useEffect, useState } from 'react';
+import { useBranding } from '../hooks/useBranding';
 import type { 
     PresentationSlide, 
     CoverSlide, 
@@ -88,11 +89,24 @@ const parseNumericValue = (value: string): { number: number; prefix: string; suf
 const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(val) ? val : [];
 
 // Fix: Added 'style' prop to allow inline styling for components like Gantt charts that need specific backgrounds.
-const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties }> = ({ children, className = '', style }) => (
-    <div className={`w-full h-full text-[var(--color-accent-cream)] flex flex-col overflow-hidden relative font-sans ${className}`} style={style}>
-        {children}
-    </div>
-);
+const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties }> = ({ children, className = '', style }) => {
+    const { presentationTemplateUrl } = useBranding();
+    
+    // If a template URL is provided (and it's an image), use it as the background
+    const backgroundStyle: CSSProperties = presentationTemplateUrl && (presentationTemplateUrl.endsWith('.png') || presentationTemplateUrl.endsWith('.jpg') || presentationTemplateUrl.endsWith('.jpeg')) 
+        ? { backgroundImage: `url(${presentationTemplateUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', ...style }
+        : { ...style };
+
+    return (
+        <div className={`w-full h-full text-[var(--color-accent-cream)] flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
+            {/* Dark overlay if using a custom background to ensure text readability */}
+            {presentationTemplateUrl && <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none"></div>}
+            <div className="relative z-10 w-full h-full flex flex-col">
+                {children}
+            </div>
+        </div>
+    );
+};
 
 const renderWithBold = (text: string) => {
     if (!text) return text;
@@ -111,6 +125,7 @@ interface EditableImageProps {
 
 const EditableImage: React.FC<EditableImageProps> = ({ src, alt, className, onUpdate }) => {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const { presentationTemplateUrl } = useBranding();
 
     const handleClick = () => {
         fileInputRef.current?.click();
@@ -128,6 +143,12 @@ const EditableImage: React.FC<EditableImageProps> = ({ src, alt, className, onUp
     };
 
     const isAbsolute = className?.includes('absolute');
+    const isFullScreen = className?.includes('inset-0') || className?.includes('w-full h-full');
+
+    // If a presentation template is provided, hide full-screen background images so the template is visible
+    if (presentationTemplateUrl && isAbsolute && isFullScreen) {
+        return null;
+    }
 
     return (
         <div className={`${isAbsolute ? '' : 'relative'} group cursor-pointer overflow-hidden ${className}`} onClick={handleClick}>

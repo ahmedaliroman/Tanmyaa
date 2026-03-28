@@ -159,12 +159,12 @@ const BrandingManager: React.FC = () => {
             if (syncError) throw syncError;
 
             toast.success("Your branding settings have been saved and synced!");
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error saving branding:", err);
             let message = "Unknown error";
-            if (err?.message && typeof err.message === 'string') {
+            if (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string') {
                 message = err.message;
-            } else if (err?.error && typeof err.error === 'string') {
+            } else if (err && typeof err === 'object' && 'error' in err && typeof err.error === 'string') {
                 message = err.error;
             } else if (typeof err === 'string') {
                 message = err;
@@ -175,11 +175,6 @@ const BrandingManager: React.FC = () => {
         } finally {
             setIsSaving(false);
         }
-    };
-
-    const handleRemoveTemplateUrl = () => {
-        removeTemplateUrl();
-        toast.success("Template PDF removed.");
     };
 
     const handleRemoveLogo = () => {

@@ -11,6 +11,7 @@ import GeneratorWelcome from './Welcome';
 
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../hooks/useBranding';
 import jsPDF from 'jspdf';
 import { toJpeg } from 'html-to-image';
 import pptxgen from 'pptxgenjs';
@@ -39,6 +40,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   
   const { companyProfile } = useCompanyProfile();
   const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
+  const { colors, presentationTemplateUrl } = useBranding();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -267,7 +269,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             }
             pdf.addImage(dataUrl, 'JPEG', 0, 0, slideWidth, slideHeight);
         }
-        pdf.save('Tanmyaa_Presentation.pdf');
+        pdf.save('Presentation.pdf');
     } catch (error) {
         console.error('Error during PDF export:', error);
         setError(`Failed to export slide ${pdfExportProgress}. Please try again.`);
@@ -287,19 +289,40 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
         pptx.defineLayout({ name: 'TANMYAA', width: 13.33, height: 7.5 });
         pptx.layout = 'TANMYAA';
 
+        // Extract colors from branding or use defaults
+        let primaryColor = 'FFFFFF';
+        let secondaryColor = '3B82F6';
+        let textColor = 'CCCCCC';
+        
+        if (colors) {
+            const hexRegex = /#([0-9A-F]{6})/gi;
+            const matches = [...colors.matchAll(hexRegex)].map(m => m[1]);
+            if (matches.length > 0) primaryColor = matches[0];
+            if (matches.length > 1) secondaryColor = matches[1];
+            if (matches.length > 2) textColor = matches[2];
+        }
+
         slides.forEach((slide, index) => {
             const pptxSlide = pptx.addSlide();
-            pptxSlide.background = { color: '0A0A0A' };
+            
+            // Apply branded template background if available and is an image
+            if (presentationTemplateUrl && (presentationTemplateUrl.endsWith('.png') || presentationTemplateUrl.endsWith('.jpg') || presentationTemplateUrl.endsWith('.jpeg'))) {
+                pptxSlide.background = { path: presentationTemplateUrl };
+            } else {
+                pptxSlide.background = { color: '0A0A0A' };
+            }
 
-            // Add Title
+            // Add Title with animation
             pptxSlide.addText(slide.title || 'Slide ' + (index + 1), {
                 x: 0.5,
                 y: 0.5,
                 w: '90%',
                 fontSize: 32,
-                color: 'FFFFFF',
+                color: primaryColor,
                 bold: true,
-                fontFace: 'Arial'
+                fontFace: 'Arial',
+                // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
+                anim: { type: 'fade', duration: 1 }
             });
 
             // Add Content based on layout (simplified)
@@ -310,8 +333,10 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                     y: contentY,
                     w: '90%',
                     fontSize: 18,
-                    color: '3B82F6',
-                    fontFace: 'Arial'
+                    color: secondaryColor,
+                    fontFace: 'Arial',
+                    // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
+                    anim: { type: 'fly', dir: 'b', duration: 1, delay: 0.5 }
                 });
                 contentY += 0.8;
             }
@@ -322,13 +347,15 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                     y: contentY,
                     w: '90%',
                     fontSize: 14,
-                    color: 'CCCCCC',
-                    fontFace: 'Arial'
+                    color: textColor,
+                    fontFace: 'Arial',
+                    // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
+                    anim: { type: 'fade', duration: 1.5, delay: 1 }
                 });
             }
 
             // Add a footer
-            pptxSlide.addText(`Tanmyaa Strategic Planning | ${index + 1}`, {
+            pptxSlide.addText(`Strategic Planning | ${index + 1}`, {
                 x: 0.5,
                 y: 7.0,
                 w: '90%',
@@ -338,7 +365,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             });
         });
 
-        await pptx.writeFile({ fileName: 'Tanmyaa_Presentation.pptx' });
+        await pptx.writeFile({ fileName: 'Presentation.pptx' });
     } catch (error) {
         console.error('Error during PPTX export:', error);
         setError('Failed to export PPTX. Please try again.');

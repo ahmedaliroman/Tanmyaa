@@ -1,4 +1,5 @@
 import React from 'react';
+import { useBranding } from '../hooks/useBranding';
 
 interface PreloaderProps {
   message?: string;
@@ -6,6 +7,21 @@ interface PreloaderProps {
 }
 
 const Preloader: React.FC<PreloaderProps> = ({ message = "Loading...", isExiting = false }) => {
+  const { logo, colors } = useBranding();
+
+  // Extract primary color from branding or use default Tanmyaa blue
+  let primaryColor = '#1B3C53';
+  let secondaryColor = '#456882';
+  let accentColor = '#D2C1B6';
+  
+  if (colors) {
+      const hexRegex = /#([0-9A-F]{6})/gi;
+      const matches = [...colors.matchAll(hexRegex)].map(m => '#' + m[1]);
+      if (matches.length > 0) primaryColor = matches[0];
+      if (matches.length > 1) secondaryColor = matches[1];
+      if (matches.length > 2) accentColor = matches[2];
+  }
+
   return (
     <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#050508] transition-opacity duration-700 ease-in-out ${isExiting ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       <style>
@@ -40,10 +56,13 @@ const Preloader: React.FC<PreloaderProps> = ({ message = "Loading...", isExiting
       </style>
       
       <div className="relative flex flex-col items-center justify-center" style={{ animation: 'float 6s ease-in-out infinite' }}>
-        {/* Ambient Background Glow (Apple Intelligence / Siri style) */}
+        {/* Ambient Background Glow matching brand colors */}
         <div 
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] max-w-[250px] max-h-[250px] rounded-full blur-[50px] bg-gradient-to-tr from-blue-600/40 via-purple-600/40 to-indigo-600/40" 
-            style={{ animation: 'pulse-glow 5s ease-in-out infinite' }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] max-w-[250px] max-h-[250px] rounded-full blur-[50px]" 
+            style={{ 
+                background: `linear-gradient(to top right, ${primaryColor}66, ${secondaryColor}66, ${accentColor}66)`,
+                animation: 'pulse-glow 5s ease-in-out infinite' 
+            }}
         ></div>
         
         {/* Glassmorphic App Icon Container */}
@@ -51,20 +70,18 @@ const Preloader: React.FC<PreloaderProps> = ({ message = "Loading...", isExiting
             {/* Diagonal light sweep reflection */}
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50"></div>
             
-            {/* Minimalist Logo Mark (T) */}
-            <svg className="w-10 h-10 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 7V4H20V7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M12 4V20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            {/* Logo */}
+            {logo ? (
+                <img src={logo} alt="Brand Logo" className="w-12 h-12 object-contain drop-shadow-lg relative z-10" />
+            ) : (
+                <div className="text-white text-4xl font-black tracking-tighter drop-shadow-lg relative z-10">
+                    T.
+                </div>
+            )}
         </div>
-
-        {/* Brand Name with Shimmer Effect */}
-        <h1 className="text-3xl font-semibold tracking-tight text-shimmer relative z-10">
-          Tanmyaa
-        </h1>
         
         {/* Status Message */}
-        <p className="mt-6 text-gray-500 font-medium tracking-[0.2em] uppercase text-[9px] animate-pulse relative z-10">
+        <p className="mt-2 text-gray-500 font-medium tracking-[0.2em] uppercase text-[9px] animate-pulse relative z-10">
           {message}
         </p>
       </div>
