@@ -159,9 +159,18 @@ const BrandingManager: React.FC = () => {
             if (syncError) throw syncError;
 
             toast.success("Your branding settings have been saved and synced!");
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error("Error saving branding:", err);
-            const message = err instanceof Error ? err.message : String(err);
+            let message = "Unknown error";
+            if (err?.message && typeof err.message === 'string') {
+                message = err.message;
+            } else if (err?.error && typeof err.error === 'string') {
+                message = err.error;
+            } else if (typeof err === 'string') {
+                message = err;
+            } else {
+                message = JSON.stringify(err);
+            }
             toast.error(`Failed to save branding: ${message}`);
         } finally {
             setIsSaving(false);
