@@ -9,6 +9,14 @@ export interface UrbanPlanningProjectInfo {
 }
 
 // New, specific slide types based on user's reference presentation
+export interface DesignSystem {
+    font_family: string;
+    text_color_primary: string;
+    text_color_secondary: string;
+    text_alignment: 'left' | 'center' | 'right' | 'justify';
+    is_light_background: boolean;
+}
+
 export interface CoverSlide {
     layout: 'Cover';
     title: string;
@@ -17,13 +25,7 @@ export interface CoverSlide {
     year: string;
     image_url?: string;
     design_system_svg?: string;
-    design_system?: {
-        font_family: string;
-        text_color_primary: string;
-        text_color_secondary: string;
-        text_alignment: 'left' | 'center' | 'right' | 'justify';
-        is_light_background: boolean;
-    };
+    design_system?: DesignSystem;
 }
 
 export interface ExecutiveOverviewSlide {
