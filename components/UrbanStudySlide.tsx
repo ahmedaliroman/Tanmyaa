@@ -1,4 +1,4 @@
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useEffect, useState, useRef } from 'react';
 import { } from 'lucide-react';
 import { useBranding } from '../hooks/useBranding';
 import type { 
@@ -107,11 +107,11 @@ const SlideWrapper: React.FC<{
         : { ...style };
 
     return (
-        <div className={`w-full h-full bg-[#F3F4F6] text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
+        <div className={`w-full h-full bg-[var(--color-bg-light)] text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
             {/* Dark overlay if using a custom background to ensure text readability */}
             {presentationTemplateUrl && <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none backdrop-blur-[1px]"></div>}
             
-            <div className={`relative z-10 w-full flex-grow flex flex-col p-10 lg:p-16 ${reflectionText !== undefined ? 'pb-40' : 'pb-20'} overflow-y-auto`}>
+            <div className={`relative z-10 w-full flex-grow flex flex-col p-10 lg:p-16 ${reflectionText !== undefined ? 'pb-40' : 'pb-20'} overflow-hidden`}>
                 {children}
             </div>
 
@@ -122,13 +122,13 @@ const SlideWrapper: React.FC<{
                 </div>
             )}
             <div className="absolute bottom-6 right-12 z-30 opacity-20 slide-footer-logo hover:opacity-40 transition-opacity">
-                <TanmyaaLogoPPTX className="!text-[#007AB9]" />
+                <TanmyaaLogoPPTX className="!text-[var(--color-primary-dark)]" />
             </div>
 
             {reflectionText !== undefined && (
                 <div className="absolute bottom-6 left-12 right-12 z-20">
-                    <div className="bg-white border border-gray-200 rounded-2xl p-5 flex items-start shadow-xl border-l-4 border-l-[#007AB9]">
-                        <div className="bg-[#007AB9]/10 text-[#007AB9] text-[10px] font-black px-2 py-1 rounded-md mr-4 tracking-widest uppercase shrink-0 mt-1">Principal Strategist Reflection</div>
+                    <div className="bg-white border border-gray-200 rounded-2xl p-5 flex items-start shadow-xl border-l-4 border-l-[var(--color-primary-dark)]">
+                        <div className="bg-[var(--color-primary-dark)]/10 text-[var(--color-primary-dark)] text-[10px] font-black px-2 py-1 rounded-md mr-4 tracking-widest uppercase shrink-0 mt-1">Principal Strategist Reflection</div>
                         <Editable value={reflectionText} onUpdate={onReflectionUpdate} className="text-sm text-gray-600 italic leading-relaxed font-light" />
                     </div>
                 </div>
@@ -1187,7 +1187,7 @@ const parseQuarter = (quarterStr: string): number => {
                                                         transform: 'translateY(-50%)' 
                                                     }}>
                                                         <div className="h-full bg-[var(--color-primary-medium)] rounded-sm flex items-center justify-end px-1.5 shadow-lg transition-all duration-300 group-hover:brightness-125"
-                                                             style={{ background: 'linear-gradient(90deg, #456882, #60829d)' }}
+                                                             style={{ background: 'linear-gradient(90deg, var(--color-primary-medium), var(--color-primary-light))' }}
                                                         >
                                                             <div className="w-1 h-1 bg-white/80 rounded-full shadow-sm"></div>
                                                         </div>
@@ -1546,6 +1546,34 @@ interface SlideLayoutProps {
 }
 
 const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; imageUrls?: Record<string, string>; onUpdate: (field: string, val: string | unknown) => void, slideNumber: number, isActive: boolean, disableAnimations?: boolean, globalBgSvg?: string, designSystem?: DesignSystem }> = ({ slide, imageUrls, onUpdate, slideNumber, isActive, disableAnimations, globalBgSvg, designSystem }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        // Target HD size: 1280x720
+        const scaleX = width / 1280;
+        const scaleY = height / 720;
+        setScale(Math.min(scaleX, scaleY));
+      }
+    };
+    
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    
+    const observer = new ResizeObserver(updateScale);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    
+    return () => {
+      window.removeEventListener('resize', updateScale);
+      observer.disconnect();
+    };
+  }, []);
+
   if (!slide) {
     return (
         <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 italic">
@@ -1590,7 +1618,7 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
             reflectionText={slide.analytic_reflection}
             onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
         >
-            <h2 className="text-5xl font-extrabold text-[#007AB9] tracking-tighter mb-8">{slide.layout.replace(/([A-Z])/g, ' $1').trim()}</h2>
+            <h2 className="text-5xl font-extrabold text-[var(--color-primary-dark)] tracking-tighter mb-8">{slide.layout.replace(/([A-Z])/g, ' $1').trim()}</h2>
             <pre className="text-xs bg-gray-50 p-4 rounded-lg border border-gray-200">{JSON.stringify(slide, null, 2)}</pre>
         </SlideWrapper>
     );
@@ -1609,7 +1637,7 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
   const alignClass = designSystem?.text_alignment ? `force-align-${designSystem.text_alignment}` : '';
 
   return (
-    <div id={`slide-container-${slideNumber}`} className={`w-full h-full bg-[#F3F4F6] relative ${themeClass} ${alignClass}`} style={bgStyle}>
+    <div ref={containerRef} id={`slide-container-${slideNumber}`} className={`w-full h-full bg-[var(--color-bg-light)] relative overflow-hidden flex items-center justify-center ${themeClass} ${alignClass}`} style={bgStyle}>
         {designSystem && (
             <style>{`
                 #slide-container-${slideNumber} h1, 
@@ -1632,7 +1660,12 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
                 }
             `}</style>
         )}
-        {renderLayout()}
+        <div 
+            className="w-[1280px] h-[720px] origin-center absolute flex flex-col"
+            style={{ transform: `scale(${scale})` }}
+        >
+            {renderLayout()}
+        </div>
     </div>
   );
 };
