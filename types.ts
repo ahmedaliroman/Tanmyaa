@@ -119,11 +119,12 @@ export interface MacroStrategySlide {
 export interface EquityAnalysisSlide {
     layout: 'EquityAnalysis';
     title: string;
-    distributional_impacts: {
-        group: string;
-        impact: string;
+    metrics: {
+        dimension: string;
+        current_state: string;
+        target_state: string;
+        impact_description: string;
     }[];
-    mitigation_strategies: string[];
     analytic_reflection: string;
     image_url?: string;
 }
@@ -211,12 +212,12 @@ export interface ProjectedImpactSlide {
     layout: 'ProjectedImpact';
     title: string;
     subtitle: string;
-    metrics: {
-        label: string;
-        baseline: string;
-        projected: string;
-        timeframe: string;
-        assumption: string;
+    impacts: {
+        area: string;
+        problem: string;
+        solution: string;
+        impact: string;
+        action: string;
     }[];
     analytic_reflection: string;
     image_url?: string;
@@ -259,6 +260,8 @@ export interface GovernanceFrameworkSlide {
     stakeholders: {
         name: string;
         role: string;
+        power: string;
+        interest: string;
     }[];
     funding_model: string;
     regulatory_changes: string[];

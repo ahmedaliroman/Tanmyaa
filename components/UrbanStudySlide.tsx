@@ -910,9 +910,24 @@ const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field
                     <div className="text-[var(--color-primary-medium)] font-bold text-[10px] uppercase mb-4">Academic & Policy References (APA Style)</div>
                     {ensureArray(slide.sources).slice(0, 6).map((source, i) => {
                         const refAnim = getAnimationStyles(isActive, 300 + i * 100, 'fade-in-left', disableAnimations);
+                        const fullRef = `${source.author || 'Author'} (${source.year || 'Year'}). ${source.title || 'Title'}. ${source.relevance || 'Relevance'}`;
                         return (
                             <div key={i} style={refAnim} className="text-[10px] text-white/70 leading-relaxed pl-4 border-l border-white/10 hover:border-[var(--color-primary-medium)] transition-colors">
-                                <Editable value={`${source.author} (${source.year}). ${source.title}. ${source.relevance}`} onUpdate={v => onUpdate(`sources[${i}].title`, v)} />
+                                <Editable value={fullRef} onUpdate={v => {
+                                    // Simple heuristic to split back into parts if user edits the whole string
+                                    const parts = v.match(/^(.+?)\s\((.+?)\)\.\s(.+?)\.\s(.+)$/);
+                                    if (parts) {
+                                        onUpdate(`sources[${i}]`, {
+                                            author: parts[1],
+                                            year: parts[2],
+                                            title: parts[3],
+                                            relevance: parts[4],
+                                            link: source.link
+                                        });
+                                    } else {
+                                        onUpdate(`sources[${i}].title`, v);
+                                    }
+                                }} />
                             </div>
                         );
                     })}
@@ -1294,25 +1309,25 @@ const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpda
                                 <div className="flex flex-col gap-1">
                                     <div className="text-[8px] font-bold text-rose-500 uppercase">The Problem</div>
                                     <div className="text-[10px] text-white/70 leading-snug bg-rose-500/5 p-2 rounded-lg border border-rose-500/10">
-                                        <Editable value="Identified critical gap in current urban infrastructure" onUpdate={v => onUpdate(`impacts[${i}].problem`, v)} />
+                                        <Editable value={impact.problem || "Identified critical gap in current urban infrastructure"} onUpdate={v => onUpdate(`impacts[${i}].problem`, v)} />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <div className="text-[8px] font-bold text-blue-500 uppercase">The Solution</div>
                                     <div className="text-[10px] text-white/70 leading-snug bg-blue-500/5 p-2 rounded-lg border border-blue-500/10">
-                                        <Editable value={impact.description} onUpdate={v => onUpdate(`impacts[${i}].description`, v)} />
+                                        <Editable value={impact.solution || impact.description} onUpdate={v => onUpdate(`impacts[${i}].solution`, v)} />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <div className="text-[8px] font-bold text-emerald-500 uppercase">The Impact</div>
                                     <div className="text-[10px] text-white/70 leading-snug bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10">
-                                        <Editable value={impact.outcome} onUpdate={v => onUpdate(`impacts[${i}].outcome`, v)} />
+                                        <Editable value={impact.impact || impact.outcome} onUpdate={v => onUpdate(`impacts[${i}].impact`, v)} />
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <div className="text-[8px] font-bold text-amber-500 uppercase">The Action</div>
                                     <div className="text-[10px] text-white/70 leading-snug bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
-                                        <Editable value="Immediate implementation of phase 1 protocols" onUpdate={v => onUpdate(`impacts[${i}].action`, v)} />
+                                        <Editable value={impact.action || "Immediate implementation of phase 1 protocols"} onUpdate={v => onUpdate(`impacts[${i}].action`, v)} />
                                     </div>
                                 </div>
                             </div>
@@ -1465,10 +1480,10 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
                                     </h3>
                                     <div className="flex gap-2">
                                         <span className="text-[7px] uppercase bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
-                                            Power: <Editable value="High" onUpdate={v => onUpdate(`stakeholders[${i}].power`, v)} />
+                                            Power: <Editable value={stakeholder.power || "High"} onUpdate={v => onUpdate(`stakeholders[${i}].power`, v)} />
                                         </span>
                                         <span className="text-[7px] uppercase bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">
-                                            Interest: <Editable value="High" onUpdate={v => onUpdate(`stakeholders[${i}].interest`, v)} />
+                                            Interest: <Editable value={stakeholder.interest || "High"} onUpdate={v => onUpdate(`stakeholders[${i}].interest`, v)} />
                                         </span>
                                     </div>
                                 </div>
@@ -1496,9 +1511,43 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
                         </div>
                         
                         {/* Stakeholder Dots */}
-                        <div className="absolute top-1/4 right-1/4 w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                        <div className="absolute top-1/3 left-1/3 w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <div className="absolute bottom-1/4 right-1/3 w-2 h-2 bg-amber-500 rounded-full"></div>
+                        {ensureArray(slide.stakeholders).slice(0, 5).map((s, i) => {
+                            const p = (s.power || 'Medium').toLowerCase();
+                            const int = (s.interest || 'Medium').toLowerCase();
+                            
+                            let top = '50%';
+                            let left = '50%';
+                            
+                            if (p === 'high') top = '20%';
+                            else if (p === 'low') top = '80%';
+                            else top = '50%';
+                            
+                            if (int === 'high') left = '80%';
+                            else if (int === 'low') left = '20%';
+                            else left = '50%';
+
+                            const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500'];
+                            const color = colors[i % colors.length];
+
+                            return (
+                                <div 
+                                    key={i}
+                                    className={`absolute w-3 h-3 ${color} rounded-full shadow-lg transition-all duration-1000 ease-out`}
+                                    style={{ 
+                                        top, 
+                                        left, 
+                                        transform: 'translate(-50%, -50%)',
+                                        transitionDelay: `${500 + i * 100}ms`,
+                                        opacity: isActive ? 1 : 0
+                                    }}
+                                    title={s.name}
+                                >
+                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap text-[6px] text-white/40 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {s.name}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="mt-6 text-[8px] text-white/30 uppercase text-center font-mono">
                         Stakeholder Prioritization Map
