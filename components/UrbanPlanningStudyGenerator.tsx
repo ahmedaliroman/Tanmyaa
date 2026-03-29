@@ -90,6 +90,9 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
              case 'Crisis':
                 promptsMap.set('crisis_image', `High-contrast, dramatic photo of ${projectInfo.mainChallenge.toLowerCase()} in ${projectInfo.location}, sun-bleached city.`);
                 break;
+            case 'GanttChartRoadmap':
+                promptsMap.set('gantt_image', `High-tech, professional gantt chart visualization background for ${projectInfo.location} urban development, blue and white technical aesthetic.`);
+                break;
             case 'Closing':
                 promptsMap.set('closing_image', `An inspiring, futuristic image of a green, vibrant ${projectInfo.location} with people enjoying public spaces, reflecting a successful project at a ${projectInfo.scale} scale.`);
                 break;
