@@ -11,26 +11,6 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <script>
-      // Gracefully handle attempts to overwrite window.fetch
-      (function() {
-        try {
-          const descriptor = Object.getOwnPropertyDescriptor(window, 'fetch');
-          if (descriptor && descriptor.configurable) {
-            const originalFetch = window.fetch;
-            Object.defineProperty(window, 'fetch', {
-              value: originalFetch,
-              writable: true,
-              configurable: true,
-              enumerable: true
-            });
-          }
-        } catch (e) {
-          console.warn('Failed to handle fetch assignment:', e);
-        }
-      })();
-    </script>
-
     <style>
     :root {
       /* New User Specified Palette */

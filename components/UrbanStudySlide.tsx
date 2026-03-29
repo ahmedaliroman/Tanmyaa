@@ -249,7 +249,7 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
 
     return (
         <SlideWrapper 
-            className="justify-center items-center text-center relative overflow-hidden"
+            className="justify-center items-center text-center relative overflow-hidden bg-black"
             reflectionText={slide.analytic_reflection}
             onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
             slideNumber={slideNumber}
@@ -257,46 +257,54 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
             <EditableImage 
                 src={slide.image_url || imageUrls['cover_image'] || 'https://picsum.photos/seed/urban/1920/1080'} 
                 alt="Cover Background" 
-                className="absolute inset-0 w-full h-full z-0"
+                className="absolute inset-0 w-full h-full z-0 opacity-60"
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
-            <div className="absolute inset-0 bg-black/60 z-1"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/40 to-black/90 z-1"></div>
             
             <div className="relative z-10 max-w-4xl flex flex-col items-center">
-                <div style={metaAnim} className="flex items-center gap-3 mb-6">
-                    <div className="h-px w-8 bg-[var(--color-primary-medium)]"></div>
-                    <span className="text-xs font-bold uppercase text-[var(--color-primary-medium)]">
-                        Strategic Doctrine {slide.year}
+                <div style={metaAnim} className="flex items-center gap-4 mb-8">
+                    <div className="h-px w-12 bg-red-600"></div>
+                    <span className="text-xs font-black tracking-[0.3em] uppercase text-red-500">
+                        Internal Use Only
                     </span>
-                    <div className="h-px w-8 bg-[var(--color-primary-medium)]"></div>
+                    <div className="h-px w-12 bg-red-600"></div>
                 </div>
                 
                 <h1 
                     style={titleAnim}
-                    className="text-6xl lg:text-7xl font-black tracking-tighter leading-tight mb-6 uppercase text-white"
+                    className="text-6xl lg:text-7xl font-black tracking-tighter leading-[0.9] mb-8 uppercase text-white"
                 >
                     <Editable value={slide.title} onUpdate={v => onUpdate('title', v)} />
                 </h1>
                 
                 <p 
                     style={subtitleAnim}
-                    className="text-xl lg:text-2xl text-white/80 font-light max-w-2xl leading-relaxed mb-12"
+                    className="text-xl lg:text-2xl text-white/80 font-light max-w-2xl leading-relaxed mb-16"
                 >
                     <Editable value={slide.subtitle} onUpdate={v => onUpdate('subtitle', v)} />
                 </p>
 
-                <div style={metaAnim} className="flex items-center gap-12 text-xs font-mono text-white/50">
-                    <div className="flex flex-col gap-1">
-                        <span className="uppercase opacity-50">Project Code</span>
-                        <span className="text-white/80 font-bold">{slide.project_code}</span>
+                <div style={metaAnim} className="flex items-center gap-12 text-xs font-mono text-white/50 pt-12 border-t border-white/10">
+                    <div className="flex flex-col gap-1 text-left">
+                        <span className="uppercase opacity-50 text-[8px] tracking-widest">Project Code</span>
+                        <span className="text-white/80 font-bold"><Editable value={slide.project_code || 'TAN-2025-001'} onUpdate={v => onUpdate('project_code', v)} /></span>
                     </div>
-                    <div className="w-px h-8 bg-white/20"></div>
-                    <div className="flex flex-col gap-1">
-                        <span className="uppercase opacity-50">Confidentiality</span>
-                        <span className="text-white/80 font-bold uppercase">Internal Use Only</span>
+                    <div className="w-px h-10 bg-white/20"></div>
+                    <div className="flex flex-col gap-1 text-left">
+                        <span className="uppercase opacity-50 text-[8px] tracking-widest">Fiscal Year</span>
+                        <span className="text-white/80 font-bold uppercase"><Editable value={slide.year || '2025'} onUpdate={v => onUpdate('year', v)} /></span>
+                    </div>
+                    <div className="w-px h-10 bg-white/20"></div>
+                    <div className="flex items-center gap-3">
+                        <TanmyaaLogoPPTX className="h-8 text-white" />
                     </div>
                 </div>
             </div>
+
+            {/* Luxury Accents */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-white to-red-600 opacity-50"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-white to-red-600 opacity-50"></div>
         </SlideWrapper>
     );
 };
@@ -340,7 +348,7 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
                         ))}
                     </div>
                 </div>
-                <div className="col-span-5 relative rounded-2xl overflow-hidden group">
+                <div className="col-span-5 relative rounded-2xl overflow-hidden group border-4 border-amber-400">
                     <EditableImage 
                         src={slide.image_url || imageUrls['overview_image'] || ''} 
                         alt={slide.title} 
@@ -459,7 +467,7 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
             onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
             slideNumber={slideNumber}
         >
-            <div className="flex justify-between items-end mb-8">
+            <div className="flex justify-between items-end mb-6">
                 <h2 
                     style={titleAnim}
                     className="text-4xl font-black tracking-tighter uppercase"
@@ -470,11 +478,32 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
                     Reference: <Editable value="Urban Planning Institute (2025) - Strategic Framework for Resilient Cities" onUpdate={v => onUpdate('reference', v)} />
                 </div>
             </div>
-            <div style={gridAnim} className="grid grid-cols-4 gap-4 flex-grow">
-                <SWOTSection title="Strengths" items={slide.strengths} color="border-emerald-500" field="strengths" onUpdate={onUpdate} />
-                <SWOTSection title="Weaknesses" items={slide.weaknesses} color="border-amber-500" field="weaknesses" onUpdate={onUpdate} />
-                <SWOTSection title="Opportunities" items={slide.opportunities} color="border-blue-500" field="opportunities" onUpdate={onUpdate} />
-                <SWOTSection title="Threats" items={slide.threats} color="border-rose-500" field="threats" onUpdate={onUpdate} />
+            
+            <div className="grid grid-cols-12 gap-6 flex-grow overflow-hidden">
+                <div style={gridAnim} className="col-span-9 grid grid-cols-2 grid-rows-2 gap-4 h-full">
+                    <SWOTSection title="Strengths" items={slide.strengths} color="border-emerald-500" field="strengths" onUpdate={onUpdate} />
+                    <SWOTSection title="Weaknesses" items={slide.weaknesses} color="border-amber-500" field="weaknesses" onUpdate={onUpdate} />
+                    <SWOTSection title="Opportunities" items={slide.opportunities} color="border-blue-500" field="opportunities" onUpdate={onUpdate} />
+                    <SWOTSection title="Threats" items={slide.threats} color="border-rose-500" field="threats" onUpdate={onUpdate} />
+                </div>
+                
+                <div style={gridAnim} className="col-span-3 bg-[#3d2b1f]/30 border border-[#5d4037]/50 rounded-2xl p-4 flex flex-col">
+                    <div className="text-[#d7ccc8] font-black text-xs uppercase mb-4 tracking-widest border-b border-[#5d4037]/30 pb-2">Prioritization List</div>
+                    <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+                        {ensureArray(slide.strengths).concat(ensureArray(slide.opportunities)).slice(0, 6).map((item, i) => (
+                            <div key={i} className="flex gap-3 items-start">
+                                <div className="w-5 h-5 rounded bg-[#5d4037] flex items-center justify-center text-[10px] font-bold text-white shrink-0">{i + 1}</div>
+                                <div className="text-[10px] text-white/80 leading-tight">
+                                    <span className="font-bold block text-[#d7ccc8]">{item.title}</span>
+                                    <span className="opacity-60">{item.description.slice(0, 40)}...</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-auto pt-4 border-t border-[#5d4037]/30">
+                        <div className="text-[8px] text-[#d7ccc8]/50 uppercase font-mono">Strategic Priority Index: 0.84</div>
+                    </div>
+                </div>
             </div>
         </SlideWrapper>
     );
@@ -749,43 +778,49 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
             >
                 <Editable value={slide.title || 'Equity & Inclusion Analysis'} onUpdate={v => onUpdate('title', v)} />
             </h2>
-            <div className="grid grid-cols-3 gap-6 flex-grow">
-                {ensureArray(slide.metrics).slice(0, 3).map((metric, i) => {
-                    const metricAnim = getAnimationStyles(isActive, 300 + i * 150, 'scale-in', disableAnimations);
-                    return (
-                        <div key={i} style={metricAnim} className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col justify-between backdrop-blur-sm">
-                            <div>
-                                <div className="text-[var(--color-primary-medium)] font-bold text-[10px] uppercase mb-4">Strategic Metric 0{i + 1}</div>
-                                <h3 className="text-xl font-black tracking-tighter uppercase mb-4 leading-tight">
+            <div className="grid grid-cols-12 gap-8 flex-grow">
+                <div className="col-span-8 space-y-4">
+                    <div className="text-emerald-400 font-black text-xs uppercase mb-4 tracking-widest">Distributional Impacts</div>
+                    <div className="grid grid-cols-2 gap-4">
+                        {ensureArray(slide.metrics).slice(0, 4).map((metric, i) => (
+                            <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                                <h3 className="text-xs font-black uppercase text-white mb-2 leading-tight">
                                     <Editable value={metric.dimension} onUpdate={v => onUpdate(`metrics[${i}].dimension`, v)} />
                                 </h3>
-                            </div>
-                            
-                            <div className="flex items-center justify-between gap-4 py-6 border-y border-white/10 my-4">
-                                <div className="text-center flex-1">
-                                    <div className="text-[10px] text-white/40 uppercase mb-1">Current (X)</div>
-                                    <div className="text-2xl font-black text-white/60">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="text-lg font-black text-white/40">
                                         <Editable value={metric.current_state} onUpdate={v => onUpdate(`metrics[${i}].current_state`, v)} />
                                     </div>
-                                </div>
-                                <div className="flex flex-col items-center">
-                                    <ArrowRight className="w-6 h-6 text-[var(--color-primary-medium)]" />
-                                    <div className="text-[8px] text-[var(--color-primary-medium)] font-bold uppercase mt-1">Target</div>
-                                </div>
-                                <div className="text-center flex-1">
-                                    <div className="text-[10px] text-[var(--color-primary-medium)] uppercase mb-1">Future (Y)</div>
-                                    <div className="text-3xl font-black text-white">
+                                    <ArrowRight className="w-3 h-3 text-emerald-500" />
+                                    <div className="text-xl font-black text-white">
                                         <Editable value={metric.target_state} onUpdate={v => onUpdate(`metrics[${i}].target_state`, v)} />
                                     </div>
                                 </div>
+                                <p className="text-[9px] text-white/50 leading-relaxed italic">
+                                    <Editable value={metric.impact_description} onUpdate={v => onUpdate(`metrics[${i}].impact_description`, v)} />
+                                </p>
                             </div>
-
-                            <p className="text-xs text-white/60 leading-relaxed italic">
-                                <Editable value={metric.impact_description} onUpdate={v => onUpdate(`metrics[${i}].impact_description`, v)} />
-                            </p>
-                        </div>
-                    );
-                })}
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="col-span-4 bg-emerald-900/20 border border-emerald-500/30 rounded-3xl p-6 backdrop-blur-sm flex flex-col">
+                    <div className="text-emerald-400 font-black text-xs uppercase mb-6 tracking-widest">Mitigation Strategies</div>
+                    <div className="space-y-4 flex-grow">
+                        {[
+                            { label: "Policy Lever", value: "Inclusive Zoning" },
+                            { label: "Fiscal Tool", value: "Tax Abatements" },
+                            { label: "Social Safety", value: "Rent Controls" }
+                        ].map((item, i) => (
+                            <div key={i} className="bg-black/20 p-3 rounded-xl border border-white/5">
+                                <div className="text-[8px] text-emerald-500 font-bold uppercase mb-1">{item.label}</div>
+                                <div className="text-[10px] text-white font-bold">
+                                    <Editable value={item.value} onUpdate={() => {}} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </SlideWrapper>
     );
@@ -839,6 +874,9 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
             onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
             slideNumber={slideNumber}
         >
+            <div className="absolute top-6 right-6 z-30 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-full border border-emerald-500/30 uppercase tracking-widest">
+                LIFECYCLE FISCAL ARCHITECTURE
+            </div>
             <div className="w-1/2 h-full absolute left-0 top-0">
                 <EditableImage 
                     src={slide.before_image_url || imageUrls[slide.before_image_prompt] || ''} 
@@ -957,45 +995,42 @@ const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field
     );
 };
 
-const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
+const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, onUpdate: (field: string, val: string | unknown) => void, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, isActive, disableAnimations, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
-
-    const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
         <SlideWrapper 
-            className="p-8 pb-24 flex flex-col"
+            className="p-8 pb-24 flex flex-col bg-black"
             reflectionText={slide.analytic_reflection}
             onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
             slideNumber={slideNumber}
         >
-            <EditableImage 
-                src={slide.image_url || imageUrls['scenario_image'] || ''} 
-                alt="Scenario background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className={`absolute inset-0 ${overlayClass} z-10 pointer-events-none`}></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Scenario Comparison"} onUpdate={v => onUpdate('title', v)} className="text-3xl md:text-4xl font-extrabold tracking-tighter mb-4 text-[var(--color-accent-light)]" /></div>
-            <div className="relative z-20 flex-grow grid grid-cols-3 gap-4 pr-2">
+            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Scenario Comparison"} onUpdate={v => onUpdate('title', v)} className="text-3xl md:text-4xl font-extrabold tracking-tighter mb-8 text-white" /></div>
+            <div className="relative z-20 flex-grow grid grid-cols-3 gap-6 pr-2">
                 {ensureArray(slide.scenarios).slice(0, 3).map((scenario, i) => {
                     const scenarioAnimation = getAnimationStyles(isActive, 350 + i * 150, 'scale-in', disableAnimations);
                     return (
-                        <div key={i} className="bg-white/5 p-3 rounded-lg border border-white/10 flex flex-col transition-all duration-300 hover:bg-white/10 hover:border-white/20" style={scenarioAnimation}>
-                            <Editable as="h3" value={scenario.name} onUpdate={v => onUpdate(`scenarios[${i}].name`, v)} className="font-bold text-sm md:text-base text-white text-center" />
-                            <div className="my-2 border-t border-white/10">
+                        <div key={i} className="bg-white/5 p-6 rounded-3xl border border-white/10 flex flex-col transition-all duration-300 hover:bg-white/10 hover:border-white/20" style={scenarioAnimation}>
+                            <Editable as="h3" value={scenario.name} onUpdate={v => onUpdate(`scenarios[${i}].name`, v)} className="font-black text-lg text-white text-center uppercase tracking-tighter mb-4" />
+                            <div className="my-4 space-y-2">
                                 {ensureArray(scenario.outcomes).slice(0, 4).map((outcome, j) => (
-                                     <div key={j} className="flex justify-between items-center py-1 border-b border-white/10 text-[8px] md:text-[9px]">
-                                        <Editable as="span" value={outcome.metric} onUpdate={v => onUpdate(`scenarios[${i}].outcomes[${j}].metric`, v)} className="text-white/70" />
-                                        <Editable as="span" value={outcome.value} onUpdate={v => onUpdate(`scenarios[${i}].outcomes[${j}].value`, v)} className="font-bold text-white" />
+                                     <div key={j} className="flex justify-between items-center py-2 border-b border-white/5 text-[10px]">
+                                        <Editable as="span" value={outcome.metric} onUpdate={v => onUpdate(`scenarios[${i}].outcomes[${j}].metric`, v)} className="text-white/50 uppercase font-bold" />
+                                        <Editable as="span" value={outcome.value} onUpdate={v => onUpdate(`scenarios[${i}].outcomes[${j}].value`, v)} className="font-black text-white" />
                                     </div>
                                 ))}
                             </div>
-                            <div className="mt-auto space-y-1 text-[8px]">
-                                 <p className="font-bold text-white/50">RISK</p>
-                                <Editable as="p" value={scenario.risk} onUpdate={v => onUpdate(`scenarios[${i}].risk`, v)} className="text-white/80 leading-tight line-clamp-2" />
-                                <p className="font-bold text-white/50 mt-1">COST</p>
-                                <Editable as="p" value={scenario.cost} onUpdate={v => onUpdate(`scenarios[${i}].cost`, v)} className="font-extrabold text-sm text-[var(--color-accent-light)]" />
+                            <div className="mt-auto space-y-4">
+                                <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
+                                    <div className="text-[8px] text-rose-500 font-bold uppercase mb-1">Strategic Actions</div>
+                                    <div className="text-[10px] text-white/70 leading-relaxed">
+                                        <Editable value={scenario.risk || "Implement phased zoning reforms and infrastructure upgrades."} onUpdate={v => onUpdate(`scenarios[${i}].risk`, v)} />
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                    <div className="text-[8px] text-white/30 uppercase font-bold">Est. Cost</div>
+                                    <Editable as="p" value={scenario.cost} onUpdate={v => onUpdate(`scenarios[${i}].cost`, v)} className="font-black text-xl text-emerald-400" />
+                                </div>
                             </div>
                         </div>
                     )
@@ -1469,34 +1504,36 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
                 <Editable value={slide.title || 'Governance & Stakeholder Framework'} onUpdate={v => onUpdate('title', v)} />
             </h2>
             <div className="grid grid-cols-12 gap-8 flex-grow">
-                <div className="col-span-7 space-y-4">
-                    {ensureArray(slide.stakeholders).slice(0, 3).map((stakeholder, i) => {
-                        const stakeholderAnim = getAnimationStyles(isActive, 300 + i * 150, 'fade-in-left', disableAnimations);
-                        return (
-                            <div key={i} style={stakeholderAnim} className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="text-sm font-black tracking-tighter uppercase text-white">
+                <div className="col-span-7 space-y-4 bg-cyan-900/20 border border-cyan-500/30 rounded-3xl p-6 backdrop-blur-sm">
+                    <div className="text-cyan-400 font-black text-xs uppercase mb-4 tracking-widest">Governance Architecture</div>
+                    <div className="space-y-4">
+                        <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                            <div className="text-[8px] text-cyan-500 font-bold uppercase mb-1">Lead Agency</div>
+                            <div className="text-sm font-bold text-white mb-1">
+                                <Editable value={slide.lead_agency?.name || "Metropolitan Development Authority"} onUpdate={v => onUpdate('lead_agency.name', v)} />
+                            </div>
+                            <div className="text-[10px] text-white/60 italic">
+                                <Editable value={slide.lead_agency?.rationale || "Primary regulatory body with cross-jurisdictional mandate."} onUpdate={v => onUpdate('lead_agency.rationale', v)} />
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            {ensureArray(slide.stakeholders).slice(0, 2).map((stakeholder, i) => (
+                                <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                                    <h3 className="text-[10px] font-black uppercase text-white mb-1">
                                         <Editable value={stakeholder.name} onUpdate={v => onUpdate(`stakeholders[${i}].name`, v)} />
                                     </h3>
-                                    <div className="flex gap-2">
-                                        <span className="text-[7px] uppercase bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
-                                            Power: <Editable value={stakeholder.power || "High"} onUpdate={v => onUpdate(`stakeholders[${i}].power`, v)} />
-                                        </span>
-                                        <span className="text-[7px] uppercase bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">
-                                            Interest: <Editable value={stakeholder.interest || "High"} onUpdate={v => onUpdate(`stakeholders[${i}].interest`, v)} />
-                                        </span>
-                                    </div>
+                                    <p className="text-[9px] text-white/50 leading-tight">
+                                        <Editable value={stakeholder.role} onUpdate={v => onUpdate(`stakeholders[${i}].role`, v)} />
+                                    </p>
                                 </div>
-                                <p className="text-[10px] text-white/50 leading-relaxed">
-                                    <Editable value={stakeholder.role} onUpdate={v => onUpdate(`stakeholders[${i}].role`, v)} />
-                                </p>
-                            </div>
-                        );
-                    })}
+                            ))}
+                        </div>
+                    </div>
                 </div>
                 
-                <div className="col-span-5 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm flex flex-col">
-                    <div className="text-[var(--color-primary-medium)] font-bold text-[10px] uppercase mb-6">Interest-Power Matrix</div>
+                <div className="col-span-5 bg-orange-900/20 border border-orange-500/30 rounded-3xl p-6 backdrop-blur-sm flex flex-col">
+                    <div className="text-orange-400 font-black text-xs uppercase mb-6 tracking-widest">Stakeholder Matrix</div>
                     <div className="flex-grow relative border-l border-b border-white/20">
                         {/* Matrix Labels */}
                         <div className="absolute -left-8 top-1/2 -rotate-90 text-[8px] text-white/40 uppercase font-mono">Power Level</div>
@@ -1526,13 +1563,10 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
                             else if (int === 'low') left = '20%';
                             else left = '50%';
 
-                            const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500'];
-                            const color = colors[i % colors.length];
-
                             return (
                                 <div 
                                     key={i}
-                                    className={`absolute w-3 h-3 ${color} rounded-full shadow-lg transition-all duration-1000 ease-out`}
+                                    className="absolute w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-lg cursor-help group"
                                     style={{ 
                                         top, 
                                         left, 
