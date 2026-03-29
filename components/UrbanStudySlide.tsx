@@ -1,5 +1,5 @@
 import React, { CSSProperties, useEffect, useState } from 'react';
-import { Brain } from 'lucide-react';
+import { } from 'lucide-react';
 import { useBranding } from '../hooks/useBranding';
 import type { 
     PresentationSlide, 
@@ -91,7 +91,14 @@ const parseNumericValue = (value: string): { number: number; prefix: string; suf
 const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(val) ? val : [];
 
 // Fix: Added 'style' prop to allow inline styling for components like Gantt charts that need specific backgrounds.
-const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties, reflectionText?: string, onReflectionUpdate?: (val: string) => void }> = ({ children, className = '', style, reflectionText, onReflectionUpdate }) => {
+const SlideWrapper: React.FC<{ 
+    children: React.ReactNode, 
+    className?: string, 
+    style?: CSSProperties, 
+    reflectionText?: string, 
+    onReflectionUpdate?: (val: string) => void,
+    slideNumber?: number
+}> = ({ children, className = '', style, reflectionText, onReflectionUpdate, slideNumber }) => {
     const { presentationTemplateUrl } = useBranding();
     
     // If a template URL is provided (and it's an image), use it as the background
@@ -100,18 +107,29 @@ const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, st
         : { ...style };
 
     return (
-        <div className={`w-full h-full bg-gray-100 text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
+        <div className={`w-full h-full bg-[#F3F4F6] text-black flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
             {/* Dark overlay if using a custom background to ensure text readability */}
-            {presentationTemplateUrl && <div className="absolute inset-0 bg-black/60 z-0 pointer-events-none backdrop-blur-[2px]"></div>}
+            {presentationTemplateUrl && <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none backdrop-blur-[1px]"></div>}
             
-            <div className="relative z-10 w-full flex-grow flex flex-col p-8 lg:p-12 overflow-y-auto">
+            <div className={`relative z-10 w-full flex-grow flex flex-col p-10 lg:p-16 ${reflectionText !== undefined ? 'pb-40' : 'pb-20'} overflow-y-auto`}>
                 {children}
             </div>
+
+            {/* Global Footer Elements */}
+            {slideNumber !== undefined && (
+                <div className="absolute bottom-8 left-12 text-[10px] font-mono font-bold text-gray-400 z-30 slide-footer-text tracking-[0.5em] uppercase">
+                    Section 01 / Slide {String(slideNumber).padStart(2, '0')}
+                </div>
+            )}
+            <div className="absolute bottom-6 right-12 z-30 opacity-20 slide-footer-logo hover:opacity-40 transition-opacity">
+                <TanmyaaLogoPPTX className="!text-[#007AB9]" />
+            </div>
+
             {reflectionText !== undefined && (
-                <div className="absolute bottom-4 left-8 right-8 z-20">
-                    <div className="bg-white border border-gray-300 rounded-lg p-3 flex items-center shadow-sm">
-                        <div className="bg-[#007AB9] text-white text-xs font-bold px-2 py-1 rounded mr-3">REFLECTION</div>
-                        <Editable value={reflectionText} onUpdate={onReflectionUpdate} className="text-sm text-gray-700 italic" />
+                <div className="absolute bottom-6 left-12 right-12 z-20">
+                    <div className="bg-white border border-gray-200 rounded-2xl p-5 flex items-start shadow-xl border-l-4 border-l-[#007AB9]">
+                        <div className="bg-[#007AB9]/10 text-[#007AB9] text-[10px] font-black px-2 py-1 rounded-md mr-4 tracking-widest uppercase shrink-0 mt-1">Principal Strategist Reflection</div>
+                        <Editable value={reflectionText} onUpdate={onReflectionUpdate} className="text-sm text-gray-600 italic leading-relaxed font-light" />
                     </div>
                 </div>
             )}
@@ -218,33 +236,9 @@ const Editable: React.FC<{
   );
 };
 
-const AnalyticReflection: React.FC<{ text: string, onUpdate: (newValue: string) => void, animationStyle: CSSProperties, disableAnimations?: boolean }> = ({ text, onUpdate, animationStyle, disableAnimations }) => (
-    <div 
-        style={disableAnimations ? { opacity: 1 } : animationStyle}
-        className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group"
-    >
-        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[var(--color-primary-medium)] to-transparent"></div>
-        <div className="flex items-start gap-6">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--color-primary-medium)]/20 flex items-center justify-center shrink-0 border border-[var(--color-primary-medium)]/30">
-                <Brain className="w-6 h-6 text-[var(--color-primary-medium)]" />
-            </div>
-            <div className="flex-grow">
-                <div className="text-[var(--color-primary-medium)] font-bold text-[10px] uppercase tracking-[0.3em] mb-2">Principal Strategist Reflection</div>
-                <Editable 
-                    as="p"
-                    value={text}
-                    onUpdate={onUpdate}
-                    className="text-sm text-white/80 font-light leading-relaxed italic"
-                />
-            </div>
-        </div>
-    </div>
-);
-
-
 // --- REDESIGNED DOCTRINE-STYLE LAYOUTS ---
 
-const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, val: string) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
+const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, val: string | unknown) => void, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, isActive, disableAnimations, slideNumber }) => {
     const titleAnim = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const subtitleAnim = getAnimationStyles(isActive, 400, 'fade-in-up', disableAnimations);
     const metaAnim = getAnimationStyles(isActive, 600, 'fade-in', disableAnimations);
@@ -253,7 +247,8 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
         <SlideWrapper 
             className="justify-center items-start relative overflow-hidden"
             reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v)}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             {slide.design_system_svg && (
                 <div className="absolute inset-0 z-0 opacity-40" dangerouslySetInnerHTML={{ __html: slide.design_system_svg }} />
@@ -298,7 +293,7 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
     );
 };
 
-const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, onUpdate: (field: string, val: string | string[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, slideNumber }) => {
     const titleAnim = getAnimationStyles(isActive, 100, 'fade-in-up', disableAnimations);
     const contentAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
     const pointsAnim = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
@@ -306,6 +301,9 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
     return (
         <SlideWrapper 
             className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-7 flex flex-col justify-center">
@@ -352,7 +350,7 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
     );
 };
 
-const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string, val: string | {label: string, value: string, description: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
+const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string, val: string | unknown) => void, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, isActive, disableAnimations, slideNumber }) => {
     const titleAnim = getAnimationStyles(isActive, 100, 'fade-in-up', disableAnimations);
     const contentAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
     const dataAnim = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
@@ -360,6 +358,9 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
     return (
         <SlideWrapper 
             className="flex flex-col justify-center"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             <div className="max-w-4xl mb-16">
                 <div style={titleAnim} className="flex items-center gap-4 mb-6">
@@ -426,13 +427,16 @@ const SWOTSection = ({ title, items, color, field, onUpdate }: { title: string, 
     </div>
 );
 
-const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, val: string) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
+const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, val: string | unknown) => void, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, isActive, disableAnimations, slideNumber }) => {
     const titleAnim = getAnimationStyles(isActive, 100, 'fade-in-up', disableAnimations);
     const gridAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
 
     return (
         <SlideWrapper 
             className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             <h2 
                 style={titleAnim}
@@ -450,12 +454,15 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
     );
 };
 
-const BenchmarksSlideLayout: React.FC<{ slide: BenchmarksSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const BenchmarksSlideLayout: React.FC<{ slide: BenchmarksSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, slideNumber }) => {
     const titleAnim = getAnimationStyles(isActive, 100, 'fade-in-up', disableAnimations);
 
     return (
         <SlideWrapper 
             className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             <h2 
                 style={titleAnim}
@@ -510,13 +517,16 @@ const BenchmarksSlideLayout: React.FC<{ slide: BenchmarksSlide, onUpdate: (field
     );
 };
 
-const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, onUpdate: (field: string, val: string | string[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, slideNumber }) => {
     const titleAnim = getAnimationStyles(isActive, 100, 'fade-in-up', disableAnimations);
     const contentAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
 
     return (
         <SlideWrapper 
             className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-12 lg:col-span-7 relative rounded-[40px] overflow-hidden group">
@@ -579,7 +589,7 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
     );
 };
 
-const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string, val: string) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, slideNumber }) => {
     const titleAnim = getAnimationStyles(isActive, 100, 'fade-in-up', disableAnimations);
     const visionAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
     const pillarsAnim = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
@@ -587,6 +597,9 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
     return (
         <SlideWrapper 
             className="flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             <div className="grid grid-cols-12 gap-12 h-full">
                 <div className="col-span-12 lg:col-span-5 flex flex-col justify-center">
@@ -644,7 +657,7 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
     );
 };
 
-const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: (field: string, val: string) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/70";
@@ -652,6 +665,9 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
     return (
         <SlideWrapper 
             className="p-12 pb-28 flex flex-col justify-between"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             <EditableImage 
                 src={slide.image_url || imageUrls[slide.image_prompt] || ''} 
@@ -683,7 +699,7 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
     );
 };
 
-const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate: (field: string, val: string | string[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const impactsAnimation = getAnimationStyles(isActive, 350, 'fade-in-up', disableAnimations);
     const strategiesAnimation = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
@@ -691,7 +707,12 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['equity_image'] || ''} 
                 alt="Equity background" 
@@ -763,7 +784,7 @@ const MetricValueDisplay: React.FC<{ value: string; isActive: boolean; numberCla
     );
 };
 
-const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate: (field: string, val: string | {label: string, value: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const conclusionAnimation = getAnimationStyles(isActive, 850, 'fade-in-up', disableAnimations);
 
@@ -773,6 +794,9 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
     return (
         <SlideWrapper 
             className="p-0 text-center flex flex-col pb-28"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
         >
             <div className="w-1/2 h-full absolute left-0 top-0">
                 <EditableImage 
@@ -824,14 +848,19 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
     );
 };
 
-const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const sourcesAnimation = getAnimationStyles(isActive, 400, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['references_image'] || ''} 
                 alt="References background" 
@@ -873,13 +902,18 @@ const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field
     );
 };
 
-const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, onUpdate: (field: string, val: string | {name: string, outcomes: {metric: string, value: string}[], risk: string, cost: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['scenario_image'] || ''} 
                 alt="Scenario background" 
@@ -916,13 +950,18 @@ const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, 
     );
 };
 
-const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate: (field: string, val: string | {category: string, description: string, mitigation: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['risk_image'] || ''} 
                 alt="Risk background" 
@@ -953,13 +992,18 @@ const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate
     );
 };
 
-const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: string, val: string | {title: string, timeline: string, action_steps: {action: string, kpi: string}[], outcome: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['roadmap_image'] || ''} 
                 alt="Roadmap background" 
@@ -1006,7 +1050,7 @@ const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: stri
     );
 };
 
-const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, onUpdate: (field: string, val: string | number | {name: string, start_quarter: string, end_quarter: string, kpi: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const parseYear = (val: string | number | undefined | null): number => {
         if (typeof val === 'number') return val;
         if (typeof val === 'string') {
@@ -1019,7 +1063,12 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     const endYear = parseYear(slide.timeline_end_year);
     if (!startYear || !endYear || endYear < startYear) {
         return (
-            <SlideWrapper className="p-12 items-center justify-center text-white/50">
+            <SlideWrapper 
+                className="p-12 items-center justify-center text-white/50"
+                reflectionText={slide.analytic_reflection}
+                onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+                slideNumber={slideNumber}
+            >
                 <div className="text-center">
                     <p className="mb-4">Invalid or missing timeline data.</p>
                     <div className="flex items-center justify-center space-x-4 bg-white/5 p-4 rounded-lg">
@@ -1057,7 +1106,12 @@ const parseQuarter = (quarterStr: string): number => {
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-10 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-10 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['gantt_image'] || ''} 
                 alt="Gantt background" 
@@ -1152,14 +1206,19 @@ const parseQuarter = (quarterStr: string): number => {
     );
 };
 
-const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpdate: (field: string, val: string | {label: string, baseline: string, projected: string, timeframe: string, assumption: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const subtitleAnimation = getAnimationStyles(isActive, 350, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col items-center text-center">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col items-center text-center"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['impact_image'] || ''} 
                 alt="Impact background" 
@@ -1226,13 +1285,18 @@ const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpda
     );
 };
 
-const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpdate: (field: string, val: string | {component: string, capex: string, opex: string, funding_source: string, recovery_mechanism: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['fiscal_image'] || ''} 
                 alt="Fiscal background" 
@@ -1272,13 +1336,18 @@ const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpda
     );
 };
 
-const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (field: string, val: string | {title: string, strategy: string, expected_impact: string, measurement_framework: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['policy_image'] || ''} 
                 alt="Policy background" 
@@ -1316,7 +1385,7 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
     );
 };
 
-const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const leadAgencyAnimation = getAnimationStyles(isActive, 350, 'fade-in-up', disableAnimations);
     const fundingModelAnimation = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
@@ -1326,7 +1395,12 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['governance_image'] || ''} 
                 alt="Governance background" 
@@ -1376,13 +1450,18 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
     );
 };
 
-const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: string, val: string | {step_number: number, title: string, description: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem }) => {
+const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, designSystem?: DesignSystem, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, designSystem, slideNumber }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     const overlayClass = designSystem?.is_light_background ? "bg-white/10" : "bg-black/80";
 
     return (
-        <SlideWrapper className="p-12 pb-28 flex flex-col">
+        <SlideWrapper 
+            className="p-12 pb-28 flex flex-col"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <EditableImage 
                 src={slide.image_url || imageUrls['process_image'] || ''} 
                 alt="Process background" 
@@ -1412,13 +1491,18 @@ const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: stri
     );
 };
 
-const ClosingSlideLayout: React.FC<{ slide: ClosingSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const ClosingSlideLayout: React.FC<{ slide: ClosingSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean, slideNumber: number }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations, slideNumber }) => {
     const taglineAnimation = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
     const lineAnimation = getAnimationStyles(isActive, 600, 'scale-in', disableAnimations);
     const creditsAnimation = getAnimationStyles(isActive, 900, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-0 overflow-hidden">
+        <SlideWrapper 
+            className="p-0 overflow-hidden"
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+            slideNumber={slideNumber}
+        >
             <div className="flex h-full w-full">
                 {/* Left side: Image */}
                 <div className="w-1/2 relative">
@@ -1458,19 +1542,20 @@ interface SlideLayoutProps {
     isActive: boolean;
     disableAnimations?: boolean;
     designSystem?: DesignSystem;
+    slideNumber: number;
 }
 
 const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; imageUrls?: Record<string, string>; onUpdate: (field: string, val: string | unknown) => void, slideNumber: number, isActive: boolean, disableAnimations?: boolean, globalBgSvg?: string, designSystem?: DesignSystem }> = ({ slide, imageUrls, onUpdate, slideNumber, isActive, disableAnimations, globalBgSvg, designSystem }) => {
   if (!slide) {
     return (
-        <div className="w-full h-full bg-[var(--color-primary-dark)] flex items-center justify-center text-white/40 italic">
+        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 italic">
             Invalid slide data.
         </div>
     );
   }
 
   const renderLayout = () => {
-    const props = { onUpdate, imageUrls: imageUrls || {}, isActive, disableAnimations, designSystem };
+    const props = { onUpdate, imageUrls: imageUrls || {}, isActive, disableAnimations, designSystem, slideNumber };
     const layoutMap: { [key: string]: React.FC<SlideLayoutProps> } = {
         'Cover': CoverSlideLayout,
         'ExecutiveOverview': ExecutiveOverviewSlideLayout,
@@ -1499,9 +1584,14 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
     if (Component) return <Component slide={slide} {...props} />;
     
     return (
-        <SlideWrapper className="p-16 bg-white text-gray-800">
-            <h2 className="text-5xl font-extrabold text-[var(--color-primary-dark)] tracking-tighter mb-8">{slide.layout.replace(/([A-Z])/g, ' $1').trim()}</h2>
-            <pre className="text-xs bg-gray-100 p-4 rounded-lg">{JSON.stringify(slide, null, 2)}</pre>
+        <SlideWrapper 
+            className="p-16 bg-white text-gray-800" 
+            slideNumber={slideNumber}
+            reflectionText={slide.analytic_reflection}
+            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
+        >
+            <h2 className="text-5xl font-extrabold text-[#007AB9] tracking-tighter mb-8">{slide.layout.replace(/([A-Z])/g, ' $1').trim()}</h2>
+            <pre className="text-xs bg-gray-50 p-4 rounded-lg border border-gray-200">{JSON.stringify(slide, null, 2)}</pre>
         </SlideWrapper>
     );
   };
@@ -1515,14 +1605,11 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
       if (designSystem.text_alignment) bgStyle.textAlign = designSystem.text_alignment;
   }
 
-  const themeClass = designSystem?.is_light_background ? 'theme-light' : '';
+  const themeClass = 'theme-light';
   const alignClass = designSystem?.text_alignment ? `force-align-${designSystem.text_alignment}` : '';
 
-  const reflectionAnimation = getAnimationStyles(isActive, 1000, 'fade-in-up', disableAnimations);
-  const hasReflection = slide && 'analytic_reflection' in slide && slide.analytic_reflection;
-
   return (
-    <div id={`slide-container-${slideNumber}`} className={`w-full h-full bg-[#0A0A0A] relative ${themeClass} ${alignClass}`} style={bgStyle}>
+    <div id={`slide-container-${slideNumber}`} className={`w-full h-full bg-[#F3F4F6] relative ${themeClass} ${alignClass}`} style={bgStyle}>
         {designSystem && (
             <style>{`
                 #slide-container-${slideNumber} h1, 
@@ -1532,7 +1619,7 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
                 #slide-container-${slideNumber} span, 
                 #slide-container-${slideNumber} div, 
                 #slide-container-${slideNumber} li {
-                    ${designSystem.text_color_primary ? `color: ${designSystem.text_color_primary.startsWith('#') ? designSystem.text_color_primary : '#' + designSystem.text_color_primary} !important;` : ''}
+                    color: #111827 !important;
                 }
                 #slide-container-${slideNumber} .text-white\\/60, 
                 #slide-container-${slideNumber} .text-white\\/70, 
@@ -1541,29 +1628,11 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
                 #slide-container-${slideNumber} .text-white\\/30,
                 #slide-container-${slideNumber} .text-white\\/80,
                 #slide-container-${slideNumber} .text-white\\/90 {
-                    ${designSystem.text_color_secondary ? `color: ${designSystem.text_color_secondary.startsWith('#') ? designSystem.text_color_secondary : '#' + designSystem.text_color_secondary} !important;` : ''}
+                    color: #4B5563 !important;
                 }
             `}</style>
         )}
-        <div className="absolute bottom-8 left-12 text-[10px] font-mono font-bold text-white/20 z-30 slide-footer-text tracking-[0.5em] uppercase">
-            Section 01 / Slide {String(slideNumber).padStart(2, '0')}
-        </div>
-        <div className="absolute bottom-6 right-12 z-30 opacity-10 slide-footer-logo hover:opacity-30 transition-opacity">
-            <TanmyaaLogoPPTX className={designSystem?.is_light_background ? "!text-black" : "!text-white"} />
-        </div>
-        <SlideWrapper>
-            {renderLayout()}
-        </SlideWrapper>
-        {hasReflection && (
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-8">
-                <AnalyticReflection 
-                    text={(slide as { analytic_reflection?: string }).analytic_reflection || ''} 
-                    onUpdate={v => onUpdate('analytic_reflection', v)} 
-                    animationStyle={reflectionAnimation} 
-                    disableAnimations={disableAnimations} 
-                />
-            </div>
-        )}
+        {renderLayout()}
     </div>
   );
 };

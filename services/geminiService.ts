@@ -432,7 +432,8 @@ export const generatePresentation = async (
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
     
-    ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
+    STRATEGIC DEPTH: Provide deep technical insights and custom-tailored recommendations. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
+    
     ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
@@ -445,6 +446,7 @@ export const generatePresentation = async (
     METRICS & CURRENCY: Use appropriate metrics (e.g., metric system vs imperial) and currency (e.g., local currency if specific, otherwise USD/EUR) that fit the content and location context.
     
     CRITICAL: For every slide, you MUST fill all fields with specific, data-driven content. 
+    - For EVERY slide (except Cover and Closing), you MUST provide an 'analytic_reflection'. This is a concise (15-20 words), high-level strategic insight that adds "Principal Strategist" value to the slide's data.
     - For Roadmap and GanttChartRoadmap (Implementation Timeline): You MUST provide a detailed, realistic timeline with specific milestones, action steps, and KPIs. DO NOT leave these blank. The GanttChartRoadmap MUST have at least 3 phases, each with at least 2 deliverables.
     - For EquityAnalysis slide: You MUST identify at least 3 distributional impacts and 3 mitigation strategies.
     - For ScenarioComparison slide: You MUST fill in the risks and costs for all scenarios.
@@ -455,44 +457,36 @@ export const generatePresentation = async (
     Every field in the JSON must be filled with high-quality, professional, and specific content.
     The output MUST be a JSON array of slide objects.
     Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
-    TECHNICAL DEPTH: Provide rigorous, data-driven analysis. Use professional urban planning terminology (e.g., FAR, TOD, modal split, heat island effect, Gini coefficient for equity).
-    NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
-    DESIGN PRINCIPLES (MANDATORY - iOS INSPIRED):
-    1. AESTHETIC: Clean, minimalist, modern iOS-inspired design. Use a palette of White, Grey, and Black.
+    DESIGN PRINCIPLES (MANDATORY):
+    1. AESTHETIC: Clean, minimalist, professional business design. Use a palette of White, Light Grey (#F3F4F6), and Black.
     2. ACCENT: Use the Tanmyaa brand color #007AB9 as a subtle accent (maximum 10% of slide area).
-    3. LAYOUT: Full-screen, edge-to-edge components. Use rounded corners (iOS style).
-    4. TYPOGRAPHY: Clean, standard sans-serif (Inter or Helvetica Neue). NO excessive letter spacing. NO "AI style" writing.
-    5. READABILITY: High-contrast, concise, professional, and well-structured content.
-    6. FOOTER: Every slide MUST have a footer containing the "Principal Strategist Reflection".
-    
-    FIXED TEMPLATE REQUIREMENTS:
-    - Cover: Must establish the visual theme. Generate a 'design_system_svg' that is sophisticated and abstract.
-    - Typography: Use 'Inter' or 'Helvetica Neue' as the base font family.
-    - Colors: Use White/Grey/Black palette with #007AB9 accent.
+    3. TYPOGRAPHY: Clean, standard sans-serif (Inter). Headings should be BOLD, BLACK, and often UPPERCASE for impact.
+    4. READABILITY: High-contrast (Black text on Light background). Concise, professional, and well-structured content.
+    5. FOOTER: Every slide MUST have an 'analytic_reflection' field.
     
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (REQUIRED, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
-    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}] }
+    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}], analytic_reflection }
     - SWOT: { layout: "SWOT", title, strengths: [{title, description}], weaknesses: [{title, description}], opportunities: [{title, description}], threats: [{title, description}], analytic_reflection }
-    - Benchmarks: { layout: "Benchmarks", title, benchmarks: [{name: "string", location: "string", introduction: "string", interventions: ["string"], takeaway: "string", image_prompt: "string"}] }
+    - Benchmarks: { layout: "Benchmarks", title, benchmarks: [{name: "string", location: "string", introduction: "string", interventions: ["string"], takeaway: "string", image_prompt: "string"}], analytic_reflection }
     - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, data_source, image_prompt, analytic_reflection }
-    - Vision: { layout: "Vision", title, vision_statement, strategic_pillars: [{title, initiatives: []}], image_prompt }
-    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}] }
+    - Vision: { layout: "Vision", title, vision_statement, strategic_pillars: [{title, initiatives: []}], image_prompt, analytic_reflection }
+    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}], analytic_reflection }
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
-    - Roadmap: { layout: "Roadmap", title, phases: [{title, timeline, action_steps: [{action, kpi}], outcome}] }
-    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}] }
+    - Roadmap: { layout: "Roadmap", title, phases: [{title, timeline, action_steps: [{action, kpi}], outcome}], analytic_reflection }
+    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}], analytic_reflection }
     - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
     - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
     - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], analytic_reflection }
     - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [{group: "string", impact: "string"}], mitigation_strategies: [], analytic_reflection }
     - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection }
     - RiskAssessment: { layout: "RiskAssessment", title, risks: [{category: "string", description: "string", mitigation: "string"}], analytic_reflection }
-    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
-    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency: {name: "string", rationale: "string"}, stakeholders: [{name: "string", role: "string"}], funding_model: "string", regulatory_changes: ["string"] }
-    - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}] }
-    - Closing: { layout: "Closing", tagline, credits, image_prompt }
+    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}], analytic_reflection }
+    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency: {name: "string", rationale: "string"}, stakeholders: [{name: "string", role: "string"}], funding_model: "string", regulatory_changes: ["string"], analytic_reflection }
+    - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}], analytic_reflection }
+    - Closing: { layout: "Closing", tagline, credits, image_prompt, analytic_reflection }
     
     VISUALS & RENDERS:
     - DO NOT generate image_prompt or image_url for slides unless specifically requested or if it's one of the mandatory visual slides.
@@ -583,28 +577,35 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
+    DESIGN PRINCIPLES (MANDATORY):
+    1. AESTHETIC: Clean, minimalist, professional business design. Use a palette of White, Light Grey (#F3F4F6), and Black.
+    2. ACCENT: Use the Tanmyaa brand color #007AB9 as a subtle accent (maximum 10% of slide area).
+    3. TYPOGRAPHY: Clean, standard sans-serif (Inter). Headings should be BOLD, BLACK, and often UPPERCASE for impact.
+    4. READABILITY: High-contrast (Black text on Light background). Concise, professional, and well-structured content.
+    5. FOOTER: Every slide MUST have an 'analytic_reflection' field.
+    
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg, design_system }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
-    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [] }
+    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [], analytic_reflection }
     - SWOT: { layout: "SWOT", title, strengths: [], weaknesses: [], opportunities: [], threats: [], analytic_reflection }
-    - Benchmarks: { layout: "Benchmarks", title, benchmarks: [] }
+    - Benchmarks: { layout: "Benchmarks", title, benchmarks: [], analytic_reflection }
     - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, data_source, image_prompt, analytic_reflection }
-    - Vision: { layout: "Vision", title, vision_statement, strategic_pillars: [], image_prompt }
-    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [] }
+    - Vision: { layout: "Vision", title, vision_statement, strategic_pillars: [], image_prompt, analytic_reflection }
+    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [], analytic_reflection }
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
-    - Roadmap: { layout: "Roadmap", title, phases: [] }
-    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [] }
+    - Roadmap: { layout: "Roadmap", title, phases: [], analytic_reflection }
+    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [], analytic_reflection }
     - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [], analytic_reflection }
     - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [], analytic_reflection }
     - Process: { layout: "Process", title, subtitle, steps: [], analytic_reflection }
     - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [], mitigation_strategies: [], analytic_reflection }
     - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [], analytic_reflection }
     - RiskAssessment: { layout: "RiskAssessment", title, risks: [], analytic_reflection }
-    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [] }
-    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency, stakeholders: [], funding_model, regulatory_changes: [] }
-    - References: { layout: "References", title, sources: [] }
-    - Closing: { layout: "Closing", tagline, credits, image_prompt }
+    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [], analytic_reflection }
+    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency, stakeholders: [], funding_model, regulatory_changes: [], analytic_reflection }
+    - References: { layout: "References", title, sources: [], analytic_reflection }
+    - Closing: { layout: "Closing", tagline, credits, image_prompt, analytic_reflection }
     
     VISUALS & RENDERS:
     - DO NOT generate image_prompt or image_url for slides unless specifically requested or if it's one of the mandatory visual slides.
