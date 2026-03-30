@@ -9,14 +9,6 @@ export interface UrbanPlanningProjectInfo {
 }
 
 // New, specific slide types based on user's reference presentation
-export interface DesignSystem {
-    font_family: string;
-    text_color_primary: string;
-    text_color_secondary: string;
-    text_alignment: 'left' | 'center' | 'right' | 'justify';
-    is_light_background: boolean;
-}
-
 export interface CoverSlide {
     layout: 'Cover';
     title: string;
@@ -24,10 +16,6 @@ export interface CoverSlide {
     project_code: string;
     year: string;
     image_url?: string;
-    design_system_svg?: string;
-    design_system?: DesignSystem;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface ExecutiveOverviewSlide {
@@ -36,7 +24,6 @@ export interface ExecutiveOverviewSlide {
     narrative: string;
     key_points: string[];
     analytic_reflection: string;
-    reference_doc?: string;
     image_url?: string;
 }
 
@@ -50,36 +37,27 @@ export interface CrisisSlide {
         description: string;
     }[];
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface SWOTSlide {
     layout: 'SWOT';
-    title?: string;
     strengths: { title: string; description: string; }[];
     weaknesses: { title: string; description: string; }[];
     opportunities: { title: string; description: string; }[];
     threats: { title: string; description: string; }[];
     analytic_reflection: string;
-    reference_doc?: string;
     image_url?: string;
 }
 
 export interface BenchmarksSlide {
     layout: 'Benchmarks';
-    title?: string;
     benchmarks: {
         name: string;
         location: string;
         introduction: string;
         interventions: string[];
         takeaway: string;
-        image_prompt: string;
-        image_url?: string;
     }[];
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface CaseStudyDeepDiveSlide {
@@ -92,7 +70,6 @@ export interface CaseStudyDeepDiveSlide {
     image_url?: string;
     data_source?: string;
     analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface VisionSlide {
@@ -105,8 +82,6 @@ export interface VisionSlide {
     }[];
     image_prompt: string;
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface MacroStrategySlide {
@@ -120,25 +95,17 @@ export interface MacroStrategySlide {
     }[];
     image_prompt: string;
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface EquityAnalysisSlide {
     layout: 'EquityAnalysis';
     title: string;
-    metrics: {
-        dimension: string;
-        current_state: string;
-        target_state: string;
-        impact_description: string;
+    distributional_impacts: {
+        group: string;
+        impact: string;
     }[];
-    mitigation_strategies: {
-        label: string;
-        value: string;
-    }[];
+    mitigation_strategies: string[];
     analytic_reflection: string;
-    reference_doc?: string;
     image_url?: string;
 }
 
@@ -152,10 +119,11 @@ export interface NodeAssessmentSlide {
         label: string;
     }[];
     conclusion: string;
+    analytic_reflection: string;
+    before_image_prompt: string;
+    after_image_prompt: string;
     before_image_url?: string;
     after_image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface ScenarioComparisonSlide {
@@ -171,7 +139,6 @@ export interface ScenarioComparisonSlide {
         cost: string;
     }[];
     analytic_reflection: string;
-    reference_doc?: string;
     image_url?: string;
 }
 
@@ -185,13 +152,11 @@ export interface RiskAssessmentSlide {
         mitigation: string;
     }[];
     analytic_reflection: string;
-    reference_doc?: string;
     image_url?: string;
 }
 
 export interface RoadmapSlide {
     layout: 'Roadmap';
-    title: string;
     phases: {
         title: string;
         timeline: string;
@@ -202,8 +167,6 @@ export interface RoadmapSlide {
         outcome: string;
     }[];
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface GanttChartRoadmapSlide {
@@ -221,8 +184,6 @@ export interface GanttChartRoadmapSlide {
         }[];
     }[];
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 
@@ -230,15 +191,14 @@ export interface ProjectedImpactSlide {
     layout: 'ProjectedImpact';
     title: string;
     subtitle: string;
-    impacts: {
-        area: string;
-        problem: string;
-        solution: string;
-        impact: string;
-        action: string;
+    metrics: {
+        label: string;
+        baseline: string;
+        projected: string;
+        timeframe: string;
+        assumption: string;
     }[];
     analytic_reflection: string;
-    reference_doc?: string;
     image_url?: string;
 }
 
@@ -253,13 +213,11 @@ export interface FiscalFrameworkSlide {
         recovery_mechanism: string;
     }[];
     analytic_reflection: string;
-    reference_doc?: string;
     image_url?: string;
 }
 
 export interface PolicyLeversSlide {
     layout: 'PolicyLevers';
-    title?: string;
     recommendations: {
         title: string;
         strategy: string;
@@ -267,8 +225,6 @@ export interface PolicyLeversSlide {
         measurement_framework: string;
     }[];
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface GovernanceFrameworkSlide {
@@ -281,67 +237,12 @@ export interface GovernanceFrameworkSlide {
     stakeholders: {
         name: string;
         role: string;
-        power: string;
-        interest: string;
     }[];
     funding_model: string;
     regulatory_changes: string[];
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
-
-export interface TableOfContentsSlide {
-    layout: 'TableOfContents';
-    title: string;
-    chapters: {
-        number: string;
-        title: string;
-        description: string;
-    }[];
-    analytic_reflection?: string;
-    reference_doc?: string;
-}
-
-export interface NextStepsSlide {
-    layout: 'NextSteps';
-    title: string;
-    immediate_actions: {
-        title: string;
-        owner: string;
-        deadline: string;
-    }[];
-    strategic_milestones: string[];
-    analytic_reflection?: string;
-    reference_doc?: string;
-}
-
-export interface ComparisonTableSlide {
-    layout: 'ComparisonTable';
-    title: string;
-    headers: string[];
-    rows: {
-        label: string;
-        values: string[];
-    }[];
-    conclusion: string;
-    analytic_reflection?: string;
-    reference_doc?: string;
-}
-
-export interface ConclusionSlide {
-    layout: 'Conclusion';
-    title: string;
-    summary_points: {
-        title: string;
-        content: string;
-    }[];
-    final_recommendation: string;
-    image_url?: string;
-    analytic_reflection?: string;
-    reference_doc?: string;
-}
 
 export interface ReferencesSlide {
     layout: 'References';
@@ -354,18 +255,13 @@ export interface ReferencesSlide {
         relevance: string;
     }[];
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface ClosingSlide {
     layout: 'Closing';
     tagline: string;
     credits: string;
-    image_prompt?: string;
     image_url?: string;
-    analytic_reflection: string;
-    reference_doc?: string;
 }
 
 export interface ProcessSlide {
@@ -378,14 +274,12 @@ export interface ProcessSlide {
         description: string;
     }[];
     analytic_reflection: string;
-    reference_doc?: string;
     image_url?: string;
 }
 
 // Union type for all possible slides in the new structure
 export type PresentationSlide = 
     | CoverSlide 
-    | TableOfContentsSlide
     | ExecutiveOverviewSlide
     | CrisisSlide
     | SWOTSlide
@@ -396,7 +290,6 @@ export type PresentationSlide =
     | EquityAnalysisSlide
     | NodeAssessmentSlide
     | ScenarioComparisonSlide
-    | ComparisonTableSlide
     | RiskAssessmentSlide
     | RoadmapSlide
     | GanttChartRoadmapSlide
@@ -405,8 +298,6 @@ export type PresentationSlide =
     | PolicyLeversSlide
     | GovernanceFrameworkSlide
     | ProcessSlide
-    | NextStepsSlide
-    | ConclusionSlide
     | ReferencesSlide
     | ClosingSlide;
 
@@ -557,13 +448,4 @@ export interface UsageHistory {
     description: string;
     credits_used: number;
     created_at: string;
-}
-
-export interface BrandingInfo {
-    logo?: string | null;
-    colors?: string | null;
-    presentation_template?: string | null;
-    presentation_template_url?: string | null;
-    report_template?: string | null;
-    report_template_url?: string | null;
 }

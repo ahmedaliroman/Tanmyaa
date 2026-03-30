@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generatePolicyReport, getPolicyBriefSuggestions } from '../services/vertexService';
-import type { PolicyBrief as PolicyBriefType, BrandingInfo } from '../types';
+import { generatePolicyReport, getPolicyBriefSuggestions } from '../services/geminiService';
+import type { PolicyBrief as PolicyBriefType } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
@@ -196,16 +196,7 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpg
     setPolicyBrief(null);
     
     try {
-        const branding: BrandingInfo | undefined = profile ? {
-            logo: profile.branding_logo || '',
-            colors: profile.branding_colors || '',
-            presentation_template: profile.branding_presentation_template || '',
-            presentation_template_url: profile.branding_presentation_template_url || '',
-            report_template: profile.branding_report_template || '',
-            report_template_url: profile.branding_report_template_url || ''
-        } : undefined;
-
-        const generatedBrief = await generatePolicyReport(projectBrief, files, companyProfile, profile?.plan, branding);
+        const generatedBrief = await generatePolicyReport(projectBrief, files, companyProfile);
         await refreshProfile();
         if (generatedBrief) {
           setPolicyBrief(generatedBrief);

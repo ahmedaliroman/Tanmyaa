@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generateStakeholderPlan, getStakeholderContextSuggestions } from '../services/vertexService';
-import type { StakeholderPlan, StakeholderGroup, BrandingInfo } from '../types';
+import { generateStakeholderPlan, getStakeholderContextSuggestions } from '../services/geminiService';
+import type { StakeholderPlan, StakeholderGroup } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
@@ -245,16 +245,7 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
     setPlan(null);
     
     try {
-        const branding: BrandingInfo | undefined = profile ? {
-            logo: profile.branding_logo || '',
-            colors: profile.branding_colors || '',
-            presentation_template: profile.branding_presentation_template || '',
-            presentation_template_url: profile.branding_presentation_template_url || '',
-            report_template: profile.branding_report_template || '',
-            report_template_url: profile.branding_report_template_url || ''
-        } : undefined;
-
-        const generatedPlan = await generateStakeholderPlan(inputs.projectContext, inputs.projectGoals, companyProfile, profile?.plan, branding);
+        const generatedPlan = await generateStakeholderPlan(inputs.projectContext, inputs.projectGoals, companyProfile);
         await refreshProfile();
         if (generatedPlan) {
             setPlan(generatedPlan);

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
-import Preloader from '../components/Preloader';
 
 interface Profile {
   id: string;
@@ -16,12 +15,6 @@ interface Profile {
   total_credits_used?: number;
   referral_code?: string;
   invited_by?: string;
-  branding_logo?: string;
-  branding_colors?: string;
-  branding_presentation_template?: string;
-  branding_presentation_template_url?: string;
-  branding_report_template?: string;
-  branding_report_template_url?: string;
 }
 
 interface AuthContextType {
@@ -46,12 +39,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const fetchingRef = useRef<string | null>(null);
 
-  const fetchProfile = useCallback(async (userId: string, email?: string, force: boolean = false) => {
-    if (!force && fetchingRef.current === userId && profile) return;
+  const fetchProfile = useCallback(async (userId: string, email?: string) => {
+    if (fetchingRef.current === userId && profile) return;
     fetchingRef.current = userId;
     
     setAuthError(null);
@@ -167,7 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id, user.email, true);
+      await fetchProfile(user.id, user.email);
     }
   };
 
@@ -277,23 +269,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    setIsLoggingOut(true);
-    
-    // Wait for the Lottie animation to play a bit before hard refreshing
-    setTimeout(async () => {
-        // Clear local storage branding keys so the next user doesn't see them
-        localStorage.removeItem('tanmyaaCustomLogo');
-        localStorage.removeItem('tanmyaaCustomColors');
-        localStorage.removeItem('tanmyaaCustomPresentationTemplate');
-        localStorage.removeItem('tanmyaaCustomPresentationTemplateUrl');
-        localStorage.removeItem('tanmyaaCustomReportTemplate');
-        localStorage.removeItem('tanmyaaCustomReportTemplateUrl');
-
-        await supabase.auth.signOut();
-        setProfile(null);
-        // Force a hard reload to clear all React state and reset the URL to the root domain
-        window.location.href = '/';
-    }, 1500);
+    await supabase.auth.signOut();
+    setProfile(null);
   };
 
   const resetPassword = async (email: string) => {
@@ -323,9 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetPassword,
       updatePassword
     }}>
-      {loading && <Preloader message="Loading Tanmyaa..." />}
-      {!loading && children}
-      {isLoggingOut && <Preloader message="Signing out securely..." />}
+      {children}
     </AuthContext.Provider>
   );
 };

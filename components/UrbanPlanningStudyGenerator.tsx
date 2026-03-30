@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '../services/vertexService';
-import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo, CoverSlide } from '../types';
+import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '../services/geminiService';
+import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide } from '../types';
 import UrbanStudyInputForm from './UrbanStudyInputForm';
 import UrbanStudySlide from './UrbanStudySlide';
 import SlideNavigator from './SlideNavigator';
@@ -51,11 +51,9 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingPptx, setIsExportingPptx] = useState(false);
   const [pdfExportProgress, setPdfExportProgress] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const [chatSuggestions, setChatSuggestions] = useState<string[]>([]);
-
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
 
 
   useEffect(() => {
@@ -91,9 +89,6 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             }
              case 'Crisis':
                 promptsMap.set('crisis_image', `High-contrast, dramatic photo of ${projectInfo.mainChallenge.toLowerCase()} in ${projectInfo.location}, sun-bleached city.`);
-                break;
-            case 'GanttChartRoadmap':
-                promptsMap.set('gantt_image', `High-tech, professional gantt chart visualization background for ${projectInfo.location} urban development, blue and white technical aesthetic.`);
                 break;
             case 'Closing':
                 promptsMap.set('closing_image', `An inspiring, futuristic image of a green, vibrant ${projectInfo.location} with people enjoying public spaces, reflecting a successful project at a ${projectInfo.scale} scale.`);
@@ -135,35 +130,22 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   }, [slides, projectInfo]);
 
   const handleGenerate = useCallback(async (finalProjectInfo: UrbanPlanningProjectInfo) => {
+    if (profile && profile.credits < 20) {
+        setError("Insufficient credits. Please upgrade your plan.");
+        onUpgrade();
+        return;
+    }
+
     setIsLoading(true);
     setError(null);
     setSlides(null);
     setImageUrls({});
-    
+    setProjectInfo(finalProjectInfo);
+    setChatMessages([{sender: 'ai', text: "Strategic deck generated. I can refine any slide or add technical depth upon request."}]);
+
     try {
-        // 1. Refresh profile to get latest credits and branding
-        const freshProfile = await refreshProfile();
-        
-        if (freshProfile && freshProfile.credits < 20) {
-            setError("Insufficient credits. Please upgrade your plan.");
-            onUpgrade();
-            setIsLoading(false);
-            return;
-        }
-
-        setProjectInfo(finalProjectInfo);
-        setChatMessages([{sender: 'ai', text: "Strategic deck generated. I can refine any slide or add technical depth upon request."}]);
-
-        const branding: BrandingInfo | undefined = freshProfile ? {
-            logo: freshProfile.branding_logo || '',
-            colors: freshProfile.branding_colors || '',
-            presentation_template: freshProfile.branding_presentation_template || '',
-            presentation_template_url: freshProfile.branding_presentation_template_url || '',
-            report_template: freshProfile.branding_report_template || '',
-            report_template_url: freshProfile.branding_report_template_url || ''
-        } : undefined;
-
-        const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile, freshProfile?.plan, branding);
+        const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile);
+        await refreshProfile();
         if (generatedSlides && generatedSlides.length > 0) {
             setSlides(generatedSlides);
             setCurrentIndex(0);
@@ -176,11 +158,17 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     } finally {
         setIsLoading(false);
     }
-  }, [files, companyProfile, refreshProfile, onUpgrade]);
-
+  }, [files, companyProfile, profile, onUpgrade, refreshProfile]);
+  
   const handleChatSend = useCallback(async (message?: string) => {
     const messageToSend = message || chatInput;
     if (!messageToSend.trim() || !slides) return;
+
+    if (profile && profile.credits < 5) {
+        setChatMessages(prev => [...prev, { sender: 'user', text: messageToSend }, { sender: 'ai', text: "Insufficient credits. Please upgrade your plan." }]);
+        onUpgrade();
+        return;
+    }
 
     const userMessage: ChatMessage = { sender: 'user', text: messageToSend };
     setChatMessages(prev => [...prev, userMessage]);
@@ -189,35 +177,16 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     setIsChatLoading(true);
 
     try {
-        // Refresh profile before refinement too
-        const freshProfile = await refreshProfile();
-
-        if (freshProfile && freshProfile.credits < 5) {
-            setChatMessages(prev => [...prev, { sender: 'ai', text: "Insufficient credits. Please upgrade your plan." }]);
-            onUpgrade();
-            setIsChatLoading(false);
-            return;
-        }
-
-        const branding: BrandingInfo | undefined = freshProfile ? {
-            logo: freshProfile.branding_logo || '',
-            colors: freshProfile.branding_colors || '',
-            presentation_template: freshProfile.branding_presentation_template || '',
-            presentation_template_url: freshProfile.branding_presentation_template_url || '',
-            report_template: freshProfile.branding_report_template || '',
-            report_template_url: freshProfile.branding_report_template_url || ''
-        } : undefined;
-
-        const newSlides = await refinePresentation(slides, messageToSend, currentIndex, companyProfile, freshProfile?.plan, branding);
+        const newSlides = await refinePresentation(slides, messageToSend, currentIndex, companyProfile);
+        await refreshProfile();
         setSlides(newSlides);
         setChatMessages(prev => [...prev, { sender: 'ai', text: "Technical updates processed." }]);
-    } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : "Refinement error.";
-        setChatMessages(prev => [...prev, { sender: 'ai', text: `Error: ${errorMsg}`}]);
+    } catch {
+        setChatMessages(prev => [...prev, { sender: 'ai', text: "Refinement error."}]);
     } finally {
         setIsChatLoading(false);
     }
-  }, [chatInput, slides, currentIndex, companyProfile, refreshProfile, onUpgrade]);
+  }, [chatInput, slides, currentIndex, companyProfile, refreshProfile, profile, onUpgrade]);
 
   const fetchSuggestions = useCallback(async () => {
     if (isChatOpen && slides && slides[currentIndex]) {
@@ -280,7 +249,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             }
             pdf.addImage(dataUrl, 'JPEG', 0, 0, slideWidth, slideHeight);
         }
-        pdf.save('Presentation.pdf');
+        pdf.save('Tanmyaa_Presentation.pdf');
     } catch (error) {
         console.error('Error during PDF export:', error);
         setError(`Failed to export slide ${pdfExportProgress}. Please try again.`);
@@ -293,44 +262,65 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   const handleExportPptx = async () => {
     if (!slides) return;
     setIsExportingPptx(true);
-    setError(null);
-
-    // Allow React to render the off-screen export container
-    await new Promise(resolve => setTimeout(resolve, 500));
-
+    
     try {
         const pptx = new pptxgen();
         pptx.layout = 'LAYOUT_16x9';
-        
-        const slideWidth = 1280;
-        const slideHeight = 720;
+        pptx.defineLayout({ name: 'TANMYAA', width: 13.33, height: 7.5 });
+        pptx.layout = 'TANMYAA';
 
-        for (let i = 0; i < slides.length; i++) {
-            const slideElement = document.getElementById(`export-slide-container-${i}`);
-            if (!slideElement) {
-                console.warn(`Export slide element ${i} not found for PPTX.`);
-                continue;
+        slides.forEach((slide, index) => {
+            const pptxSlide = pptx.addSlide();
+            pptxSlide.background = { color: '0A0A0A' };
+
+            // Add Title
+            pptxSlide.addText(slide.title || 'Slide ' + (index + 1), {
+                x: 0.5,
+                y: 0.5,
+                w: '90%',
+                fontSize: 32,
+                color: 'FFFFFF',
+                bold: true,
+                fontFace: 'Arial'
+            });
+
+            // Add Content based on layout (simplified)
+            let contentY = 1.5;
+            if (slide.subtitle) {
+                pptxSlide.addText(slide.subtitle, {
+                    x: 0.5,
+                    y: contentY,
+                    w: '90%',
+                    fontSize: 18,
+                    color: '3B82F6',
+                    fontFace: 'Arial'
+                });
+                contentY += 0.8;
             }
 
-            const dataUrl = await toJpeg(slideElement, {
-                quality: 1.0,
-                cacheBust: true,
-                width: slideWidth,
-                height: slideHeight,
-                pixelRatio: 3,
-            });
+            if (slide.description) {
+                pptxSlide.addText(slide.description, {
+                    x: 0.5,
+                    y: contentY,
+                    w: '90%',
+                    fontSize: 14,
+                    color: 'CCCCCC',
+                    fontFace: 'Arial'
+                });
+            }
 
-            const pptxSlide = pptx.addSlide();
-            pptxSlide.addImage({
-                data: dataUrl,
-                x: 0,
-                y: 0,
-                w: '100%',
-                h: '100%'
+            // Add a footer
+            pptxSlide.addText(`Tanmyaa Strategic Planning | ${index + 1}`, {
+                x: 0.5,
+                y: 7.0,
+                w: '90%',
+                fontSize: 10,
+                color: '666666',
+                align: 'right'
             });
-        }
+        });
 
-        await pptx.writeFile({ fileName: `${projectInfo?.location || 'Urban_Study'}_Presentation.pptx` });
+        await pptx.writeFile({ fileName: 'Tanmyaa_Presentation.pptx' });
     } catch (error) {
         console.error('Error during PPTX export:', error);
         setError('Failed to export PPTX. Please try again.');
@@ -378,28 +368,21 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
 
   const handleSlideUpdate = (slideIndex: number, fieldPath: string, value: unknown) => {
     if (!fieldPath) return;
-    setIsSaving(true);
     setSlides(prevSlides => {
-        if (!prevSlides) {
-            setIsSaving(false);
-            return null;
-        }
+        if (!prevSlides) return null;
         
-        // Create a shallow copy of the slides array
-        const newSlides = [...prevSlides];
-        // Create a deep-ish copy of the specific slide to modify
-        const slide = JSON.parse(JSON.stringify(newSlides[slideIndex]));
+        const newSlides = JSON.parse(JSON.stringify(prevSlides));
+        if (!newSlides[slideIndex]) return prevSlides;
         
         const path = fieldPath.replace(/\[(\d+)\]/g, '.$1').split('.');
         const lastKey = path.pop();
         
         if (!lastKey) {
             console.error("Invalid fieldPath for update:", fieldPath);
-            setIsSaving(false);
             return prevSlides;
         }
 
-        let currentLevel = slide;
+        let currentLevel = newSlides[slideIndex];
         
         for (const key of path) {
             if (!currentLevel[key] || typeof currentLevel[key] !== 'object') {
@@ -409,13 +392,6 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
         }
         
         currentLevel[lastKey] = value;
-        newSlides[slideIndex] = slide;
-        
-        // Set last saved time and clear saving state after a tiny delay for visual feedback
-        setTimeout(() => {
-            setIsSaving(false);
-            setLastSaved(new Date());
-        }, 400);
         
         return newSlides;
     });
@@ -433,15 +409,11 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
 
   return (
     <div className="flex flex-col h-full">
-      {/* PDF/PPTX Export Container: Renders all slides off-screen when exporting */}
-      {(isExportingPdf || isExportingPptx) && slides && (
-          <div style={{ position: 'fixed', top: 0, left: '-9999px', width: '1280px', height: '720px', zIndex: -50, pointerEvents: 'none', overflow: 'hidden' }}>
+      {/* PDF Export Container: Renders all slides off-screen when exporting */}
+      {isExportingPdf && slides && (
+          <div style={{ position: 'fixed', top: '100vh', left: 0, zIndex: -1, pointerEvents: 'none', opacity: 0 }}>
               <div style={{ width: '1280px' }}>
-                  {slides.map((slide, index) => {
-                      const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
-                      const globalBgSvg = coverSlide?.design_system_svg;
-                      const designSystem = coverSlide?.design_system;
-                      return (
+                  {slides.map((slide, index) => (
                       <div key={`export-${index}`} id={`export-slide-container-${index}`} style={{ width: '1280px', height: '720px' }}>
                           <UrbanStudySlide 
                               slide={slide} 
@@ -450,12 +422,9 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                               onUpdate={() => {}} // Disable updates during export
                               isActive={true} // Force active state for consistent export rendering
                               disableAnimations={true}
-                              globalBgSvg={globalBgSvg}
-                              designSystem={designSystem}
                           />
                       </div>
-                      );
-                  })}
+                  ))}
               </div>
           </div>
       )}
@@ -501,20 +470,6 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 {isEditorMode ? 'Parameters' : 'Hide Form'}
               </button>
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 mr-2 min-w-[100px] justify-end">
-                    {isSaving && (
-                        <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full animate-pulse">
-                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
-                            <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Saving</span>
-                        </div>
-                    )}
-                    {!isSaving && lastSaved && (
-                        <div className="flex items-center space-x-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
-                            <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
-                            <span className="text-[9px] font-bold text-green-400 uppercase tracking-widest">Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                    )}
-                </div>
                 <button onClick={handleDeleteSlide} disabled={slides.length <= 1} className="bg-red-900/40 text-red-200 font-semibold py-2 px-5 rounded-full text-xs uppercase tracking-wider hover:bg-red-800 transition-all duration-300 border border-red-700/30 flex items-center disabled:opacity-30">
                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                    Delete
@@ -546,23 +501,16 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 <div className="w-full h-full max-w-7xl relative group">
                     <div className="aspect-[16/9] w-full mx-auto relative overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-gray-800">
                         <div className="flex transition-transform duration-700 cubic-bezier(0.23, 1, 0.32, 1) h-full" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
-                        {slides.map((slide, index) => {
-                            const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
-                            const globalBgSvg = coverSlide?.design_system_svg;
-                            const designSystem = coverSlide?.design_system;
-                            return (
+                        {slides.map((slide, index) => (
                             <div key={index} id={`study-slide-container-${index}`} className="w-full flex-shrink-0 h-full">
                                 <UrbanStudySlide 
                                     slide={slide} 
                                     slideNumber={index+1} 
                                     imageUrls={imageUrls} 
                                     onUpdate={(fieldPath, value) => handleSlideUpdate(index, fieldPath, value)}
-                                    isActive={index === currentIndex}
-                                    globalBgSvg={globalBgSvg}
-                                    designSystem={designSystem} />
+                                    isActive={index === currentIndex} />
                             </div>
-                            );
-                        })}
+                        ))}
                         </div>
                     </div>
                     {slides.length > 1 && !isExportingPdf && (

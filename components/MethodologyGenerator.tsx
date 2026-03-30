@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generateMethodology, getMethodologySuggestions } from '../services/vertexService';
-import type { Methodology, BrandingInfo } from '../types';
+import { generateMethodology, getMethodologySuggestions } from '../services/geminiService';
+import type { Methodology } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
@@ -136,16 +136,7 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
     setGeneratedContent(null);
     
     try {
-        const branding: BrandingInfo | undefined = profile ? {
-            logo: profile.branding_logo || '',
-            colors: profile.branding_colors || '',
-            presentation_template: profile.branding_presentation_template || '',
-            presentation_template_url: profile.branding_presentation_template_url || '',
-            report_template: profile.branding_report_template || '',
-            report_template_url: profile.branding_report_template_url || ''
-        } : undefined;
-
-        const result = await generateMethodology(taskDescription, companyProfile, profile?.plan, branding);
+        const result = await generateMethodology(taskDescription, companyProfile);
         await refreshProfile();
         if (result) {
             setGeneratedContent(result);

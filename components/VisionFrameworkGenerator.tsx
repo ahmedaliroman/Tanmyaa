@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generateVisionFramework, getVisionAspirationSuggestions } from '../services/vertexService';
-import type { VisionFramework, BrandingInfo } from '../types';
+import { generateVisionFramework, getVisionAspirationSuggestions } from '../services/geminiService';
+import type { VisionFramework } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
@@ -136,16 +136,7 @@ const VisionFrameworkGenerator: React.FC<VisionFrameworkGeneratorProps> = ({ onU
     setFramework(null);
     
     try {
-        const branding: BrandingInfo | undefined = profile ? {
-            logo: profile.branding_logo || '',
-            colors: profile.branding_colors || '',
-            presentation_template: profile.branding_presentation_template || '',
-            presentation_template_url: profile.branding_presentation_template_url || '',
-            report_template: profile.branding_report_template || '',
-            report_template_url: profile.branding_report_template_url || ''
-        } : undefined;
-
-        const generatedFramework = await generateVisionFramework(inputs.city, inputs.aspirations, inputs.timeframe, companyProfile, profile?.plan, branding);
+        const generatedFramework = await generateVisionFramework(inputs.city, inputs.aspirations, inputs.timeframe, companyProfile);
         await refreshProfile();
         if (generatedFramework) {
             setFramework(generatedFramework);

@@ -12,12 +12,6 @@ create table if not exists public.profiles (
   total_credits_used integer default 0,
   referral_code text unique default gen_random_uuid()::text,
   invited_by uuid references auth.users(id),
-  branding_logo text,
-  branding_colors text,
-  branding_presentation_template text,
-  branding_presentation_template_url text,
-  branding_report_template text,
-  branding_report_template_url text,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
@@ -123,28 +117,3 @@ create policy "Users can view own history"
 create policy "Service role can insert history" 
   on public.usage_history for insert 
   with check (true);
-
--- 9. Create Storage Bucket for Branding
-insert into storage.buckets (id, name, public)
-values ('branding', 'branding', true)
-on conflict (id) do nothing;
-
--- Allow public read access to branding bucket
-create policy "Public Access to Branding"
-  on storage.objects for select
-  using ( bucket_id = 'branding' );
-
--- Allow authenticated users to upload files to branding bucket
-create policy "Authenticated users can upload branding files"
-  on storage.objects for insert
-  with check ( bucket_id = 'branding' and auth.role() = 'authenticated' );
-
--- Allow users to update their own branding files
-create policy "Users can update own branding files"
-  on storage.objects for update
-  using ( bucket_id = 'branding' and auth.uid() = owner );
-
--- Allow users to delete their own branding files
-create policy "Users can delete own branding files"
-  on storage.objects for delete
-  using ( bucket_id = 'branding' and auth.uid() = owner );

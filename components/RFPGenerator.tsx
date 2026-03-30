@@ -1,9 +1,9 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { generateRFP, getRFPSuggestions } from '../services/vertexService';
+import { generateRFP, getRFPSuggestions } from '../services/geminiService';
 import { exportRFPToDocx } from '../services/docxGenerator';
 import { useBranding } from '../hooks/useBranding';
-import type { RFPContent, BrandingInfo } from '../types';
+import type { RFPContent } from '../types';
 import FileUpload from './FileUpload';
 import GeneratorShell from './GeneratorShell';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
@@ -132,16 +132,7 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
     setGeneratedContent(null);
     
     try {
-        const branding: BrandingInfo | undefined = profile ? {
-            logo: profile.branding_logo || '',
-            colors: profile.branding_colors || '',
-            presentation_template: profile.branding_presentation_template || '',
-            presentation_template_url: profile.branding_presentation_template_url || '',
-            report_template: profile.branding_report_template || '',
-            report_template_url: profile.branding_report_template_url || ''
-        } : undefined;
-
-        const result = await generateRFP(taskDescription, pageRange, files, companyProfile, profile?.plan, branding);
+        const result = await generateRFP(taskDescription, pageRange, files, companyProfile);
         await refreshProfile();
         if (result) {
             setGeneratedContent(result);
