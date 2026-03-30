@@ -340,7 +340,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 const svgBase64 = btoa(unescape(encodeURIComponent(globalBgSvg)));
                 pptxSlide.background = { data: `image/svg+xml;base64,${svgBase64}` };
             } else {
-                pptxSlide.background = { color: '0A0A0A' };
+                const bgColor = designSystem?.background_color?.replace('#', '') || '0A0A0A';
+                pptxSlide.background = { color: bgColor };
             }
 
             // Add Title with animation
@@ -394,7 +395,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 y: 7.0,
                 w: '90%',
                 fontSize: 10,
-                color: '666666',
+                color: textColor,
                 align: 'right'
             });
         });
