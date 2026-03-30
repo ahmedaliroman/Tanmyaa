@@ -462,11 +462,12 @@ export const generatePresentation = async (
     Use a diverse range of layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
     DESIGN PRINCIPLES (MANDATORY):
-    1. AESTHETIC: Clean, minimalist, professional business design. Use a palette of White, Light Grey (#F3F4F6), and Black.
-    2. ACCENT: Use the Tanmyaa brand color #007AB9 as a subtle accent (maximum 10% of slide area).
-    3. TYPOGRAPHY: Clean, standard sans-serif (Inter). Headings should be BOLD, BLACK, and often UPPERCASE for impact.
-    4. READABILITY: High-contrast (Black text on Light background). Concise, professional, and well-structured content.
-    5. FOOTER: Every slide MUST have an 'analytic_reflection' field.
+    1. AESTHETIC: Professional, corporate, urban planning focus. Use the provided blue palette: Dark Navy (#001B3D), Deep Blue (#003B73), Royal Blue (#005B96), Steel Blue (#6497B1), and Light Blue (#B3CDE0).
+    2. COVER PAGE: The Cover slide MUST have a semi-dark perspective background (use 'design_system_svg' to create a dark navy/deep blue gradient or abstract pattern) and WHITE text for high contrast.
+    3. CONTENT DENSITY: Ensure slides are full of content. Avoid wide blank areas. Use comprehensive descriptions, multiple data points, and detailed strategic insights.
+    4. TYPOGRAPHY: Use Inter (sans-serif). Headings should be bold and well-sized. Text alignment should be professional (mostly left-aligned for readability, centered for titles).
+    5. READABILITY: High contrast. Use white text on dark backgrounds (Cover) and dark navy/deep blue text on light backgrounds (Content slides).
+    6. FOOTER: Every slide MUST have an 'analytic_reflection' field.
     
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (REQUIRED, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
@@ -581,11 +582,12 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Benchmarks, CaseStudyDeepDive, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
     DESIGN PRINCIPLES (MANDATORY):
-    1. AESTHETIC: Clean, minimalist, professional business design. Use a palette of White, Light Grey (#F3F4F6), and Black.
-    2. ACCENT: Use the Tanmyaa brand color #007AB9 as a subtle accent (maximum 10% of slide area).
-    3. TYPOGRAPHY: Clean, standard sans-serif (Inter). Headings should be BOLD, BLACK, and often UPPERCASE for impact.
-    4. READABILITY: High-contrast (Black text on Light background). Concise, professional, and well-structured content.
-    5. FOOTER: Every slide MUST have an 'analytic_reflection' field.
+    1. AESTHETIC: Professional, corporate, urban planning focus. Use the provided blue palette: Dark Navy (#001B3D), Deep Blue (#003B73), Royal Blue (#005B96), Steel Blue (#6497B1), and Light Blue (#B3CDE0).
+    2. COVER PAGE: The Cover slide MUST have a semi-dark perspective background (use 'design_system_svg' to create a dark navy/deep blue gradient or abstract pattern) and WHITE text for high contrast.
+    3. CONTENT DENSITY: Ensure slides are full of content. Avoid wide blank areas. Use comprehensive descriptions, multiple data points, and detailed strategic insights.
+    4. TYPOGRAPHY: Use Inter (sans-serif). Headings should be bold and well-sized. Text alignment should be professional (mostly left-aligned for readability, centered for titles).
+    5. READABILITY: High contrast. Use white text on dark backgrounds (Cover) and dark navy/deep blue text on light backgrounds (Content slides).
+    6. FOOTER: Every slide MUST have an 'analytic_reflection' field.
     
     SCHEMA GUIDANCE:
     - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (REQUIRED, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
