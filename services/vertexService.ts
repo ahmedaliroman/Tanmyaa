@@ -149,13 +149,24 @@ When generating content for the following areas, you MUST use the specified name
 `;
 
 const getAi = () => {
-    const apiKey = process.env.VERTEX_API_KEY;
+    // Priority:
+    // 1. GEMINI_API_KEY (Platform-provided free key - preferred for free credits)
+    // 2. API_KEY (User-selected key via dialog - used for paid models)
+    // 3. VERTEX_API_KEY (Legacy environment variable)
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.VERTEX_API_KEY;
+    
     if (!apiKey) {
-        console.error('CRITICAL: Vertex API key is not configured in the frontend bundle.');
-        throw new Error('Vertex API key is not configured. Please check your environment variables.');
+        console.error('CRITICAL: AI API key is not configured.');
+        throw new Error('AI features are not configured. Please check your environment or connect an API key.');
     }
+    
+    // Log key source for debugging in non-production environments
+    if (process.env.NODE_ENV !== 'production') {
+        const source = process.env.GEMINI_API_KEY ? 'Platform (Free)' : (process.env.API_KEY ? 'User (Connected)' : 'Legacy (Env)');
+        console.log(`AI initialized using ${source} key source.`);
+    }
+    
     // Note: The @google/genai SDK is a unified SDK for both Google AI and Vertex AI.
-    // We are using the latest models available on Vertex AI.
     return new GoogleGenAI({ apiKey });
 };
 

@@ -85,10 +85,10 @@ const AppContent: React.FC<{
               <p className="text-xs opacity-90 font-normal">Please run the SQL in <code className="bg-black/20 px-1 rounded">supabase/schema.sql</code> in your Supabase SQL Editor to fix this.</p>
           </div>
       )}
-      {!hasApiKey && window.aistudio && (
-          <div className="bg-blue-600 text-white py-2 px-4 text-center text-sm font-bold animate-fade-in flex items-center justify-center gap-4 sticky top-0 z-[60]">
-              <span>Connect your Vertex API Key to enable AI features on this domain.</span>
-              <button onClick={handleConnectApiKey} className="bg-white text-blue-600 px-4 py-1 rounded-full text-xs hover:bg-gray-100 transition-colors">
+      {!hasApiKey && !process.env.GEMINI_API_KEY && window.aistudio && (
+          <div className="bg-blue-600/90 backdrop-blur-md text-white py-2 px-4 text-center text-sm font-medium animate-fade-in flex items-center justify-center gap-4 sticky top-0 z-[60] border-b border-white/10">
+              <span>Connect your Google Cloud API Key to enable high-quota Business/Pro features.</span>
+              <button onClick={handleConnectApiKey} className="bg-white text-blue-600 px-4 py-1 rounded-full text-xs font-bold hover:bg-gray-100 transition-colors shadow-lg">
                   Connect Key
               </button>
           </div>
