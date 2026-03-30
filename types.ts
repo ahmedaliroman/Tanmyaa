@@ -449,3 +449,12 @@ export interface UsageHistory {
     credits_used: number;
     created_at: string;
 }
+
+export interface BrandingInfo {
+    logo?: string | null;
+    colors?: string | null;
+    presentation_template?: string | null;
+    presentation_template_url?: string | null;
+    report_template?: string | null;
+    report_template_url?: string | null;
+}

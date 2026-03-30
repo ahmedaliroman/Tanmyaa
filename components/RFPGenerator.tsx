@@ -3,7 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { generateRFP, getRFPSuggestions } from '../services/geminiService';
 import { exportRFPToDocx } from '../services/docxGenerator';
 import { useBranding } from '../hooks/useBranding';
-import type { RFPContent } from '../types';
+import type { RFPContent, BrandingInfo } from '../types';
 import FileUpload from './FileUpload';
 import GeneratorShell from './GeneratorShell';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
@@ -132,7 +132,13 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
     setGeneratedContent(null);
     
     try {
-        const result = await generateRFP(taskDescription, pageRange, files, companyProfile);
+        const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
+            logo: profile.branding_logo,
+            colors: profile.branding_colors,
+            template: profile.branding_template
+        } : undefined;
+
+        const result = await generateRFP(taskDescription, pageRange, files, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (result) {
             setGeneratedContent(result);

@@ -1,8 +1,9 @@
 
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { generateDeepUnderstanding, refineDeepUnderstanding } from '../services/geminiService';
-import type { UrbanDeepUnderstanding } from '../types';
+import type { UrbanDeepUnderstanding, BrandingInfo } from '../types';
 import GeneratorShell from './GeneratorShell';
 import UrbanDeepUnderstandingInputForm from './UrbanDeepUnderstandingInputForm';
 import { toPng } from 'html-to-image';
@@ -14,6 +15,7 @@ interface GeneratorProps {
 
 const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }) => {
     const { user, profile, loading, refreshProfile, signInWithGoogle } = useAuth();
+    const { companyProfile } = useCompanyProfile();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<UrbanDeepUnderstanding | null>(null);
@@ -27,7 +29,13 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
         setError(null);
         setSelectedChoice(null);
         try {
-            const result = await generateDeepUnderstanding(topic, context);
+            const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
+                logo: profile.branding_logo,
+                colors: profile.branding_colors,
+                template: profile.branding_template
+            } : undefined;
+
+            const result = await generateDeepUnderstanding(topic, context, companyProfile, profile?.plan, branding);
             setData(result);
             await refreshProfile();
         } catch (err: unknown) {
@@ -42,7 +50,13 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
         setIsRefining(true);
         setError(null);
         try {
-            const result = await refineDeepUnderstanding(data, refinementRequest);
+            const branding: BrandingInfo | undefined = profile?.branding_logo || profile?.branding_colors || profile?.branding_template ? {
+                logo: profile.branding_logo,
+                colors: profile.branding_colors,
+                template: profile.branding_template
+            } : undefined;
+
+            const result = await refineDeepUnderstanding(data, refinementRequest, companyProfile, profile?.plan, branding);
             setData(result);
             setRefinementRequest('');
             setSelectedChoice(null);

@@ -261,6 +261,7 @@ const FeatureComparisonTable: React.FC = () => (
 
 
 const SubscriptionPage: React.FC = () => {
+    const { profile } = useAuth();
     const [hoveredTier, setHoveredTier] = useState<string | null>(null);
     const [paymentSuccess, setPaymentSuccess] = useState<{ plan: string, credits: number } | null>(null);
 
@@ -358,7 +359,9 @@ const SubscriptionPage: React.FC = () => {
                     features={[
                         '3000 Credits / month',
                         'All Pro features',
-                        'Custom Branding & Persona',
+                        'Custom Branding (Logo, Colors, Template)',
+                        'AI-Generated Content in Your Style',
+                        'Personal Support: ahmedroman@tanmyaa.com',
                         'Team Collaboration Tools',
                         'Dedicated Support & Onboarding'
                     ]}
@@ -408,7 +411,7 @@ const SubscriptionPage: React.FC = () => {
             </div>
             
              <div className="px-4 md:px-8 lg:px-12 mt-20 pb-12 max-w-7xl mx-auto space-y-8">
-                <BrandingManager />
+                <BrandingManager key={`${profile?.id}-${profile?.branding_logo}-${profile?.branding_colors}-${profile?.branding_presentation_template}-${profile?.branding_presentation_template_url}-${profile?.branding_report_template}-${profile?.branding_report_template_url}`} />
                 <CompanyProfileManager />
             </div>
         </div>
