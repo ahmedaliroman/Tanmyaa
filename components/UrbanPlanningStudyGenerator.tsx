@@ -51,6 +51,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingPptx, setIsExportingPptx] = useState(false);
   const [pdfExportProgress, setPdfExportProgress] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const [chatSuggestions, setChatSuggestions] = useState<string[]>([]);
 
@@ -291,116 +293,44 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   const handleExportPptx = async () => {
     if (!slides) return;
     setIsExportingPptx(true);
-    
+    setError(null);
+
+    // Allow React to render the off-screen export container
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     try {
         const pptx = new pptxgen();
         pptx.layout = 'LAYOUT_16x9';
-        pptx.defineLayout({ name: 'TANMYAA', width: 13.33, height: 7.5 });
-        pptx.layout = 'TANMYAA';
-
-        // Extract colors from branding or use defaults
-        let primaryColor = 'FFFFFF';
-        let secondaryColor = '3B82F6';
-        let textColor = 'CCCCCC';
         
-        if (colors) {
-            const hexRegex = /#([0-9A-F]{6})/gi;
-            const matches = [...colors.matchAll(hexRegex)].map(m => m[1]);
-            if (matches.length > 0) primaryColor = matches[0];
-            if (matches.length > 1) secondaryColor = matches[1];
-            if (matches.length > 2) textColor = matches[2];
-        }
+        const slideWidth = 1280;
+        const slideHeight = 720;
 
-        const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;
-        const globalBgSvg = coverSlide?.design_system_svg;
-        const designSystem = coverSlide?.design_system;
+        for (let i = 0; i < slides.length; i++) {
+            const slideElement = document.getElementById(`export-slide-container-${i}`);
+            if (!slideElement) {
+                console.warn(`Export slide element ${i} not found for PPTX.`);
+                continue;
+            }
 
-        if (designSystem) {
-            if (designSystem.text_color_primary) primaryColor = designSystem.text_color_primary.replace('#', '');
-            if (designSystem.text_color_secondary) textColor = designSystem.text_color_secondary.replace('#', '');
-            // We keep secondaryColor (accent) from user's branding colors if available, as per instructions
-        }
+            const dataUrl = await toJpeg(slideElement, {
+                quality: 0.95,
+                cacheBust: true,
+                width: slideWidth,
+                height: slideHeight,
+                pixelRatio: 2,
+            });
 
-        const fontFace = designSystem?.font_family?.split(',')[0]?.replace(/['"]/g, '') || 'Arial';
-        const alignMap: Record<string, 'left' | 'center' | 'right' | 'justify'> = {
-            'left': 'left',
-            'center': 'center',
-            'right': 'right',
-            'justify': 'justify'
-        };
-        const textAlign = designSystem?.text_alignment ? alignMap[designSystem.text_alignment] || 'center' : 'center';
-
-        slides.forEach((slide, index) => {
             const pptxSlide = pptx.addSlide();
-            
-            // Apply branded template background if available and is an image
-            if (presentationTemplateUrl && (presentationTemplateUrl.endsWith('.png') || presentationTemplateUrl.endsWith('.jpg') || presentationTemplateUrl.endsWith('.jpeg'))) {
-                pptxSlide.background = { path: presentationTemplateUrl };
-            } else if (globalBgSvg) {
-                const svgBase64 = btoa(unescape(encodeURIComponent(globalBgSvg)));
-                pptxSlide.background = { data: `image/svg+xml;base64,${svgBase64}` };
-            } else {
-                const bgColor = designSystem?.background_color?.replace('#', '') || '0A0A0A';
-                pptxSlide.background = { color: bgColor };
-            }
-
-            // Add Title with animation
-            pptxSlide.addText(slide.title || 'Slide ' + (index + 1), {
-                x: 0.5,
-                y: 0.5,
-                w: '90%',
-                fontSize: 32,
-                color: primaryColor,
-                bold: true,
-                fontFace: fontFace,
-                align: textAlign,
-                // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
-                anim: { type: 'fade', duration: 1 }
+            pptxSlide.addImage({
+                data: dataUrl,
+                x: 0,
+                y: 0,
+                w: '100%',
+                h: '100%'
             });
+        }
 
-            // Add Content based on layout (simplified)
-            let contentY = 1.5;
-            if (slide.subtitle) {
-                pptxSlide.addText(slide.subtitle, {
-                    x: 0.5,
-                    y: contentY,
-                    w: '90%',
-                    fontSize: 18,
-                    color: secondaryColor,
-                    fontFace: fontFace,
-                    align: textAlign,
-                    // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
-                    anim: { type: 'fly', dir: 'b', duration: 1, delay: 0.5 }
-                });
-                contentY += 0.8;
-            }
-
-            if (slide.description) {
-                pptxSlide.addText(slide.description, {
-                    x: 0.5,
-                    y: contentY,
-                    w: '90%',
-                    fontSize: 14,
-                    color: textColor,
-                    fontFace: fontFace,
-                    align: textAlign,
-                    // @ts-expect-error - pptxgenjs types might not include anim in all versions, but it works
-                    anim: { type: 'fade', duration: 1.5, delay: 1 }
-                });
-            }
-
-            // Add a footer
-            pptxSlide.addText(`Strategic Planning | ${index + 1}`, {
-                x: 0.5,
-                y: 7.0,
-                w: '90%',
-                fontSize: 10,
-                color: textColor,
-                align: 'right'
-            });
-        });
-
-        await pptx.writeFile({ fileName: 'Presentation.pptx' });
+        await pptx.writeFile({ fileName: `${projectInfo?.location || 'Urban_Study'}_Presentation.pptx` });
     } catch (error) {
         console.error('Error during PPTX export:', error);
         setError('Failed to export PPTX. Please try again.');
@@ -448,21 +378,28 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
 
   const handleSlideUpdate = (slideIndex: number, fieldPath: string, value: unknown) => {
     if (!fieldPath) return;
+    setIsSaving(true);
     setSlides(prevSlides => {
-        if (!prevSlides) return null;
+        if (!prevSlides) {
+            setIsSaving(false);
+            return null;
+        }
         
-        const newSlides = JSON.parse(JSON.stringify(prevSlides));
-        if (!newSlides[slideIndex]) return prevSlides;
+        // Create a shallow copy of the slides array
+        const newSlides = [...prevSlides];
+        // Create a deep-ish copy of the specific slide to modify
+        const slide = JSON.parse(JSON.stringify(newSlides[slideIndex]));
         
         const path = fieldPath.replace(/\[(\d+)\]/g, '.$1').split('.');
         const lastKey = path.pop();
         
         if (!lastKey) {
             console.error("Invalid fieldPath for update:", fieldPath);
+            setIsSaving(false);
             return prevSlides;
         }
 
-        let currentLevel = newSlides[slideIndex];
+        let currentLevel = slide;
         
         for (const key of path) {
             if (!currentLevel[key] || typeof currentLevel[key] !== 'object') {
@@ -472,6 +409,13 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
         }
         
         currentLevel[lastKey] = value;
+        newSlides[slideIndex] = slide;
+        
+        // Set last saved time and clear saving state after a tiny delay for visual feedback
+        setTimeout(() => {
+            setIsSaving(false);
+            setLastSaved(new Date());
+        }, 400);
         
         return newSlides;
     });
@@ -489,8 +433,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
 
   return (
     <div className="flex flex-col h-full">
-      {/* PDF Export Container: Renders all slides off-screen when exporting */}
-      {isExportingPdf && slides && (
+      {/* PDF/PPTX Export Container: Renders all slides off-screen when exporting */}
+      {(isExportingPdf || isExportingPptx) && slides && (
           <div style={{ position: 'fixed', top: 0, left: '-9999px', width: '1280px', height: '720px', zIndex: -50, pointerEvents: 'none', overflow: 'hidden' }}>
               <div style={{ width: '1280px' }}>
                   {slides.map((slide, index) => {
@@ -557,6 +501,20 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 {isEditorMode ? 'Parameters' : 'Hide Form'}
               </button>
               <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 mr-2 min-w-[100px] justify-end">
+                    {isSaving && (
+                        <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full animate-pulse">
+                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                            <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">Saving</span>
+                        </div>
+                    )}
+                    {!isSaving && lastSaved && (
+                        <div className="flex items-center space-x-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                            <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                            <span className="text-[9px] font-bold text-green-400 uppercase tracking-widest">Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                    )}
+                </div>
                 <button onClick={handleDeleteSlide} disabled={slides.length <= 1} className="bg-red-900/40 text-red-200 font-semibold py-2 px-5 rounded-full text-xs uppercase tracking-wider hover:bg-red-800 transition-all duration-300 border border-red-700/30 flex items-center disabled:opacity-30">
                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                    Delete

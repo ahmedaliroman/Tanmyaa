@@ -101,6 +101,51 @@ const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => {
     return [val];
 };
 
+const ScalingContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+  
+    useEffect(() => {
+      const updateScale = () => {
+        if (containerRef.current && contentRef.current) {
+          const containerHeight = containerRef.current.offsetHeight;
+          const contentHeight = contentRef.current.scrollHeight;
+          
+          if (contentHeight > containerHeight && containerHeight > 0) {
+            // Add a small buffer to avoid pixel-perfect issues
+            setScale(Math.max(0.5, (containerHeight - 4) / contentHeight));
+          } else {
+            setScale(1);
+          }
+        }
+      };
+  
+      updateScale();
+      const observer = new ResizeObserver(updateScale);
+      if (containerRef.current) observer.observe(containerRef.current);
+      if (contentRef.current) observer.observe(contentRef.current);
+      
+      return () => observer.disconnect();
+    }, []);
+  
+    return (
+      <div ref={containerRef} className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
+        <div 
+          ref={contentRef}
+          className="flex-1 flex flex-col origin-top transition-transform duration-300"
+          style={{ 
+            transform: `scale(${scale})`, 
+            width: `${100 / scale}%`,
+            height: 'max-content'
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    );
+};
+
 // Fix: Added 'style' prop to allow inline styling for components like Gantt charts that need specific backgrounds.
 const SlideWrapper: React.FC<{ 
     children: React.ReactNode, 
@@ -152,8 +197,18 @@ const SlideWrapper: React.FC<{
             {/* Dark overlay if using a custom background to ensure text readability */}
             {presentationTemplateUrl && <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none backdrop-blur-[1px]"></div>}
             
-            <div className={`relative z-10 w-full flex-1 flex flex-col min-h-0 pt-16 pb-24 px-10 lg:px-16 ${showReflection ? 'pb-12' : 'pb-24'} overflow-y-auto custom-scrollbar`}>
-                {children}
+            <div className={`relative z-10 w-full flex-1 flex flex-col min-h-0 pt-10 pb-16 px-10 lg:px-12 ${showReflection ? 'pb-8' : 'pb-16'} overflow-hidden`}>
+                {isActive && (
+                    <div className="absolute top-4 right-4 z-50 animate-ios-reveal pointer-events-none">
+                        <div className="flex items-center space-x-2 px-3 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full shadow-2xl">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                            <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Interactive Mode</span>
+                        </div>
+                    </div>
+                )}
+                <ScalingContent>
+                    {children}
+                </ScalingContent>
             </div>
 
             {/* Global Footer Elements */}
@@ -230,21 +285,22 @@ const EditableImage: React.FC<EditableImageProps> = ({ src, alt, className, onUp
     }
 
     return (
-        <div className={`${isAbsolute ? '' : 'relative'} group cursor-pointer overflow-hidden ${className}`} onClick={handleClick}>
+        <div className={`${isAbsolute ? '' : 'relative'} group cursor-pointer overflow-hidden rounded-lg border-2 border-transparent hover:border-[var(--color-primary-medium)]/50 transition-all ${className}`} onClick={handleClick}>
             <img 
                 src={src} 
                 alt={alt} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                 referrerPolicy="no-referrer" 
                 crossOrigin="anonymous"
             />
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-30">
-                <div className="bg-white/20 backdrop-blur-md p-3 rounded-full border border-white/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-current" fill="none" viewBox="0 0 24" stroke="currentColor">
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center z-30 backdrop-blur-[2px]">
+                <div className="bg-white/20 backdrop-blur-md p-4 rounded-full border border-white/30 shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                 </div>
+                <p className="text-white text-[10px] font-black uppercase tracking-widest mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500">Replace Image</p>
             </div>
             <input 
                 type="file" 
@@ -279,10 +335,15 @@ const Editable: React.FC<{
       contentEditable={!useMarkdown}
       suppressContentEditableWarning
       onBlur={handleBlur}
-      className={`outline-none focus:ring-2 focus:ring-[var(--color-primary-medium)] focus:bg-white/10 rounded-sm p-1 -m-1 transition-all break-words ${className}`}
+      className={`outline-none focus:ring-2 focus:ring-[var(--color-primary-medium)] focus:bg-white/10 hover:bg-white/5 rounded-sm p-1 -m-1 transition-all break-words relative group/editable ${className}`}
       dangerouslySetInnerHTML={useMarkdown ? undefined : { __html: safeValue }}
     >
       {useMarkdown ? content : null}
+      {!useMarkdown && (
+        <div className="absolute -top-4 -right-1 opacity-0 group-hover/editable:opacity-100 transition-opacity pointer-events-none">
+            <div className="bg-[var(--color-primary-medium)] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg uppercase tracking-tighter">Edit</div>
+        </div>
+      )}
     </Component>
   );
 };
@@ -996,10 +1057,10 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                         onUpdate={(newUrl) => onUpdate(`before_image_url`, newUrl)}
                     />
                     <div className={`absolute inset-0 ${overlayClassBefore} backdrop-blur-[1px]`}></div>
-                    <div className="absolute top-10 left-10 bg-black/80 text-white px-4 py-1 text-[10px] font-black tracking-[0.4em] rounded-full border border-white/20">BASELINE</div>
+                    <div className="absolute top-12 left-10 bg-black/80 text-white px-4 py-1 text-[10px] font-black tracking-[0.4em] rounded-full border border-white/20">BASELINE</div>
                     <div className="absolute bottom-10 left-10 right-10 text-left">
                         <div className="text-[var(--color-primary-medium)] font-black text-[10px] uppercase mb-1 tracking-[0.2em]">Current State</div>
-                        <div className="text-white text-sm font-medium opacity-80 italic">Legacy infrastructure and underutilized public realm.</div>
+                        <div className="text-white text-xs font-medium opacity-80 italic">Legacy infrastructure and underutilized public realm.</div>
                     </div>
                 </div>
                 
@@ -1011,23 +1072,23 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                         onUpdate={(newUrl) => onUpdate(`after_image_url`, newUrl)}
                     />
                     <div className={`absolute inset-0 ${overlayClassAfter} backdrop-blur-[1px]`}></div>
-                    <div className="absolute top-10 right-10 bg-[var(--color-primary-medium)] text-white px-4 py-1 text-[10px] font-black tracking-[0.4em] rounded-full border border-white/20">VISION</div>
+                    <div className="absolute top-12 right-10 bg-[var(--color-primary-medium)] text-white px-4 py-1 text-[10px] font-black tracking-[0.4em] rounded-full border border-white/20">VISION</div>
                     <div className="absolute bottom-10 left-10 right-10 text-right">
                         <div className="text-[var(--color-primary-medium)] font-black text-[10px] uppercase mb-1 tracking-[0.2em]">Future Projection</div>
-                        <div className="text-white text-sm font-medium opacity-80 italic">Integrated transit-oriented development and green corridors.</div>
+                        <div className="text-white text-xs font-medium opacity-80 italic">Integrated transit-oriented development and green corridors.</div>
                     </div>
                 </div>
             </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
-                <div style={titleAnimation} className="bg-black/60 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 max-w-2xl pointer-events-auto shadow-2xl">
-                    <Editable as="h1" value={slide.title || "Node Assessment"} onUpdate={v => onUpdate('title', v)} className="text-4xl font-black tracking-tighter uppercase mb-4 text-[var(--color-accent-light)]" />
-                    <div style={contentAnimation} className="space-y-4">
+            <div className="absolute top-24 left-0 right-0 flex flex-col items-center pointer-events-none z-20">
+                <div style={titleAnimation} className="bg-black/70 backdrop-blur-xl p-6 rounded-3xl border border-white/10 max-w-3xl pointer-events-auto shadow-2xl">
+                    <Editable as="h1" value={slide.title || "Node Assessment"} onUpdate={v => onUpdate('title', v)} className="text-3xl font-black tracking-tighter uppercase mb-2 text-[var(--color-accent-light)]" />
+                    <div style={contentAnimation} className="space-y-2">
                         <div className="flex items-center justify-center gap-3">
                             <div className="h-px w-8 bg-white/20"></div>
-                            <Editable as="p" value={slide.site_location} onUpdate={v => onUpdate('site_location', v)} className="text-sm font-bold text-white tracking-widest uppercase" />
+                            <Editable as="p" value={slide.site_location} onUpdate={v => onUpdate('site_location', v)} className="text-xs font-bold text-white tracking-widest uppercase" />
                             <div className="h-px w-8 bg-white/20"></div>
                         </div>
-                        <Editable as="p" value={slide.site_rationale} onUpdate={v => onUpdate('site_rationale', v)} className="text-xs md:text-sm text-white opacity-80 leading-relaxed italic" />
+                        <Editable as="p" value={slide.site_rationale} onUpdate={v => onUpdate('site_rationale', v)} className="text-xs text-white opacity-80 leading-relaxed italic line-clamp-2" />
                     </div>
                 </div>
             </div>
@@ -1433,7 +1494,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                                     </div>
                                 ) : (
                                     ensureArray(slide.phases).map((phase, pIndex) => 
-                                        ensureArray(phase.deliverables).slice(0, 8).map((d, dIndex) => {
+                                        ensureArray(phase.deliverables).slice(0, 6).map((d, dIndex) => {
                                             const startIndex = parseQuarter(d.start_quarter);
                                             const endIndex = parseQuarter(d.end_quarter);
                                             if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) return null;
