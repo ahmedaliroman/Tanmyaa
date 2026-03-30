@@ -149,11 +149,13 @@ When generating content for the following areas, you MUST use the specified name
 `;
 
 const getAi = () => {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    const apiKey = process.env.VERTEX_API_KEY;
     if (!apiKey) {
-        console.error('CRITICAL: Gemini API key is not configured in the frontend bundle.');
-        throw new Error('Gemini API key is not configured. Please check your environment variables.');
+        console.error('CRITICAL: Vertex API key is not configured in the frontend bundle.');
+        throw new Error('Vertex API key is not configured. Please check your environment variables.');
     }
+    // Note: The @google/genai SDK is a unified SDK for both Google AI and Vertex AI.
+    // We are using the latest models available on Vertex AI.
     return new GoogleGenAI({ apiKey });
 };
 
@@ -162,7 +164,7 @@ const getModelForPlan = (plan?: string) => {
         return 'gemini-3.1-pro-preview';
     }
     // Trial / Free / Default - Use Flash for better resilience and higher quota
-    return 'gemini-3-flash-preview'; 
+    return 'gemini-3.1-flash-lite-preview'; 
 };
 
 const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
@@ -441,17 +443,18 @@ export const generatePresentation = async (
     ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "[City Name]", "TBD", "To be determined", or any bracketed text. 
-    REAL-WORLD DATA: Use the provided Google Search tool to find real, up-to-date data, statistics, and specific details about the location (${projectInfo.location}). 
+    REAL-WORLD DATA: Use the provided Google Search tool to find real, up-to-date data, statistics, and specific details about the location (${projectInfo.location}). You MUST integrate actual numbers, dates, and names of local entities.
     
     METRICS & CURRENCY: Use appropriate metrics (e.g., metric system vs imperial) and currency (e.g., local currency if specific, otherwise USD/EUR) that fit the content and location context.
     
-    CRITICAL: For every slide, you MUST fill all fields with specific, data-driven content. 
+    CRITICAL: For every slide, you MUST fill all fields with specific, data-driven, and highly comprehensive content. Do not provide brief or generic answers. Expand on your points to provide a thorough analysis.
     - For EVERY slide (except Cover and Closing), you MUST provide an 'analytic_reflection'. This is a concise (15-20 words), high-level strategic insight that adds "Principal Strategist" value to the slide's data.
     - For Roadmap and GanttChartRoadmap (Implementation Timeline): You MUST provide a detailed, realistic timeline with specific milestones, action steps, and KPIs. DO NOT leave these blank. The GanttChartRoadmap MUST have at least 3 phases, each with at least 2 deliverables.
     - For EquityAnalysis slide: You MUST identify at least 3 distributional impacts and 3 mitigation strategies.
     - For ScenarioComparison slide: You MUST fill in the risks and costs for all scenarios.
     - For PolicyLevers slide: You MUST provide at least 3 actionable policy recommendations.
     - For References slide: You MUST provide at least 5 real, local references (reports, studies, laws, or news articles) relevant to the data and context of the presentation.
+    - For SWOT slide: You MUST provide at least 4 highly specific points for each category (Strengths, Weaknesses, Opportunities, Threats).
     
     If specific real-world data is unavailable, use your expert knowledge to synthesize highly plausible, technically sound, and data-driven estimates based on similar global benchmarks. DO NOT leave any field blank or use placeholder text.
     Every field in the JSON must be filled with high-quality, professional, and specific content.
@@ -477,14 +480,14 @@ export const generatePresentation = async (
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
     - Roadmap: { layout: "Roadmap", title, phases: [{title, timeline, action_steps: [{action, kpi}], outcome}], analytic_reflection }
     - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}], analytic_reflection }
-    - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
-    - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
-    - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], analytic_reflection }
-    - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [{group: "string", impact: "string"}], mitigation_strategies: [], analytic_reflection }
+    - ProjectedImpact: { layout: "ProjectedImpact", title, impacts: [{area: "string", problem: "string", solution: "string", impact: "string", action: "string"}], analytic_reflection }
+    - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component: "string", capex: "string", opex: "string", funding_source: "string", recovery_mechanism: "string"}], matrix_caption: "string", analytic_reflection }
+    - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], image_prompt: "string", analytic_reflection }
+    - EquityAnalysis: { layout: "EquityAnalysis", title, metrics: [{dimension: "string", current_state: "string", target_state: "string", impact_description: "string"}], mitigation_strategies: [{label: "string", value: "string"}], analytic_reflection }
     - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection }
-    - RiskAssessment: { layout: "RiskAssessment", title, risks: [{category: "string", description: "string", mitigation: "string"}], analytic_reflection }
-    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}], analytic_reflection }
-    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency: {name: "string", rationale: "string"}, stakeholders: [{name: "string", role: "string"}], funding_model: "string", regulatory_changes: ["string"], analytic_reflection }
+    - RiskAssessment: { layout: "RiskAssessment", title, risks: [{category: "string", description: "string", mitigation: "string"}], image_prompt: "string", analytic_reflection }
+    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{strategy: "string", impact: "string", measurement_framework: "string"}], analytic_reflection }
+    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency: {name: "string", rationale: "string"}, stakeholders: [{name: "string", role: "string", power: "string", interest: "string"}], analytic_reflection }
     - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}], analytic_reflection }
     - Closing: { layout: "Closing", tagline, credits, image_prompt, analytic_reflection }
     
@@ -541,7 +544,7 @@ export const generatePresentation = async (
                     systemInstruction, 
                     responseMimeType: 'application/json',
                     maxOutputTokens: 12000,
-                    tools: [{ googleSearch: {} }]
+                    tools: [{ googleSearch: {} }, { googleMaps: {} }]
                 },
             });
 
@@ -585,26 +588,26 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     5. FOOTER: Every slide MUST have an 'analytic_reflection' field.
     
     SCHEMA GUIDANCE:
-    - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg, design_system }
+    - Cover: { layout: "Cover", title, subtitle, project_code, year, design_system_svg: "string (REQUIRED, SVG code for background)", design_system: { font_family: "string", text_color_primary: "string", text_color_secondary: "string", text_alignment: "string", is_light_background: "boolean" } }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
-    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [], analytic_reflection }
-    - SWOT: { layout: "SWOT", title, strengths: [], weaknesses: [], opportunities: [], threats: [], analytic_reflection }
-    - Benchmarks: { layout: "Benchmarks", title, benchmarks: [], analytic_reflection }
+    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}], analytic_reflection }
+    - SWOT: { layout: "SWOT", title, strengths: [{title, description}], weaknesses: [{title, description}], opportunities: [{title, description}], threats: [{title, description}], analytic_reflection }
+    - Benchmarks: { layout: "Benchmarks", title, benchmarks: [{name: "string", location: "string", introduction: "string", interventions: ["string"], takeaway: "string", image_prompt: "string"}], analytic_reflection }
     - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, data_source, image_prompt, analytic_reflection }
-    - Vision: { layout: "Vision", title, vision_statement, strategic_pillars: [], image_prompt, analytic_reflection }
-    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [], analytic_reflection }
-    - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
-    - Roadmap: { layout: "Roadmap", title, phases: [], analytic_reflection }
-    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [], analytic_reflection }
-    - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [], analytic_reflection }
-    - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [], analytic_reflection }
-    - Process: { layout: "Process", title, subtitle, steps: [], analytic_reflection }
-    - EquityAnalysis: { layout: "EquityAnalysis", title, distributional_impacts: [], mitigation_strategies: [], analytic_reflection }
-    - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [], analytic_reflection }
-    - RiskAssessment: { layout: "RiskAssessment", title, risks: [], analytic_reflection }
-    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [], analytic_reflection }
-    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency, stakeholders: [], funding_model, regulatory_changes: [], analytic_reflection }
-    - References: { layout: "References", title, sources: [], analytic_reflection }
+    - Vision: { layout: "Vision", title, vision_statement, strategic_pillars: [{title, initiatives: []}], image_prompt, analytic_reflection }
+    - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}], analytic_reflection }
+    - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
+    - Roadmap: { layout: "Roadmap", title, phases: [{title, timeline, action_steps: [{action, kpi}], outcome}], analytic_reflection }
+    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}], analytic_reflection }
+    - ProjectedImpact: { layout: "ProjectedImpact", title, impacts: [{area: "string", problem: "string", solution: "string", impact: "string", action: "string"}], analytic_reflection }
+    - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component: "string", capex: "string", opex: "string", funding_source: "string", recovery_mechanism: "string"}], matrix_caption: "string", analytic_reflection }
+    - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], image_prompt: "string", analytic_reflection }
+    - EquityAnalysis: { layout: "EquityAnalysis", title, metrics: [{dimension: "string", current_state: "string", target_state: "string", impact_description: "string"}], mitigation_strategies: [{label: "string", value: "string"}], analytic_reflection }
+    - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection }
+    - RiskAssessment: { layout: "RiskAssessment", title, risks: [{category: "string", description: "string", mitigation: "string"}], image_prompt: "string", analytic_reflection }
+    - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{strategy: "string", impact: "string", measurement_framework: "string"}], analytic_reflection }
+    - GovernanceFramework: { layout: "GovernanceFramework", title, lead_agency: {name: "string", rationale: "string"}, stakeholders: [{name: "string", role: "string", power: "string", interest: "string"}], analytic_reflection }
+    - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}], analytic_reflection }
     - Closing: { layout: "Closing", tagline, credits, image_prompt, analytic_reflection }
     
     VISUALS & RENDERS:
@@ -645,7 +648,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
                 systemInstruction,
                 responseMimeType: 'application/json',
                 maxOutputTokens: 12000,
-                tools: [{ googleSearch: {} }]
+                tools: [{ googleSearch: {} }, { googleMaps: {} }]
             },
         });
         const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
@@ -720,7 +723,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
             await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
             // Fallback to flash if pro fails on retry
-            const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3-flash-preview' : model;
+            const currentModel = (retryCount > 0 && model === 'gemini-3.1-pro-preview') ? 'gemini-3.1-flash-lite-preview' : model;
 
             const response = await ai.models.generateContent({
                 model: currentModel,
@@ -728,7 +731,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
                 config: { 
                     systemInstruction,
                     responseMimeType: 'application/json',
-                    tools: [{googleSearch: {}}],
+                    tools: [{ googleSearch: {} }, { googleMaps: {} }],
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {

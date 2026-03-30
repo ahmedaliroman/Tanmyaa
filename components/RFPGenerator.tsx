@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { generateRFP, getRFPSuggestions } from '../services/geminiService';
+import { generateRFP, getRFPSuggestions } from '../services/vertexService';
 import { exportRFPToDocx } from '../services/docxGenerator';
 import { useBranding } from '../hooks/useBranding';
 import type { RFPContent, BrandingInfo } from '../types';

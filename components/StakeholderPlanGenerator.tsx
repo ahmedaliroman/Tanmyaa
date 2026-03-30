@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generateStakeholderPlan, getStakeholderContextSuggestions } from '../services/geminiService';
+import { generateStakeholderPlan, getStakeholderContextSuggestions } from '../services/vertexService';
 import type { StakeholderPlan, StakeholderGroup, BrandingInfo } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';

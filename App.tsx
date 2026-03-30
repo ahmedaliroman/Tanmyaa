@@ -87,7 +87,7 @@ const AppContent: React.FC<{
       )}
       {!hasApiKey && window.aistudio && (
           <div className="bg-blue-600 text-white py-2 px-4 text-center text-sm font-bold animate-fade-in flex items-center justify-center gap-4 sticky top-0 z-[60]">
-              <span>Connect your Gemini API Key to enable AI features on this domain.</span>
+              <span>Connect your Vertex API Key to enable AI features on this domain.</span>
               <button onClick={handleConnectApiKey} className="bg-white text-blue-600 px-4 py-1 rounded-full text-xs hover:bg-gray-100 transition-colors">
                   Connect Key
               </button>
@@ -118,7 +118,7 @@ const App: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
 
   const initialOptions = {
-    "client-id": "test", // Replace with your real client ID
+    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test", // Replace with your real client ID
     currency: "USD",
     intent: "capture",
   };

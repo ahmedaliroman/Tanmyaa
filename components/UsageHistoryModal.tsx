@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchUsageHistory } from '../services/geminiService';
+import { fetchUsageHistory } from '../services/vertexService';
 import { UsageHistory } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Clock, CreditCard, CheckCircle2 } from 'lucide-react';

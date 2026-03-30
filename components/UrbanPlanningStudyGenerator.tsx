@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '../services/geminiService';
+import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '../services/vertexService';
 import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo } from '../types';
 import UrbanStudyInputForm from './UrbanStudyInputForm';
 import UrbanStudySlide from './UrbanStudySlide';
@@ -53,7 +53,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   const [pdfExportProgress, setPdfExportProgress] = useState(0);
 
   const [chatSuggestions, setChatSuggestions] = useState<string[]>([]);
-  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+
 
 
   useEffect(() => {

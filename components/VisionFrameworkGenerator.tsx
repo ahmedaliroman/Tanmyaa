@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generateVisionFramework, getVisionAspirationSuggestions } from '../services/geminiService';
+import { generateVisionFramework, getVisionAspirationSuggestions } from '../services/vertexService';
 import type { VisionFramework, BrandingInfo } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';

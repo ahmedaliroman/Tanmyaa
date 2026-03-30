@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generateMethodology, getMethodologySuggestions } from '../services/geminiService';
+import { generateMethodology, getMethodologySuggestions } from '../services/vertexService';
 import type { Methodology, BrandingInfo } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
