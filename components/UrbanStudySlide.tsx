@@ -156,6 +156,7 @@ const SlideWrapper: React.FC<{
     onReflectionUpdate?: (val: string) => void,
     onReferenceUpdate?: (val: string) => void,
     slideNumber?: number,
+    isActive?: boolean,
     hideFooter?: boolean,
     hideReflection?: boolean,
     hideReference?: boolean,
@@ -169,6 +170,7 @@ const SlideWrapper: React.FC<{
     onReflectionUpdate, 
     onReferenceUpdate, 
     slideNumber,
+    isActive = false,
     hideFooter = false,
     hideReflection = false,
     hideReference = false,
@@ -1762,6 +1764,7 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
             referenceText={slide.reference_doc || "Ref. Doc: Urban Strategy Framework v2.1"}
             onReferenceUpdate={v => onUpdate('reference_doc', v as string)}
             slideNumber={slideNumber}
+            isActive={isActive}
         >
             <SlideHeader 
                 label="Governance & Stakeholder Framework"
@@ -1970,7 +1973,7 @@ const ConclusionSlideLayout: React.FC<SlideLayoutProps> = ({ slide, onUpdate, is
     const contentAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper slideNumber={slideNumber} className="bg-[#f5f2ed] text-gray-900">
+        <SlideWrapper slideNumber={slideNumber} isActive={isActive} className="bg-[#f5f2ed] text-gray-900">
             <div className="grid grid-cols-12 gap-16 h-full items-center">
                 <div className="col-span-7" style={contentAnim}>
                     <SlideHeader label="Final Synthesis" title={s.title || "Strategic Conclusion & Path Forward"} onTitleUpdate={v => onUpdate('title', v)} />
@@ -2037,7 +2040,7 @@ const TableOfContentsSlideLayout: React.FC<SlideLayoutProps> = ({ slide, onUpdat
     const contentAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper slideNumber={slideNumber} className="bg-[#f5f2ed] text-gray-900">
+        <SlideWrapper slideNumber={slideNumber} isActive={isActive} className="bg-[#f5f2ed] text-gray-900">
             <div className="grid grid-cols-12 gap-16 h-full items-center">
                 <div className="col-span-4 flex flex-col justify-center border-r border-gray-200 pr-16 h-full">
                     <div className="flex items-center gap-4 mb-8">
@@ -2088,7 +2091,7 @@ const NextStepsSlideLayout: React.FC<SlideLayoutProps> = ({ slide, onUpdate, isA
     const contentAnim = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper slideNumber={slideNumber} className="bg-white">
+        <SlideWrapper slideNumber={slideNumber} isActive={isActive} className="bg-white">
             <SlideHeader label="Implementation Roadmap" title={s.title || "Immediate Strategic Actions"} onTitleUpdate={v => onUpdate('title', v)} />
             
             <div className="grid grid-cols-12 gap-12 mt-12 h-full" style={contentAnim}>
@@ -2182,7 +2185,7 @@ const ComparisonTableSlideLayout: React.FC<SlideLayoutProps> = ({ slide, onUpdat
     const colors = ['#FF6321', '#FFC107', '#8BC34A', '#00BFA5', '#2196F3', '#9C27B0'];
 
     return (
-        <SlideWrapper slideNumber={slideNumber} className="bg-white">
+        <SlideWrapper slideNumber={slideNumber} isActive={isActive} className="bg-white">
             <SlideHeader label="Comparison Analysis & Strategic Benchmarking" title={s.title || "Comparison Table"} onTitleUpdate={v => onUpdate('title', v)} />
             
             <div className="mt-12 overflow-hidden rounded-[32px] border border-gray-200 shadow-2xl" style={contentAnim}>
@@ -2338,6 +2341,7 @@ const UrbanStudySlide: React.FC<{ slide: PresentationSlide | null | undefined; i
         <SlideWrapper 
             className="p-16 bg-[var(--color-bg-light)] text-current" 
             slideNumber={slideNumber}
+            isActive={isActive}
             reflectionText={slide.analytic_reflection}
             onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
         >
