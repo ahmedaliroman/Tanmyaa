@@ -124,7 +124,7 @@ const SlideWrapper: React.FC<{
             {/* Dark overlay if using a custom background to ensure text readability */}
             {presentationTemplateUrl && <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none backdrop-blur-[1px]"></div>}
             
-            <div className={`relative z-10 w-full flex-grow flex flex-col p-8 lg:p-12 ${reflectionText !== undefined ? 'pb-32' : 'pb-16'} overflow-hidden`}>
+            <div className={`relative z-10 w-full flex-grow flex flex-col p-8 lg:p-12 ${reflectionText !== undefined ? 'pb-6' : 'pb-16'} overflow-hidden`}>
                 {children}
             </div>
 
@@ -144,7 +144,7 @@ const SlideWrapper: React.FC<{
             </div>
 
             {reflectionText !== undefined && (
-                <div className="absolute bottom-6 left-12 right-12 z-20">
+                <div className="relative z-20 px-12 pb-6 shrink-0">
                     <div className="bg-[var(--color-bg-light)] border border-[var(--color-primary-medium)]/20 rounded-2xl p-5 flex items-start shadow-xl border-l-4 border-l-[var(--color-primary-dark)]">
                         <div className="bg-[var(--color-primary-dark)]/10 text-[var(--color-primary-dark)] text-sm font-black px-2 py-1 rounded-md mr-4 uppercase shrink-0 mt-1">Principal Strategist Reflection</div>
                         <Editable value={reflectionText} onUpdate={onReflectionUpdate} className="text-sm text-current opacity-80 italic leading-relaxed font-light" />
@@ -379,7 +379,7 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
                         src={slide.image_url || imageUrls[slide.image_prompt] || 'https://picsum.photos/seed/urban-overview/1920/1080'} 
                         alt={slide.title} 
                         onUpdate={url => onUpdate('image_url', url)}
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
+                        className="w-full h-full object-cover transition-all duration-1000 scale-105 group-hover:scale-100"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                     <div className="absolute bottom-10 left-10 right-10">
@@ -574,7 +574,7 @@ const BenchmarksSlideLayout: React.FC<{ slide: BenchmarksSlide, onUpdate: (field
                                 <EditableImage 
                                     src={benchmark.image_url || imageUrls[benchmark.image_prompt] || `https://picsum.photos/seed/${benchmark.name}/800/600`} 
                                     alt={benchmark.name} 
-                                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                                    className="w-full h-full object-cover transition-all duration-700"
                                     onUpdate={(newUrl) => onUpdate(`benchmarks[${i}].image_url`, newUrl)}
                                 />
                                 <div className="absolute top-3 left-3 bg-[var(--color-primary-medium)] px-2 py-0.5 rounded-full text-xs font-bold text-current uppercase border border-white/10">
@@ -634,7 +634,7 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
                         src={slide.image_url || imageUrls[slide.image_prompt] || 'https://picsum.photos/seed/casestudy/1920/1080'} 
                         alt={slide.title} 
                         onUpdate={url => onUpdate('image_url', url)}
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000"
+                        className="w-full h-full object-cover transition-all duration-1000"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     <div className="absolute bottom-12 left-12 right-12">
@@ -793,7 +793,7 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
                     <EditableImage 
                         src={slide.image_url || imageUrls[slide.image_prompt] || 'https://picsum.photos/seed/strategy/800/1200'} 
                         alt="Perspective Visualization" 
-                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000"
+                        className="w-full h-full object-cover transition-all duration-1000"
                         onUpdate={(newUrl) => onUpdate(`image_url`, newUrl)}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
@@ -859,7 +859,7 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
                         src={slide.image_url || imageUrls['equity_image'] || 'https://picsum.photos/seed/equity/1920/1080'} 
                         alt={slide.title} 
                         onUpdate={url => onUpdate('image_url', url)}
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000"
+                        className="w-full h-full object-cover transition-all duration-1000"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     <div className="absolute bottom-6 left-6 right-6">
@@ -947,7 +947,7 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                     <EditableImage 
                         src={slide.before_image_url || imageUrls[slide.before_image_prompt] || 'https://picsum.photos/seed/urban-decay/800/600'} 
                         alt="Before" 
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-110 group-hover:scale-100"
+                        className="w-full h-full object-cover transition-all duration-1000 scale-110 group-hover:scale-100"
                         onUpdate={(newUrl) => onUpdate(`before_image_url`, newUrl)}
                     />
                     <div className={`absolute inset-0 ${overlayClassBefore} backdrop-blur-[1px]`}></div>
@@ -962,7 +962,7 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                     <EditableImage 
                         src={slide.after_image_url || imageUrls[slide.after_image_prompt] || 'https://picsum.photos/seed/urban-future/800/600'} 
                         alt="After" 
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-110 group-hover:scale-100"
+                        className="w-full h-full object-cover transition-all duration-1000 scale-110 group-hover:scale-100"
                         onUpdate={(newUrl) => onUpdate(`after_image_url`, newUrl)}
                     />
                     <div className={`absolute inset-0 ${overlayClassAfter} backdrop-blur-[1px]`}></div>
@@ -1617,7 +1617,7 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
                         src={slide.image_url || imageUrls['policy_image'] || 'https://picsum.photos/seed/policy/1920/1080'} 
                         alt={slide.title} 
                         onUpdate={url => onUpdate('image_url', url)}
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
+                        className="w-full h-full object-cover transition-all duration-1000 scale-105 group-hover:scale-100"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                     <div className="absolute bottom-10 left-10 right-10">
