@@ -17,18 +17,19 @@
 
 @layer base {
   :root {
-    --color-navy: #001B3D;
-    --color-deep: #003B73;
-    --color-royal: #005B96;
-    --color-steel: #6497B1;
-    --color-light: #B3CDE0;
-    
-    --color-primary-dark: var(--color-navy);
-    --color-primary-medium: var(--color-royal);
-    --color-primary-light: var(--color-steel);
-    --color-accent-light: var(--color-light);
-    --color-accent-cream: #F8FAFC;
-    --color-bg-light: #F1F5F9;
+    --color-primary-dark: #007AB9;
+    --color-primary-medium: #50ABE7;
+    --color-primary-light: #6CBDE9;
+    --color-accent-dark: #D32F2F;
+    --color-accent-medium: #EF5350;
+    --color-accent-light: #87CEEB;
+    --color-accent-cream: #BAE0F3;
+    --color-bg-light: #EDF2FB;
+    --color-bg-dark: #050508;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-info: #3B82F6;
+    --color-danger: #F43F5E;
   }
 
   body {
@@ -51,15 +52,20 @@
   
   .theme-light .text-\[var\(--color-accent-cream\)\] { color: var(--color-primary-medium) !important; }
   
+  .theme-light .bg-white\/5 { background-color: rgba(0, 0, 0, 0.02) !important; }
   .theme-light .bg-white\/10 { background-color: rgba(0, 0, 0, 0.05) !important; }
   .theme-light .bg-white\/20 { background-color: rgba(0, 0, 0, 0.1) !important; }
   .theme-light .bg-white\/30 { background-color: rgba(0, 0, 0, 0.15) !important; }
   
+  .theme-light .bg-black\/5 { background-color: rgba(255, 255, 255, 0.05) !important; }
+  .theme-light .bg-black\/10 { background-color: rgba(255, 255, 255, 0.1) !important; }
+  .theme-light .bg-black\/20 { background-color: rgba(255, 255, 255, 0.2) !important; }
   .theme-light .bg-black\/40 { background-color: rgba(255, 255, 255, 0.4) !important; }
   .theme-light .bg-black\/60 { background-color: rgba(255, 255, 255, 0.6) !important; }
   .theme-light .bg-black\/70 { background-color: rgba(255, 255, 255, 0.7) !important; }
   .theme-light .bg-black\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
   
+  .theme-light .border-white\/5 { border-color: rgba(0, 0, 0, 0.05) !important; }
   .theme-light .border-white\/10 { border-color: rgba(0, 0, 0, 0.1) !important; }
   .theme-light .border-white\/20 { border-color: rgba(0, 0, 0, 0.2) !important; }
   .theme-light .border-white\/30 { border-color: rgba(0, 0, 0, 0.3) !important; }
