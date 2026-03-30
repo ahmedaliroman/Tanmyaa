@@ -544,7 +544,7 @@ export const generatePresentation = async (
                     systemInstruction, 
                     responseMimeType: 'application/json',
                     maxOutputTokens: 12000,
-                    tools: [{ googleSearch: {} }, { googleMaps: {} }]
+                    tools: [{ googleSearch: {} }]
                 },
             });
 
@@ -648,7 +648,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
                 systemInstruction,
                 responseMimeType: 'application/json',
                 maxOutputTokens: 12000,
-                tools: [{ googleSearch: {} }, { googleMaps: {} }]
+                tools: [{ googleSearch: {} }]
             },
         });
         const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
@@ -731,7 +731,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
                 config: { 
                     systemInstruction,
                     responseMimeType: 'application/json',
-                    tools: [{ googleSearch: {} }, { googleMaps: {} }],
+                    tools: [{ googleSearch: {} }],
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
