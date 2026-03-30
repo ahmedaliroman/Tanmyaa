@@ -27,6 +27,7 @@ export interface CoverSlide {
     design_system_svg?: string;
     design_system?: DesignSystem;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface ExecutiveOverviewSlide {
@@ -35,6 +36,7 @@ export interface ExecutiveOverviewSlide {
     narrative: string;
     key_points: string[];
     analytic_reflection: string;
+    reference_doc?: string;
     image_url?: string;
 }
 
@@ -49,6 +51,7 @@ export interface CrisisSlide {
     }[];
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface SWOTSlide {
@@ -59,6 +62,7 @@ export interface SWOTSlide {
     opportunities: { title: string; description: string; }[];
     threats: { title: string; description: string; }[];
     analytic_reflection: string;
+    reference_doc?: string;
     image_url?: string;
 }
 
@@ -75,6 +79,7 @@ export interface BenchmarksSlide {
         image_url?: string;
     }[];
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface CaseStudyDeepDiveSlide {
@@ -87,6 +92,7 @@ export interface CaseStudyDeepDiveSlide {
     image_url?: string;
     data_source?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface VisionSlide {
@@ -100,6 +106,7 @@ export interface VisionSlide {
     image_prompt: string;
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface MacroStrategySlide {
@@ -114,6 +121,7 @@ export interface MacroStrategySlide {
     image_prompt: string;
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface EquityAnalysisSlide {
@@ -125,7 +133,12 @@ export interface EquityAnalysisSlide {
         target_state: string;
         impact_description: string;
     }[];
+    mitigation_strategies: {
+        label: string;
+        value: string;
+    }[];
     analytic_reflection: string;
+    reference_doc?: string;
     image_url?: string;
 }
 
@@ -142,6 +155,7 @@ export interface NodeAssessmentSlide {
     before_image_url?: string;
     after_image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface ScenarioComparisonSlide {
@@ -157,6 +171,7 @@ export interface ScenarioComparisonSlide {
         cost: string;
     }[];
     analytic_reflection: string;
+    reference_doc?: string;
     image_url?: string;
 }
 
@@ -170,6 +185,7 @@ export interface RiskAssessmentSlide {
         mitigation: string;
     }[];
     analytic_reflection: string;
+    reference_doc?: string;
     image_url?: string;
 }
 
@@ -187,6 +203,7 @@ export interface RoadmapSlide {
     }[];
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface GanttChartRoadmapSlide {
@@ -205,6 +222,7 @@ export interface GanttChartRoadmapSlide {
     }[];
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 
@@ -220,6 +238,7 @@ export interface ProjectedImpactSlide {
         action: string;
     }[];
     analytic_reflection: string;
+    reference_doc?: string;
     image_url?: string;
 }
 
@@ -234,6 +253,7 @@ export interface FiscalFrameworkSlide {
         recovery_mechanism: string;
     }[];
     analytic_reflection: string;
+    reference_doc?: string;
     image_url?: string;
 }
 
@@ -248,6 +268,7 @@ export interface PolicyLeversSlide {
     }[];
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface GovernanceFrameworkSlide {
@@ -267,6 +288,7 @@ export interface GovernanceFrameworkSlide {
     regulatory_changes: string[];
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 
@@ -282,6 +304,7 @@ export interface ReferencesSlide {
     }[];
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface ClosingSlide {
@@ -291,6 +314,7 @@ export interface ClosingSlide {
     image_prompt?: string;
     image_url?: string;
     analytic_reflection: string;
+    reference_doc?: string;
 }
 
 export interface ProcessSlide {
@@ -303,6 +327,7 @@ export interface ProcessSlide {
         description: string;
     }[];
     analytic_reflection: string;
+    reference_doc?: string;
     image_url?: string;
 }
 
