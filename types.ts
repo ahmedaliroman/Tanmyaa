@@ -292,6 +292,57 @@ export interface GovernanceFrameworkSlide {
 }
 
 
+export interface TableOfContentsSlide {
+    layout: 'TableOfContents';
+    title: string;
+    chapters: {
+        number: string;
+        title: string;
+        description: string;
+    }[];
+    analytic_reflection?: string;
+    reference_doc?: string;
+}
+
+export interface NextStepsSlide {
+    layout: 'NextSteps';
+    title: string;
+    immediate_actions: {
+        title: string;
+        owner: string;
+        deadline: string;
+    }[];
+    strategic_milestones: string[];
+    analytic_reflection?: string;
+    reference_doc?: string;
+}
+
+export interface ComparisonTableSlide {
+    layout: 'ComparisonTable';
+    title: string;
+    headers: string[];
+    rows: {
+        label: string;
+        values: string[];
+    }[];
+    conclusion: string;
+    analytic_reflection?: string;
+    reference_doc?: string;
+}
+
+export interface ConclusionSlide {
+    layout: 'Conclusion';
+    title: string;
+    summary_points: {
+        title: string;
+        content: string;
+    }[];
+    final_recommendation: string;
+    image_url?: string;
+    analytic_reflection?: string;
+    reference_doc?: string;
+}
+
 export interface ReferencesSlide {
     layout: 'References';
     title: string;
@@ -334,6 +385,7 @@ export interface ProcessSlide {
 // Union type for all possible slides in the new structure
 export type PresentationSlide = 
     | CoverSlide 
+    | TableOfContentsSlide
     | ExecutiveOverviewSlide
     | CrisisSlide
     | SWOTSlide
@@ -344,6 +396,7 @@ export type PresentationSlide =
     | EquityAnalysisSlide
     | NodeAssessmentSlide
     | ScenarioComparisonSlide
+    | ComparisonTableSlide
     | RiskAssessmentSlide
     | RoadmapSlide
     | GanttChartRoadmapSlide
@@ -352,6 +405,8 @@ export type PresentationSlide =
     | PolicyLeversSlide
     | GovernanceFrameworkSlide
     | ProcessSlide
+    | NextStepsSlide
+    | ConclusionSlide
     | ReferencesSlide
     | ClosingSlide;
 
