@@ -491,7 +491,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     <div className="flex flex-col h-full">
       {/* PDF Export Container: Renders all slides off-screen when exporting */}
       {isExportingPdf && slides && (
-          <div style={{ position: 'fixed', top: '100vh', left: 0, zIndex: -1, pointerEvents: 'none', opacity: 0 }}>
+          <div style={{ position: 'fixed', top: 0, left: '-9999px', width: '1280px', height: '720px', zIndex: -50, pointerEvents: 'none', overflow: 'hidden' }}>
               <div style={{ width: '1280px' }}>
                   {slides.map((slide, index) => {
                       const coverSlide = slides.find(s => s.layout === 'Cover') as CoverSlide | undefined;

@@ -114,17 +114,24 @@ const SlideWrapper: React.FC<{
 }> = ({ children, className = '', style, reflectionText, referenceText, onReflectionUpdate, onReferenceUpdate, slideNumber }) => {
     const { presentationTemplateUrl } = useBranding();
     
-    // If a template URL is provided (and it's an image), use it as the background
-    const backgroundStyle: CSSProperties = presentationTemplateUrl && (presentationTemplateUrl.endsWith('.png') || presentationTemplateUrl.endsWith('.jpg') || presentationTemplateUrl.endsWith('.jpeg')) 
-        ? { backgroundImage: `url(${presentationTemplateUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', ...style }
-        : { ...style };
+    const isImageUrl = presentationTemplateUrl && (presentationTemplateUrl.endsWith('.png') || presentationTemplateUrl.endsWith('.jpg') || presentationTemplateUrl.endsWith('.jpeg'));
 
     return (
-        <div className={`w-full h-full bg-[var(--color-bg-light)] flex flex-col overflow-hidden relative font-sans ${className}`} style={backgroundStyle}>
+        <div className={`w-full h-full bg-[var(--color-bg-light)] flex flex-col overflow-hidden relative font-sans ${className}`} style={style}>
+            {/* Background Image */}
+            {isImageUrl && (
+                <img 
+                    src={presentationTemplateUrl} 
+                    alt="Presentation Template" 
+                    className="absolute inset-0 w-full h-full object-cover z-0" 
+                    crossOrigin="anonymous" 
+                    referrerPolicy="no-referrer"
+                />
+            )}
             {/* Dark overlay if using a custom background to ensure text readability */}
             {presentationTemplateUrl && <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none backdrop-blur-[1px]"></div>}
             
-            <div className={`relative z-10 w-full flex-grow flex flex-col p-8 lg:p-12 ${reflectionText !== undefined ? 'pb-6' : 'pb-16'} overflow-hidden`}>
+            <div className={`relative z-10 w-full flex-1 flex flex-col min-h-0 p-8 lg:p-12 ${reflectionText !== undefined ? 'pb-6' : 'pb-16'} overflow-hidden`}>
                 {children}
             </div>
 
@@ -204,6 +211,7 @@ const EditableImage: React.FC<EditableImageProps> = ({ src, alt, className, onUp
                 alt={alt} 
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                 referrerPolicy="no-referrer" 
+                crossOrigin="anonymous"
             />
             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-30">
                 <div className="bg-white/20 backdrop-blur-md p-3 rounded-full border border-white/30">
@@ -264,8 +272,6 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
     return (
         <SlideWrapper 
             className="justify-center items-center text-center relative overflow-hidden bg-black"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
             referenceText={slide.reference_doc || "Ref. Doc: Urban Strategy Framework v2.1"}
             onReferenceUpdate={v => onUpdate('reference_doc', v as string)}
             slideNumber={slideNumber}
@@ -438,7 +444,7 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
                 </div>
             </div>
 
-            <div style={dataAnim} className="grid grid-cols-3 gap-6 overflow-y-auto pr-2 custom-scrollbar">
+            <div style={dataAnim} className="grid grid-cols-3 gap-6 pr-2">
                 {ensureArray(slide.key_data_points).slice(0, 3).map((point, idx) => (
                     <div key={idx} className="bg-white/5 border-l-4 border-[var(--color-accent-dark)] p-5 rounded-r-2xl backdrop-blur-md">
                         <div className="text-3xl font-black tracking-tighter mb-1 text-current">
@@ -469,7 +475,7 @@ const SWOTSection = ({ title, items, color, field, onUpdate }: { title: string, 
             {title}
             <span className={`w-2 h-2 rounded-full ${color.replace('border-', 'bg-')}`}></span>
         </h3>
-        <div className="space-y-2 flex-grow overflow-y-auto pr-1 custom-scrollbar">
+        <div className="space-y-2 flex-grow pr-1">
             {ensureArray(items).slice(0, 6).map((item, idx) => (
                 <div key={idx} className="group">
                     <div className="font-bold text-xs uppercase mb-0.5 text-current group-hover:text-[var(--color-primary-medium)] transition-colors truncate">
@@ -526,7 +532,7 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
                 
                 <div style={listAnim} className="col-span-3 bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col">
                     <div className="text-[var(--color-primary-medium)] font-black text-xs uppercase mb-4 tracking-widest border-b border-white/10 pb-2">Prioritization List</div>
-                    <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-3 pr-2">
                         {ensureArray(slide.strengths).concat(ensureArray(slide.opportunities)).slice(0, 6).map((item, i) => (
                             <div key={i} className="flex gap-3 items-start">
                                 <div className="w-5 h-5 rounded bg-[var(--color-primary-medium)]/20 flex items-center justify-center text-sm font-bold text-[var(--color-primary-medium)] shrink-0">{i + 1}</div>
@@ -829,7 +835,7 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
                 <Editable value={slide.title || 'Equity & Inclusion Analysis'} onUpdate={v => onUpdate('title', v)} />
             </h2>
             <div className="grid grid-cols-12 gap-6 flex-grow overflow-hidden">
-                <div style={leftAnim} className="col-span-4 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+                <div style={leftAnim} className="col-span-4 space-y-3 pr-2">
                     <div className="text-[var(--color-primary-medium)] font-black text-[10px] uppercase mb-2 tracking-widest">Distributional Impacts</div>
                     <div className="space-y-3">
                         {ensureArray(slide.metrics).slice(0, 4).map((metric, i) => (
@@ -870,7 +876,7 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
                 
                 <div style={rightAnim} className="col-span-4 bg-white/5 border border-white/10 rounded-3xl p-5 backdrop-blur-sm flex flex-col overflow-hidden">
                     <div className="text-[var(--color-primary-medium)] font-black text-[10px] uppercase mb-4 tracking-widest">Mitigation Strategies</div>
-                    <div className="space-y-3 flex-grow overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-3 flex-grow pr-2">
                         {ensureArray(slide.mitigation_strategies).slice(0, 4).map((item, i) => (
                             <div key={i} className="bg-black/20 p-3 rounded-xl border border-white/5">
                                 <div className="text-[10px] text-[var(--color-primary-medium)] font-bold uppercase mb-1">
@@ -1152,7 +1158,7 @@ const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate
                 </div>
                 
                 <div className="flex-grow grid grid-cols-2 gap-6 overflow-hidden">
-                    <div className="space-y-4 overflow-y-auto pr-4 custom-scrollbar">
+                    <div className="space-y-4 pr-4">
                         {ensureArray(slide.risks).slice(0, 4).map((risk, i) => {
                             const riskAnimation = getAnimationStyles(isActive, 350 + i * 100, 'fade-in-up', disableAnimations);
                             return (
@@ -1375,7 +1381,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                     </div>
 
                     {/* Chart Body */}
-                    <div className="flex-grow pr-2 pb-2 overflow-y-auto custom-scrollbar">
+                    <div className="flex-grow pr-2 pb-2">
                         <div className="relative min-h-full flex flex-col">
                             {/* Vertical grid lines */}
                             <div className="absolute top-0 left-[20%] w-[80%] h-full grid" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
@@ -1448,7 +1454,7 @@ const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpda
             >
                 <Editable value={slide.title || 'Projected Strategic Impact'} onUpdate={v => onUpdate('title', v)} />
             </h2>
-            <div className="flex flex-col gap-4 flex-grow overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex flex-col gap-4 flex-grow pr-2">
                 {ensureArray(slide.impacts).slice(0, 3).map((impact, i) => {
                     const impactAnim = getAnimationStyles(isActive, 300 + i * 150, 'fade-in-right', disableAnimations);
                     return (
@@ -1515,7 +1521,7 @@ const FiscalResponsibilitySlideLayout: React.FC<{ slide: FiscalFrameworkSlide, o
                 <Editable value={slide.title || 'Fiscal Responsibility Matrix'} onUpdate={v => onUpdate('title', v)} />
             </h2>
             <div className="grid grid-cols-2 gap-8 flex-grow overflow-hidden">
-                <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-4 pr-2">
                     {ensureArray(slide.cost_items).slice(0, 3).map((item, i) => {
                         const sourceAnim = getAnimationStyles(isActive, 300 + i * 150, 'fade-in-left', disableAnimations);
                         return (
@@ -1587,7 +1593,7 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
             </div>
             
             <div className="grid grid-cols-12 gap-8 flex-grow overflow-hidden">
-                <div style={contentAnim} className="col-span-8 grid grid-cols-2 gap-6 overflow-y-auto pr-2 custom-scrollbar">
+                <div style={contentAnim} className="col-span-8 grid grid-cols-2 gap-6 pr-2">
                     {ensureArray(slide.recommendations).slice(0, 4).map((rec, i) => (
                         <div key={i} className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm flex flex-col hover:bg-white/10 transition-colors group">
                             <div className="text-[var(--color-primary-medium)] font-black text-[10px] uppercase mb-3 tracking-[0.2em] opacity-60 group-hover:opacity-100 transition-opacity">Recommendation 0{i + 1}</div>
@@ -1652,7 +1658,7 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
             
             <div className="grid grid-cols-12 gap-8 flex-grow overflow-hidden">
                 <div style={leftAnim} className="col-span-7 flex flex-col gap-4 overflow-hidden">
-                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm flex-grow overflow-y-auto custom-scrollbar">
+                    <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm flex-grow">
                         <div className="text-[var(--color-primary-medium)] font-black text-xs uppercase mb-6 tracking-[0.3em] opacity-60">Governance Architecture</div>
                         <div className="space-y-6">
                             <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
@@ -1799,8 +1805,6 @@ const ClosingSlideLayout: React.FC<{ slide: ClosingSlide, onUpdate: (field: stri
     return (
         <SlideWrapper 
             className="p-0 overflow-hidden"
-            reflectionText={slide.analytic_reflection}
-            onReflectionUpdate={v => onUpdate('analytic_reflection', v as string)}
             referenceText={slide.reference_doc || "Ref. Doc: Urban Strategy Framework v2.1"}
             onReferenceUpdate={v => onUpdate('reference_doc', v as string)}
             slideNumber={slideNumber}
