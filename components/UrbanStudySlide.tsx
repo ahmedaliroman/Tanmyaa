@@ -333,14 +333,18 @@ const Editable: React.FC<{
   const content = useMarkdown ? renderWithBold(safeValue) : safeValue;
 
   return (
-    <Component
-      contentEditable={!useMarkdown}
-      suppressContentEditableWarning
-      onBlur={handleBlur}
-      className={`outline-none focus:ring-2 focus:ring-[var(--color-primary-medium)] focus:bg-white/10 hover:bg-white/5 rounded-sm p-1 -m-1 transition-all break-words relative group/editable ${className}`}
-      dangerouslySetInnerHTML={useMarkdown ? undefined : { __html: safeValue }}
-    >
-      {useMarkdown ? content : null}
+    <Component className={`relative group/editable ${className}`}>
+      {useMarkdown ? (
+        <span className="outline-none break-words">{content}</span>
+      ) : (
+        <span
+          contentEditable
+          suppressContentEditableWarning
+          onBlur={handleBlur}
+          className="outline-none focus:ring-2 focus:ring-[var(--color-primary-medium)] focus:bg-white/10 hover:bg-white/5 rounded-sm p-1 -m-1 transition-all break-words block w-full"
+          dangerouslySetInnerHTML={{ __html: safeValue }}
+        />
+      )}
       {!useMarkdown && (
         <div className="absolute -top-4 -right-1 opacity-0 group-hover/editable:opacity-100 transition-opacity pointer-events-none">
             <div className="bg-[var(--color-primary-medium)] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg uppercase tracking-tighter">Edit</div>

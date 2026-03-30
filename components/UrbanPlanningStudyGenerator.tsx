@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '../services/vertexService';
-import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo } from '../types';
+import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo, CoverSlide } from '../types';
 import UrbanStudyInputForm from './UrbanStudyInputForm';
 import UrbanStudySlide from './UrbanStudySlide';
 import SlideNavigator from './SlideNavigator';
@@ -313,11 +313,11 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             }
 
             const dataUrl = await toJpeg(slideElement, {
-                quality: 0.95,
+                quality: 1.0,
                 cacheBust: true,
                 width: slideWidth,
                 height: slideHeight,
-                pixelRatio: 2,
+                pixelRatio: 3,
             });
 
             const pptxSlide = pptx.addSlide();
