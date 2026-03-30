@@ -30,7 +30,6 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   authError: string | null;
-  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   deductCredits: (amount: number, description?: string, fileUrl?: string, type?: string) => Promise<boolean>;
@@ -266,16 +265,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) throw error;
-  };
-
   const signOut = async () => {
     setIsLoggingOut(true);
     
@@ -315,7 +304,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       profile, 
       loading, 
       authError, 
-      signInWithGoogle, 
       signOut, 
       refreshProfile, 
       deductCredits, 
