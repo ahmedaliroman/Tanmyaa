@@ -1,13 +1,13 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generateCapacityBuildingProgram, getCapacityBuildingSuggestions } from '@/services/geminiService';
-import type { CapacityBuildingProgram, BrandingInfo } from '../types';
+import type { CapacityBuildingProgram, BrandingInfo } from '@/types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
-import { useCompanyProfile } from '../hooks/useCompanyProfile';
-import { useAuth } from '../context/AuthContext';
+import { useCompanyProfile } from '@/hooks/useCompanyProfile';
+import { useAuth } from '@/context/AuthContext';
 import AISuggestionButton from './AISuggestionButton';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (

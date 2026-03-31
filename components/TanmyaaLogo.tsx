@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useBranding } from '../hooks/useBranding';
+import { useBranding } from '@/hooks/useBranding';
 
 interface TanmyaaLogoProps {
   className?: string;

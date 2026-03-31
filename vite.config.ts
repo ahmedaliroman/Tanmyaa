@@ -27,8 +27,9 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: [
-          { find: '@', replacement: path.resolve(__dirname, '.') }
-        ]
+          { find: /^@\/(.*)/, replacement: path.resolve(__dirname, './$1') }
+        ],
+        extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
       }
     };
 });

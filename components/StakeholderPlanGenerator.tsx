@@ -1,12 +1,12 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generateStakeholderPlan, getStakeholderContextSuggestions } from '@/services/geminiService';
-import type { StakeholderPlan, StakeholderGroup, BrandingInfo } from '../types';
+import type { StakeholderPlan, StakeholderGroup, BrandingInfo } from '@/types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
-import { useCompanyProfile } from '../hooks/useCompanyProfile';
-import { useAuth } from '../context/AuthContext';
+import { useCompanyProfile } from '@/hooks/useCompanyProfile';
+import { useAuth } from '@/context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import AISuggestionButton from './AISuggestionButton';
 

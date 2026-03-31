@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { useCompanyProfile } from '../hooks/useCompanyProfile';
+import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 
 const CompanyProfileManager: React.FC = () => {
     const { companyProfile, saveProfile, removeProfile, isLoaded } = useCompanyProfile();

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { motion } from 'motion/react';
 import { CheckCircle2, AlertCircle, Lock, Eye, EyeOff, Loader } from 'lucide-react';
 

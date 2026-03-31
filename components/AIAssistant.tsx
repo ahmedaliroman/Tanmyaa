@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { streamAssistantResponse } from '@/services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface Message {
     sender: 'user' | 'ai';

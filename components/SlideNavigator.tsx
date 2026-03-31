@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { PresentationSlide } from '../types';
+import type { PresentationSlide } from '@/types';
 
 interface SlideNavigatorProps {
   slides: PresentationSlide[];

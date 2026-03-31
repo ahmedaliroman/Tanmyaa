@@ -1,13 +1,13 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { generateRFP, getRFPSuggestions } from '@/services/geminiService';
-import { exportRFPToDocx } from '../services/docxGenerator';
-import { useBranding } from '../hooks/useBranding';
-import type { RFPContent, BrandingInfo } from '../types';
+import { exportRFPToDocx } from '@/services/docxGenerator';
+import { useBranding } from '@/hooks/useBranding';
+import type { RFPContent, BrandingInfo } from '@/types';
 import FileUpload from './FileUpload';
 import GeneratorShell from './GeneratorShell';
-import { useCompanyProfile } from '../hooks/useCompanyProfile';
-import { useAuth } from '../context/AuthContext';
+import { useCompanyProfile } from '@/hooks/useCompanyProfile';
+import { useAuth } from '@/context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import AISuggestionButton from './AISuggestionButton';
 import jsPDF from 'jspdf';

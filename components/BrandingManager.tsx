@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { useBranding } from '../hooks/useBranding';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
+import { useBranding } from '@/hooks/useBranding';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { FileText, Upload, X, Check, Image as ImageIcon } from 'lucide-react';
 
 const BrandingManager: React.FC = () => {

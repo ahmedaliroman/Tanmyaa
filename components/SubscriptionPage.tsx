@@ -3,8 +3,8 @@ import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import { toast } from 'sonner';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const CheckIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-blue-400" }) => (
     <svg className={className} fill="none" viewBox="0 0 24" stroke="currentColor">

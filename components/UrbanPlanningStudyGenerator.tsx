@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '@/services/geminiService';
-import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo } from '../types';
+import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo } from '@/types';
 import UrbanStudyInputForm from './UrbanStudyInputForm';
 import UrbanStudySlide from './UrbanStudySlide';
 import SlideNavigator from './SlideNavigator';
@@ -9,8 +9,8 @@ import Loader from './Loader';
 import ErrorMessage from './ErrorMessage';
 import GeneratorWelcome from './Welcome';
 
-import { useCompanyProfile } from '../hooks/useCompanyProfile';
-import { useAuth } from '../context/AuthContext';
+import { useCompanyProfile } from '@/hooks/useCompanyProfile';
+import { useAuth } from '@/context/AuthContext';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import pptxgen from 'pptxgenjs';

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { TanmyaaLogo } from './TanmyaaLogo';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { AuthModal } from './AuthModal';
 import { LogOut, CreditCard, Clock, Gift } from 'lucide-react';
 import UsageHistoryModal from './UsageHistoryModal';

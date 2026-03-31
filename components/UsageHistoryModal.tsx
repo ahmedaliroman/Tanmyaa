@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchUsageHistory } from '@/services/geminiService';
-import { UsageHistory } from '../types';
+import { UsageHistory } from '@/types';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Clock, CreditCard, CheckCircle2 } from 'lucide-react';
 
