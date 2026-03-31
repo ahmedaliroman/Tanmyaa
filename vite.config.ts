@@ -26,9 +26,9 @@ export default defineConfig(({ mode }) => {
         'global': 'globalThis',
       },
       resolve: {
-        alias: [
-          { find: /^@\/(.*)/, replacement: path.resolve(__dirname, './$1') }
-        ],
+        alias: {
+          '@': path.resolve(__dirname, './'),
+        },
         extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
       }
     };

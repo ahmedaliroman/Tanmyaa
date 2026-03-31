@@ -1,6 +1,6 @@
 import * as docx from 'docx';
 import saveAs from 'file-saver';
-import type { RFPContent } from '../types';
+import type { RFPContent } from '@/types';
 
 const TanmyaaLogoDefault = `iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAcSURBVHhe7cEBAQAAAIIg/69uSEABAAAAAAAAAAAAAAB8G4IAAAE2lV8dAAAAAElFTkSuQmCC`;
 
