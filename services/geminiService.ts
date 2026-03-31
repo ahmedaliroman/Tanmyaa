@@ -364,8 +364,12 @@ export const generatePresentation = async (
     - Vision: { layout: "Vision", title, vision_statement, image_prompt }
     - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}], image_prompt }
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
-    - Roadmap: { layout: "Roadmap", phases: [{title, timeline, action_steps: [{action, kpi}], outcome}] }
-    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year, timeline_end_year, phases: [{name, deliverables: [{name, start_quarter, end_quarter, kpi}]}] }
+    - Roadmap: { layout: "Roadmap", phases: [{title, timeline (e.g. "Phase 1: 2025-2026"), action_steps: [{action, kpi}], outcome}] }
+    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year (number), timeline_end_year (number), phases: [{name, deliverables: [{name, start_quarter (1-4), end_quarter (1-4), kpi}]}] }
+    
+    CRITICAL: For Roadmap and GanttChartRoadmap, you MUST provide realistic, specific timeline data. DO NOT leave the 'timeline' or 'start_quarter'/'end_quarter' fields empty.
+    - For Roadmap: 'timeline' should be a string like "Q1 2025 - Q4 2026".
+    - For GanttChartRoadmap: 'timeline_start_year' and 'timeline_end_year' must be valid years (e.g. 2025, 2030). 'start_quarter' and 'end_quarter' must be numbers 1, 2, 3, or 4.
     - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
     - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
     - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], analytic_reflection }

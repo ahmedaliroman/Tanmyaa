@@ -1,4 +1,5 @@
 import React, { CSSProperties, useEffect, useState } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
 import type { 
     PresentationSlide, 
     CoverSlide, 
@@ -128,15 +129,23 @@ const EditableImage: React.FC<EditableImageProps> = ({ src, alt, className, onUp
     };
 
     const isAbsolute = className?.includes('absolute');
+    const hasValidSrc = src && src.length > 0 && !src.includes('undefined') && !src.includes('null') && !src.includes('placeholder');
 
     return (
         <div className={`${isAbsolute ? '' : 'relative'} group cursor-pointer overflow-hidden ${className}`} onClick={handleClick}>
-            <img 
-                src={src} 
-                alt={alt} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                referrerPolicy="no-referrer" 
-            />
+            {hasValidSrc ? (
+                <img 
+                    src={src} 
+                    alt={alt} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                    referrerPolicy="no-referrer" 
+                />
+            ) : (
+                <div className="w-full h-full bg-white/5 flex flex-col items-center justify-center border-2 border-dashed border-white/10 text-white/30 p-4 text-center">
+                    <ImageIcon className="w-8 h-8 mb-2 opacity-20" />
+                    <span className="text-[10px] uppercase tracking-widest">{alt || 'Image Placeholder'}</span>
+                </div>
+            )}
             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-30">
                 <div className="bg-white/20 backdrop-blur-md p-3 rounded-full border border-white/30">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -606,9 +615,11 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
 const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const sourcesAnimation = getAnimationStyles(isActive, 400, 'fade-in-up', disableAnimations);
+    const sources = ensureArray(slide.sources).slice(0, 8);
+    const isMany = sources.length > 4;
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
+        <SlideWrapper className="p-12 flex flex-col">
             <EditableImage 
                 src={slide.image_url || imageUrls['references_image'] || ''} 
                 alt="References background" 
@@ -616,28 +627,31 @@ const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || 'Strategic References'} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
-            <div className="relative z-20 flex-grow pr-4" style={sourcesAnimation}>
-                <div className={`grid grid-cols-1 ${ensureArray(slide.sources).length > 4 ? 'gap-2' : 'gap-4'}`}>
-                    {ensureArray(slide.sources).slice(0, 6).map((source, i) => (
-                        <div key={i} className={`bg-black/40 backdrop-blur-md ${ensureArray(slide.sources).length > 4 ? 'p-2' : 'p-4'} rounded-lg border border-white/10 hover:bg-white/10 transition-all group`}>
+            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || 'Strategic References'} className="text-4xl font-extrabold tracking-tighter mb-6 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
+            <div className="relative z-20 flex-grow pr-4 pb-6 overflow-hidden" style={sourcesAnimation}>
+                <div className={`grid ${isMany ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                    {sources.map((source, i) => (
+                        <div key={i} className={`bg-black/40 backdrop-blur-md ${isMany ? 'p-3' : 'p-4'} rounded-lg border border-white/10 hover:bg-white/10 transition-all group`}>
                             <div className="flex items-start justify-between mb-1">
-                                <div className="flex-grow">
-                                    <Editable as="p" value={source.title} onUpdate={v => onUpdate(`sources[${i}].title`, v)} className={`${ensureArray(slide.sources).length > 4 ? 'text-sm' : 'text-lg'} font-bold text-gray-100 group-hover:text-[var(--color-primary-medium)] transition-colors`} />
+                                <div className="flex-grow min-w-0">
+                                    <Editable as="p" value={source.title} onUpdate={v => onUpdate(`sources[${i}].title`, v)} className={`${isMany ? 'text-xs' : 'text-base'} font-bold text-gray-100 group-hover:text-[var(--color-primary-medium)] transition-colors truncate`} />
                                     <div className="flex items-center space-x-4 mt-0.5">
-                                        <Editable as="span" value={source.author} onUpdate={v => onUpdate(`sources[${i}].author`, v)} className="text-[10px] text-white/40" />
+                                        <Editable as="span" value={source.author} onUpdate={v => onUpdate(`sources[${i}].author`, v)} className="text-[9px] text-white/40 truncate" />
                                         <span className="text-white/20">•</span>
-                                        <Editable as="span" value={source.year} onUpdate={v => onUpdate(`sources[${i}].year`, v)} className="text-[10px] text-white/40" />
+                                        <Editable as="span" value={source.year} onUpdate={v => onUpdate(`sources[${i}].year`, v)} className="text-[9px] text-white/40" />
                                     </div>
                                 </div>
                             </div>
-                            <div className={`${ensureArray(slide.sources).length > 4 ? 'mt-1 pl-2' : 'mt-4 pl-4'} border-l-2 border-[var(--color-primary-medium)]/30`}>
-                                <p className="text-[8px] uppercase tracking-widest text-white/40 mb-0.5">Strategic Relevance</p>
-                                <Editable as="p" value={source.relevance} onUpdate={v => onUpdate(`sources[${i}].relevance`, v)} className={`${(source.relevance?.length || 0) > 100 ? 'text-[10px]' : 'text-xs'} text-white/70 italic`} />
+                            <div className={`${isMany ? 'mt-1 pl-2' : 'mt-3 pl-4'} border-l-2 border-[var(--color-primary-medium)]/30`}>
+                                <p className="text-[7px] uppercase tracking-widest text-white/40 mb-0.5">Strategic Relevance</p>
+                                <Editable as="p" value={source.relevance} onUpdate={v => onUpdate(`sources[${i}].relevance`, v)} className={`${isMany ? 'text-[9px]' : 'text-[10px]'} text-white/70 italic leading-tight line-clamp-2`} />
                             </div>
                         </div>
                     ))}
                 </div>
+            </div>
+            <div className="absolute bottom-4 right-8 text-[9px] font-mono text-white/20 z-20">
+                TANMYAA STRATEGIC DOCTRINE // REF_BASE_V1.0
             </div>
         </SlideWrapper>
     );
@@ -746,10 +760,10 @@ const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: stri
                     return (
                         <div key={i} className="w-1/3 bg-black/40 backdrop-blur-md p-6 rounded-xl border border-white/10 flex flex-col flex-1" style={phaseAnimation}>
                             <div className="flex items-center mb-4 flex-shrink-0">
-                                <div className="w-10 h-10 bg-[var(--color-primary-medium)] text-white rounded-full flex items-center justify-center font-bold text-lg mr-4">{String(i + 1).padStart(2, '0')}</div>
-                                <div>
-                                    <Editable as="h3" value={phase.title} onUpdate={v => onUpdate(`phases[${i}].title`, v)} className="font-extrabold text-xl text-white" />
-                                    <Editable as="p" value={phase.timeline} onUpdate={v => onUpdate(`phases[${i}].timeline`, v)} className="text-xs text-white/50 font-semibold uppercase" />
+                                <div className="w-10 h-10 bg-[var(--color-primary-medium)] text-white rounded-full flex items-center justify-center font-bold text-lg mr-4 flex-shrink-0">{String(i + 1).padStart(2, '0')}</div>
+                                <div className="min-w-0">
+                                    <Editable as="h3" value={phase.title} onUpdate={v => onUpdate(`phases[${i}].title`, v)} className="font-extrabold text-xl text-white truncate" />
+                                    <Editable as="p" value={phase.timeline} onUpdate={v => onUpdate(`phases[${i}].timeline`, v)} className="text-xs text-white/50 font-semibold uppercase truncate" />
                                 </div>
                             </div>
                             <div className="flex-grow min-h-0 pr-2">
@@ -787,44 +801,26 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
         }
         return 0;
     };
-    const startYear = parseYear(slide.timeline_start_year);
-    const endYear = parseYear(slide.timeline_end_year);
-    if (!startYear || !endYear || endYear < startYear) {
-        return (
-            <SlideWrapper className="p-12 items-center justify-center text-white/50" style={{background: 'linear-gradient(to bottom, #1B3C53, #102434)'}}>
-                <div className="text-center">
-                    <p className="mb-4">Invalid or missing timeline data.</p>
-                    <div className="flex items-center justify-center space-x-4 bg-white/5 p-4 rounded-lg">
-                        <div className="flex flex-col items-start">
-                            <span className="text-[10px] uppercase opacity-50">Start Year</span>
-                            <Editable value={String(slide.timeline_start_year || 2024)} onUpdate={v => onUpdate('timeline_start_year', parseInt(v) || 2024)} className="text-white font-bold" />
-                        </div>
-                        <div className="flex flex-col items-start">
-                            <span className="text-[10px] uppercase opacity-50">End Year</span>
-                            <Editable value={String(slide.timeline_end_year || 2026)} onUpdate={v => onUpdate('timeline_end_year', parseInt(v) || 2026)} className="text-white font-bold" />
-                        </div>
-                    </div>
-                </div>
-            </SlideWrapper>
-        );
-    }
-    const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+    const startYear = parseYear(slide.timeline_start_year) || 2024;
+    const endYear = parseYear(slide.timeline_end_year) || 2026;
+    
+    const years = Array.from({ length: Math.max(1, endYear - startYear + 1) }, (_, i) => startYear + i);
     const totalQuarters = years.length * 4;
 
-    const parseQuarter = (quarterStr: string): number => {
-        if (typeof quarterStr !== 'string') {
-            console.error("parseQuarter: quarterStr is not a string", quarterStr);
-            return -1;
-        }
-        if (!quarterStr.includes(' ')) return -1;
-        const parts = quarterStr.split(' ');
-        const quarter = parts[0];
-        const year = parts[parts.length - 1]; // Handle cases like "Q1 2025" or "Q1 - 2025"
-        const yearInt = parseInt(year);
-        if (isNaN(yearInt)) return -1;
+    const parseQuarter = (quarterStr: string | number | undefined | null): number => {
+        if (typeof quarterStr !== 'string' || !quarterStr) return -1;
+        
+        // Handle "Q1 2025", "Q1-2025", "Quarter 1 2025", "2025 Q1"
+        const qMatch = quarterStr.match(/Q(\d)/i) || quarterStr.match(/Quarter\s*(\d)/i);
+        const yMatch = quarterStr.match(/(\d{4})/);
+        
+        if (!qMatch || !yMatch) return -1;
+        
+        const quarterIndex = parseInt(qMatch[1]) - 1;
+        const yearInt = parseInt(yMatch[1]);
         const yearIndex = yearInt - startYear;
-        const quarterIndex = parseInt(quarter.replace(/\D/g, '')) - 1;
-        if (isNaN(quarterIndex) || quarterIndex < 0 || quarterIndex > 3) return -1;
+        
+        if (isNaN(quarterIndex) || quarterIndex < 0 || quarterIndex > 3 || isNaN(yearIndex)) return -1;
         return yearIndex * 4 + quarterIndex;
     };
 
@@ -1059,22 +1055,29 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Required Policy Levers"} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
-            <div className="relative z-20 space-y-4 flex-grow pr-4">
+            <div className="relative z-20 space-y-4 flex-grow pr-4 overflow-hidden">
                 {(slide.recommendations || []).length > 0 ? (slide.recommendations || []).slice(0, 3).map((rec, i) => {
                     const recommendationAnimation = getAnimationStyles(isActive, 350 + i * 150, 'fade-in-up', disableAnimations);
-                    const isLong = (rec.strategy?.length || 0) + (rec.expected_impact?.length || 0) + (rec.measurement_framework?.length || 0) > 400;
+                    const strategyLen = rec.strategy?.length || 0;
+                    const impactLen = rec.expected_impact?.length || 0;
+                    const measurementLen = rec.measurement_framework?.length || 0;
+                    const totalLen = strategyLen + impactLen + measurementLen;
+                    
+                    const isVeryLong = totalLen > 600;
+                    const isLong = totalLen > 400;
+                    
                     return (
-                        <div key={i} className={`bg-black/40 backdrop-blur-md ${isLong ? 'p-4' : 'p-6'} rounded-lg border border-white/10`} style={recommendationAnimation}>
-                            <Editable as="h3" value={rec.title} onUpdate={v => onUpdate(`recommendations[${i}].title`, v)} className={`font-bold ${isLong ? 'text-lg' : 'text-xl'} text-white mb-2`} />
+                        <div key={i} className={`bg-black/40 backdrop-blur-md ${isVeryLong ? 'p-3' : isLong ? 'p-4' : 'p-6'} rounded-lg border border-white/10`} style={recommendationAnimation}>
+                            <Editable as="h3" value={rec.title} onUpdate={v => onUpdate(`recommendations[${i}].title`, v)} className={`font-bold ${isVeryLong ? 'text-base' : isLong ? 'text-lg' : 'text-xl'} text-white mb-2 truncate`} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-white/50 mb-1">Strategy & Impact</p>
-                                    <Editable as="p" value={rec.strategy} onUpdate={v => onUpdate(`recommendations[${i}].strategy`, v)} className={`${isLong ? 'text-[11px]' : 'text-sm'} mb-1 text-white/80`} useMarkdown />
-                                    <Editable as="p" value={rec.expected_impact} onUpdate={v => onUpdate(`recommendations[${i}].expected_impact`, v)} className={`${isLong ? 'text-[11px]' : 'text-sm'} font-semibold text-white`} useMarkdown />
+                                    <p className="text-[9px] font-bold uppercase text-white/50 mb-1">Strategy & Impact</p>
+                                    <Editable as="p" value={rec.strategy} onUpdate={v => onUpdate(`recommendations[${i}].strategy`, v)} className={`${isVeryLong ? 'text-[10px]' : isLong ? 'text-[11px]' : 'text-sm'} mb-1 text-white/80 leading-tight`} useMarkdown />
+                                    <Editable as="p" value={rec.expected_impact} onUpdate={v => onUpdate(`recommendations[${i}].expected_impact`, v)} className={`${isVeryLong ? 'text-[10px]' : isLong ? 'text-[11px]' : 'text-sm'} font-semibold text-white leading-tight`} useMarkdown />
                                 </div>
                                 <div>
-                                     <p className="text-[10px] font-bold uppercase text-white/50 mb-1">Measurement Framework</p>
-                                    <Editable as="p" value={rec.measurement_framework} onUpdate={v => onUpdate(`recommendations[${i}].measurement_framework`, v)} className={`${isLong ? 'text-[11px]' : 'text-sm'} text-white/80`} />
+                                     <p className="text-[9px] font-bold uppercase text-white/50 mb-1">Measurement Framework</p>
+                                    <Editable as="p" value={rec.measurement_framework} onUpdate={v => onUpdate(`recommendations[${i}].measurement_framework`, v)} className={`${isVeryLong ? 'text-[10px]' : isLong ? 'text-[11px]' : 'text-sm'} text-white/80 leading-tight`} />
                                 </div>
                             </div>
                         </div>
@@ -1106,36 +1109,35 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Governance Framework"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
-            <div className="relative z-20 flex-grow grid grid-cols-2 gap-10 min-h-0">
-                <div className="space-y-6">
-                    <div className="bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/10" style={leadAgencyAnimation}>
-                        <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-2">Lead Agency</h3>
-                        <Editable as="p" value={slide.lead_agency?.name} onUpdate={v => onUpdate('lead_agency.name', v)} className="text-base font-semibold text-white" />
-                        <Editable as="p" value={slide.lead_agency?.rationale} onUpdate={v => onUpdate('lead_agency.rationale', v)} className="text-xs text-white/70 mt-1" />
+            <div className="relative z-20 flex-grow grid grid-cols-2 gap-10 min-h-0 overflow-hidden">
+                <div className="space-y-4">
+                    <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10" style={leadAgencyAnimation}>
+                        <h3 className="font-bold text-base text-[var(--color-accent-light)] mb-1">Lead Agency</h3>
+                        <Editable as="p" value={slide.lead_agency?.name} onUpdate={v => onUpdate('lead_agency.name', v)} className="text-sm font-semibold text-white truncate" />
+                        <Editable as="p" value={slide.lead_agency?.rationale} onUpdate={v => onUpdate('lead_agency.rationale', v)} className="text-[10px] text-white/70 mt-0.5 leading-tight" />
                     </div>
-                     <div className="bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/10" style={fundingModelAnimation}>
-                        <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-2">Funding Model</h3>
-                        <Editable as="p" value={slide.funding_model} onUpdate={v => onUpdate('funding_model', v)} className="text-sm text-white" />
+                     <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10" style={fundingModelAnimation}>
+                        <h3 className="font-bold text-base text-[var(--color-accent-light)] mb-1">Funding Model</h3>
+                        <Editable as="p" value={slide.funding_model} onUpdate={v => onUpdate('funding_model', v)} className="text-xs text-white leading-tight" />
                     </div>
-                     <div className="bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/10" style={regulatoryChangesAnimation}>
-                        <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-2">Regulatory Changes</h3>
-                         <ul className="list-disc list-inside space-y-1 text-sm text-white/90">
-                            {(slide.regulatory_changes || []).length > 0 ? (slide.regulatory_changes || []).map((change, i) => <li key={i}><Editable as="span" value={change} onUpdate={v => onUpdate(`regulatory_changes[${i}]`, v)} /></li>) : (
-                                <p className="text-white/40 italic list-none">No regulatory changes identified.</p>
-                            )}
+                     <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10" style={regulatoryChangesAnimation}>
+                        <h3 className="font-bold text-base text-[var(--color-accent-light)] mb-1">Regulatory Changes</h3>
+                         <ul className="list-disc list-inside space-y-0.5 text-xs text-white/90">
+                            {(slide.regulatory_changes || []).slice(0, 4).map((change, i) => <li key={i} className="truncate"><Editable as="span" value={change} onUpdate={v => onUpdate(`regulatory_changes[${i}]`, v)} /></li>)}
+                            {(slide.regulatory_changes || []).length === 0 && <p className="text-white/40 italic list-none">No regulatory changes identified.</p>}
                         </ul>
                     </div>
                 </div>
                  <div className="flex flex-col min-h-0">
-                    <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-2 flex-shrink-0" style={stakeholderRolesAnimation}>Key Stakeholder Roles</h3>
-                    <div className="space-y-1 pr-2 flex-grow">
-                        {(slide.stakeholders || []).length > 0 ? (slide.stakeholders || []).slice(0, 6).map((s, i) => {
+                    <h3 className="font-bold text-base text-[var(--color-accent-light)] mb-2 flex-shrink-0" style={stakeholderRolesAnimation}>Key Stakeholder Roles</h3>
+                    <div className="space-y-0.5 pr-2 flex-grow overflow-hidden">
+                        {(slide.stakeholders || []).length > 0 ? (slide.stakeholders || []).slice(0, 8).map((s, i) => {
                             const stakeholderAnimation = getAnimationStyles(isActive, 500 + i * 75, 'fade-in-up', disableAnimations);
-                            const isLong = (slide.stakeholders || []).length > 4;
+                            const isMany = (slide.stakeholders || []).length > 5;
                             return (
-                                <div key={i} className={`flex items-start ${isLong ? 'text-xs' : 'text-sm'} border-b border-white/10 py-1.5`} style={stakeholderAnimation}>
-                                    <Editable as="p" value={s.name} onUpdate={v => onUpdate(`stakeholders[${i}].name`, v)} className="w-1/3 font-semibold text-white/90" />
-                                    <Editable as="p" value={s.role} onUpdate={v => onUpdate(`stakeholders[${i}].role`, v)} className="w-2/3 text-white/70" />
+                                <div key={i} className={`flex items-start ${isMany ? 'text-[10px]' : 'text-xs'} border-b border-white/10 py-1`} style={stakeholderAnimation}>
+                                    <Editable as="p" value={s.name} onUpdate={v => onUpdate(`stakeholders[${i}].name`, v)} className="w-1/3 font-semibold text-white/90 truncate mr-2" />
+                                    <Editable as="p" value={s.role} onUpdate={v => onUpdate(`stakeholders[${i}].role`, v)} className="w-2/3 text-white/70 leading-tight" />
                                 </div>
                             )
                         }) : (
