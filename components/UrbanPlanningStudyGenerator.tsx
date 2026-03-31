@@ -12,7 +12,7 @@ import GeneratorWelcome from './Welcome';
 import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useAuth } from '@/context/AuthContext';
 import jsPDF from 'jspdf';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import pptxgen from 'pptxgenjs';
 
 interface ChatMessage {
@@ -245,21 +245,30 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     });
 
     try {
+        if (!slides || slides.length === 0) {
+            throw new Error("No slides available to export.");
+        }
+
         for (let i = 0; i < slides.length; i++) {
             setPdfExportProgress(i + 1);
             
             const slideElement = document.getElementById(`export-slide-container-${i}`);
             if (!slideElement) {
-                console.warn(`Export slide element ${i} not found.`);
-                continue;
+                throw new Error(`Slide ${i + 1} container not found in the DOM.`);
             }
 
-            const dataUrl = await toPng(slideElement, {
-                cacheBust: true,
+            // Use html2canvas for better reliability with complex CSS and images
+            const canvas = await html2canvas(slideElement, {
+                scale: 1.5,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#0A0A0A',
                 width: slideWidth,
                 height: slideHeight,
-                pixelRatio: 1.5,
+                logging: false
             });
+
+            const dataUrl = canvas.toDataURL('image/png');
 
             if (i > 0) {
                 pdf.addPage([slideWidth, slideHeight], 'landscape');
@@ -269,7 +278,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
         pdf.save('Tanmyaa_Presentation.pdf');
     } catch (error) {
         console.error('Error during PDF export:', error);
-        setError(`Failed to export slide ${pdfExportProgress}. Please try again.`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        setError(`Export Failed: ${errorMessage}. Please try again.`);
     } finally {
         setIsExportingPdf(false);
         setPdfExportProgress(0);
@@ -290,25 +300,52 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             const pptxSlide = pptx.addSlide();
             pptxSlide.background = { color: '0A0A0A' };
 
+            // Determine background image
+            let bgImage = slide.image_url;
+            if (!bgImage) {
+                switch (slide.layout) {
+                    case 'Cover': bgImage = imageUrls['cover_image']; break;
+                    case 'Crisis': bgImage = imageUrls['crisis_image']; break;
+                    case 'Closing': bgImage = imageUrls['closing_image']; break;
+                    case 'CaseStudyDeepDive': bgImage = imageUrls[(slide as CaseStudyDeepDiveSlide).image_prompt]; break;
+                    case 'Vision': bgImage = imageUrls[(slide as VisionSlide).image_prompt]; break;
+                    case 'MacroStrategy': bgImage = imageUrls[(slide as MacroStrategySlide).image_prompt]; break;
+                }
+            }
+
+            if (bgImage && bgImage !== 'error') {
+                pptxSlide.addImage({
+                    path: bgImage,
+                    x: 0, y: 0, w: '100%', h: '100%',
+                    sizing: { type: 'cover' }
+                });
+                // Add a dark overlay for readability
+                pptxSlide.addShape(pptx.ShapeType.rect, {
+                    x: 0, y: 0, w: '100%', h: '100%',
+                    fill: { color: '000000', transparency: 60 }
+                });
+            }
+
             // Add Title
             pptxSlide.addText(slide.title || 'Slide ' + (index + 1), {
                 x: 0.5,
                 y: 0.5,
                 w: '90%',
-                fontSize: 32,
+                fontSize: 36,
                 color: 'FFFFFF',
                 bold: true,
-                fontFace: 'Arial'
+                fontFace: 'Arial',
+                margin: 0
             });
 
-            // Add Content based on layout (simplified)
+            // Add Content based on layout
             let contentY = 1.5;
             if (slide.subtitle) {
                 pptxSlide.addText(slide.subtitle, {
                     x: 0.5,
                     y: contentY,
                     w: '90%',
-                    fontSize: 18,
+                    fontSize: 20,
                     color: '3B82F6',
                     fontFace: 'Arial'
                 });
@@ -320,9 +357,31 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                     x: 0.5,
                     y: contentY,
                     w: '90%',
-                    fontSize: 14,
+                    fontSize: 16,
                     color: 'CCCCCC',
                     fontFace: 'Arial'
+                });
+            }
+
+            // Layout specific content
+            if (slide.layout === 'Crisis') {
+                const s = slide as CrisisSlide;
+                if (s.problem_statement) {
+                    pptxSlide.addText(s.problem_statement, {
+                        x: 0.5, y: 2.5, w: '90%', fontSize: 14, color: 'FFFFFF', fontFace: 'Arial'
+                    });
+                }
+            }
+
+            if (slide.layout === 'Roadmap') {
+                const s = slide as RoadmapSlide;
+                s.phases?.forEach((phase, i) => {
+                    pptxSlide.addText(phase.title, {
+                        x: 0.5 + (i * 4), y: 3.5, w: 3.5, fontSize: 18, color: '3B82F6', bold: true
+                    });
+                    pptxSlide.addText(phase.timeline, {
+                        x: 0.5 + (i * 4), y: 4.0, w: 3.5, fontSize: 12, color: 'AAAAAA'
+                    });
                 });
             }
 
@@ -332,7 +391,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 y: 7.0,
                 w: '90%',
                 fontSize: 10,
-                color: '666666',
+                color: '999999',
                 align: 'right'
             });
         });
