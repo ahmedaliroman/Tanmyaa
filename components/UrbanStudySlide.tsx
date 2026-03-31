@@ -810,14 +810,20 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     const parseQuarter = (quarterStr: string | number | undefined | null): number => {
         if (typeof quarterStr !== 'string' || !quarterStr) return -1;
         
-        // Handle "Q1 2025", "Q1-2025", "Quarter 1 2025", "2025 Q1", or just "Q1"
+        // Handle "Q1 2025", "Q1-2025", "Quarter 1 2025", "2025 Q1", "Q1 25", or just "Q1"
         const qMatch = quarterStr.match(/Q(\d)/i) || quarterStr.match(/Quarter\s*(\d)/i);
-        const yMatch = quarterStr.match(/(\d{4})/);
+        const yMatch = quarterStr.match(/(\d{4})/) || quarterStr.match(/(\d{2})$/);
         
         if (!qMatch) return -1;
         
         const quarterIndex = parseInt(qMatch[1]) - 1;
-        const yearInt = yMatch ? parseInt(yMatch[1]) : startYear;
+        let yearInt = startYear;
+        
+        if (yMatch) {
+            const matchedYear = parseInt(yMatch[1]);
+            yearInt = matchedYear < 100 ? 2000 + matchedYear : matchedYear;
+        }
+        
         const yearIndex = yearInt - startYear;
         
         if (isNaN(quarterIndex) || quarterIndex < 0 || quarterIndex > 3 || isNaN(yearIndex)) return -1;
@@ -885,24 +891,24 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                                         const deliverableAnimation = getAnimationStyles(isActive, 400 + (pIndex * (ensureArray(phase.deliverables).length) + dIndex) * 75, 'fade-in-up', disableAnimations);
         
                                         return (
-                                            <div key={`${pIndex}-${dIndex}`} className="flex items-center h-14 relative group" style={deliverableAnimation}>
+                                            <div key={`${pIndex}-${dIndex}`} className="flex items-center h-10 relative group" style={deliverableAnimation}>
                                                 <div className="w-[30%] flex-shrink-0 pr-4 text-right">
-                                                    <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-sm font-semibold text-white/90 truncate" />
-                                                    <div className="text-xs text-white/50 italic truncate flex justify-end items-center">
+                                                    <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-xs font-semibold text-white/90 truncate" />
+                                                    <div className="text-[10px] text-white/50 italic truncate flex justify-end items-center">
                                                         <span className="mr-1">KPI:</span>
                                                         <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} />
                                                     </div>
                                                 </div>
-                                                <div className="absolute h-5 transition-all duration-300 group-hover:h-6" style={{ 
+                                                <div className="absolute h-4 transition-all duration-300 group-hover:h-5 z-20" style={{ 
                                                     left: `calc(30% + ${(startIndex / totalQuarters) * 70}%)`, 
                                                     width: `calc(${(duration / totalQuarters) * 70}%)`, 
                                                     top: '50%', 
                                                     transform: 'translateY(-50%)' 
                                                 }}>
-                                                    <div className="h-full bg-[var(--color-primary-medium)] rounded-sm flex items-center justify-end px-1.5 shadow-lg transition-all duration-300 group-hover:brightness-125"
+                                                    <div className="h-full bg-[var(--color-primary-medium)] rounded-full flex items-center justify-end px-1.5 shadow-lg transition-all duration-300 group-hover:brightness-125 border border-white/20"
                                                          style={{ background: 'linear-gradient(90deg, #456882, #60829d)' }}
                                                     >
-                                                        <div className="w-1.5 h-1.5 bg-white/80 rounded-full shadow-sm"></div>
+                                                        <div className="w-1 h-1 bg-white/80 rounded-full shadow-sm"></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1046,7 +1052,7 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-12 flex flex-col">
+        <SlideWrapper className="p-10 flex flex-col">
             <EditableImage 
                 src={slide.image_url || imageUrls['policy_image'] || ''} 
                 alt="Policy background" 
@@ -1054,8 +1060,8 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Required Policy Levers"} className="text-5xl font-extrabold tracking-tighter mb-6 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
-            <div className="relative z-20 space-y-2 flex-grow pr-4 overflow-y-auto custom-scrollbar">
+            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Required Policy Levers"} className="text-4xl font-extrabold tracking-tighter mb-4 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
+            <div className="relative z-20 space-y-2 flex-grow pr-4 overflow-hidden">
                 {(slide.recommendations || []).length > 0 ? (slide.recommendations || []).slice(0, 3).map((rec, i) => {
                     const recommendationAnimation = getAnimationStyles(isActive, 350 + i * 150, 'fade-in-up', disableAnimations);
                     const strategyLen = rec.strategy?.length || 0;
@@ -1063,21 +1069,21 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
                     const measurementLen = rec.measurement_framework?.length || 0;
                     const totalLen = strategyLen + impactLen + measurementLen;
                     
-                    const isVeryLong = totalLen > 600;
-                    const isLong = totalLen > 400;
+                    const isVeryLong = totalLen > 500;
+                    const isLong = totalLen > 300;
                     
                     return (
-                        <div key={i} className={`bg-black/40 backdrop-blur-md ${isVeryLong ? 'p-3' : isLong ? 'p-4' : 'p-6'} rounded-lg border border-white/10`} style={recommendationAnimation}>
-                            <Editable as="h3" value={rec.title} onUpdate={v => onUpdate(`recommendations[${i}].title`, v)} className={`font-bold ${isVeryLong ? 'text-base' : isLong ? 'text-lg' : 'text-xl'} text-white mb-2 truncate`} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                        <div key={i} className={`bg-black/40 backdrop-blur-md ${isVeryLong ? 'p-2' : isLong ? 'p-3' : 'p-4'} rounded-lg border border-white/10`} style={recommendationAnimation}>
+                            <Editable as="h3" value={rec.title} onUpdate={v => onUpdate(`recommendations[${i}].title`, v)} className={`font-bold ${isVeryLong ? 'text-sm' : isLong ? 'text-base' : 'text-lg'} text-white mb-1 truncate`} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                 <div>
-                                    <p className="text-[9px] font-bold uppercase text-white/50 mb-1">Strategy & Impact</p>
-                                    <Editable as="p" value={rec.strategy} onUpdate={v => onUpdate(`recommendations[${i}].strategy`, v)} className={`${isVeryLong ? 'text-[10px]' : isLong ? 'text-[11px]' : 'text-sm'} mb-1 text-white/80 leading-tight`} useMarkdown />
-                                    <Editable as="p" value={rec.expected_impact} onUpdate={v => onUpdate(`recommendations[${i}].expected_impact`, v)} className={`${isVeryLong ? 'text-[10px]' : isLong ? 'text-[11px]' : 'text-sm'} font-semibold text-white leading-tight`} useMarkdown />
+                                    <p className="text-[8px] font-bold uppercase text-white/50 mb-0.5">Strategy & Impact</p>
+                                    <Editable as="p" value={rec.strategy} onUpdate={v => onUpdate(`recommendations[${i}].strategy`, v)} className={`${isVeryLong ? 'text-[9px]' : isLong ? 'text-[10px]' : 'text-xs'} mb-0.5 text-white/80 leading-tight`} useMarkdown />
+                                    <Editable as="p" value={rec.expected_impact} onUpdate={v => onUpdate(`recommendations[${i}].expected_impact`, v)} className={`${isVeryLong ? 'text-[9px]' : isLong ? 'text-[10px]' : 'text-xs'} font-semibold text-white leading-tight`} useMarkdown />
                                 </div>
                                 <div>
-                                     <p className="text-[9px] font-bold uppercase text-white/50 mb-1">Measurement Framework</p>
-                                    <Editable as="p" value={rec.measurement_framework} onUpdate={v => onUpdate(`recommendations[${i}].measurement_framework`, v)} className={`${isVeryLong ? 'text-[10px]' : isLong ? 'text-[11px]' : 'text-sm'} text-white/80 leading-tight`} />
+                                     <p className="text-[8px] font-bold uppercase text-white/50 mb-0.5">Measurement Framework</p>
+                                    <Editable as="p" value={rec.measurement_framework} onUpdate={v => onUpdate(`recommendations[${i}].measurement_framework`, v)} className={`${isVeryLong ? 'text-[9px]' : isLong ? 'text-[10px]' : 'text-xs'} text-white/80 leading-tight`} />
                                 </div>
                             </div>
                         </div>
