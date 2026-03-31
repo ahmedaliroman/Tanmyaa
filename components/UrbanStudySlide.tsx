@@ -618,29 +618,22 @@ const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || 'Strategic References'} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
             <div className="relative z-20 flex-grow pr-4" style={sourcesAnimation}>
-                <div className="grid grid-cols-1 gap-4">
-                    {ensureArray(slide.sources).map((source, i) => (
-                        <div key={i} className="bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/10 hover:bg-white/10 transition-all group">
+                <div className={`grid grid-cols-1 ${ensureArray(slide.sources).length > 4 ? 'gap-2' : 'gap-4'}`}>
+                    {ensureArray(slide.sources).slice(0, 6).map((source, i) => (
+                        <div key={i} className={`bg-black/40 backdrop-blur-md ${ensureArray(slide.sources).length > 4 ? 'p-2' : 'p-4'} rounded-lg border border-white/10 hover:bg-white/10 transition-all group`}>
                             <div className="flex items-start justify-between mb-1">
                                 <div className="flex-grow">
-                                    <Editable as="p" value={source.title} onUpdate={v => onUpdate(`sources[${i}].title`, v)} className="text-lg font-bold text-gray-100 group-hover:text-[var(--color-primary-medium)] transition-colors" />
+                                    <Editable as="p" value={source.title} onUpdate={v => onUpdate(`sources[${i}].title`, v)} className={`${ensureArray(slide.sources).length > 4 ? 'text-sm' : 'text-lg'} font-bold text-gray-100 group-hover:text-[var(--color-primary-medium)] transition-colors`} />
                                     <div className="flex items-center space-x-4 mt-0.5">
-                                        <Editable as="span" value={source.author} onUpdate={v => onUpdate(`sources[${i}].author`, v)} className="text-xs text-white/40" />
+                                        <Editable as="span" value={source.author} onUpdate={v => onUpdate(`sources[${i}].author`, v)} className="text-[10px] text-white/40" />
                                         <span className="text-white/20">•</span>
-                                        <Editable as="span" value={source.year} onUpdate={v => onUpdate(`sources[${i}].year`, v)} className="text-xs text-white/40" />
+                                        <Editable as="span" value={source.year} onUpdate={v => onUpdate(`sources[${i}].year`, v)} className="text-[10px] text-white/40" />
                                     </div>
                                 </div>
-                                {source.link && (
-                                    <a href={source.link} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 rounded-full hover:bg-[var(--color-primary-medium)]/20 text-white/40 hover:text-[var(--color-primary-medium)] transition-all">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                        </svg>
-                                    </a>
-                                )}
                             </div>
-                            <div className="mt-4 pl-4 border-l-2 border-[var(--color-primary-medium)]/30">
-                                <p className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Strategic Relevance</p>
-                                <Editable as="p" value={source.relevance} onUpdate={v => onUpdate(`sources[${i}].relevance`, v)} className="text-sm text-white/70 italic" />
+                            <div className={`${ensureArray(slide.sources).length > 4 ? 'mt-1 pl-2' : 'mt-4 pl-4'} border-l-2 border-[var(--color-primary-medium)]/30`}>
+                                <p className="text-[8px] uppercase tracking-widest text-white/40 mb-0.5">Strategic Relevance</p>
+                                <Editable as="p" value={source.relevance} onUpdate={v => onUpdate(`sources[${i}].relevance`, v)} className={`${(source.relevance?.length || 0) > 100 ? 'text-[10px]' : 'text-xs'} text-white/70 italic`} />
                             </div>
                         </div>
                     ))}
@@ -1066,21 +1059,22 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Required Policy Levers"} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
-            <div className="relative z-20 space-y-6 flex-grow overflow-y-auto content-scrollbar pr-4">
-                {(slide.recommendations || []).length > 0 ? (slide.recommendations || []).map((rec, i) => {
+            <div className="relative z-20 space-y-4 flex-grow pr-4">
+                {(slide.recommendations || []).length > 0 ? (slide.recommendations || []).slice(0, 3).map((rec, i) => {
                     const recommendationAnimation = getAnimationStyles(isActive, 350 + i * 150, 'fade-in-up', disableAnimations);
+                    const isLong = (rec.strategy?.length || 0) + (rec.expected_impact?.length || 0) + (rec.measurement_framework?.length || 0) > 400;
                     return (
-                        <div key={i} className="bg-black/40 backdrop-blur-md p-6 rounded-lg border border-white/10" style={recommendationAnimation}>
-                            <Editable as="h3" value={rec.title} onUpdate={v => onUpdate(`recommendations[${i}].title`, v)} className="font-bold text-xl text-white mb-4" />
+                        <div key={i} className={`bg-black/40 backdrop-blur-md ${isLong ? 'p-4' : 'p-6'} rounded-lg border border-white/10`} style={recommendationAnimation}>
+                            <Editable as="h3" value={rec.title} onUpdate={v => onUpdate(`recommendations[${i}].title`, v)} className={`font-bold ${isLong ? 'text-lg' : 'text-xl'} text-white mb-2`} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                                 <div>
-                                    <p className="text-xs font-bold uppercase text-white/50 mb-2">Strategy & Impact</p>
-                                    <Editable as="p" value={rec.strategy} onUpdate={v => onUpdate(`recommendations[${i}].strategy`, v)} className="text-sm mb-2 text-white/80" useMarkdown />
-                                    <Editable as="p" value={rec.expected_impact} onUpdate={v => onUpdate(`recommendations[${i}].expected_impact`, v)} className="text-sm font-semibold text-white" useMarkdown />
+                                    <p className="text-[10px] font-bold uppercase text-white/50 mb-1">Strategy & Impact</p>
+                                    <Editable as="p" value={rec.strategy} onUpdate={v => onUpdate(`recommendations[${i}].strategy`, v)} className={`${isLong ? 'text-[11px]' : 'text-sm'} mb-1 text-white/80`} useMarkdown />
+                                    <Editable as="p" value={rec.expected_impact} onUpdate={v => onUpdate(`recommendations[${i}].expected_impact`, v)} className={`${isLong ? 'text-[11px]' : 'text-sm'} font-semibold text-white`} useMarkdown />
                                 </div>
                                 <div>
-                                     <p className="text-xs font-bold uppercase text-white/50 mb-2">Measurement Framework</p>
-                                    <Editable as="p" value={rec.measurement_framework} onUpdate={v => onUpdate(`recommendations[${i}].measurement_framework`, v)} className="text-sm text-white/80" />
+                                     <p className="text-[10px] font-bold uppercase text-white/50 mb-1">Measurement Framework</p>
+                                    <Editable as="p" value={rec.measurement_framework} onUpdate={v => onUpdate(`recommendations[${i}].measurement_framework`, v)} className={`${isLong ? 'text-[11px]' : 'text-sm'} text-white/80`} />
                                 </div>
                             </div>
                         </div>
@@ -1134,11 +1128,12 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
                 </div>
                  <div className="flex flex-col min-h-0">
                     <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-2 flex-shrink-0" style={stakeholderRolesAnimation}>Key Stakeholder Roles</h3>
-                    <div className="space-y-2 overflow-y-auto content-scrollbar pr-2 flex-grow">
-                        {(slide.stakeholders || []).length > 0 ? (slide.stakeholders || []).map((s, i) => {
+                    <div className="space-y-1 pr-2 flex-grow">
+                        {(slide.stakeholders || []).length > 0 ? (slide.stakeholders || []).slice(0, 6).map((s, i) => {
                             const stakeholderAnimation = getAnimationStyles(isActive, 500 + i * 75, 'fade-in-up', disableAnimations);
+                            const isLong = (slide.stakeholders || []).length > 4;
                             return (
-                                <div key={i} className="flex items-start text-sm border-b border-white/10 py-2" style={stakeholderAnimation}>
+                                <div key={i} className={`flex items-start ${isLong ? 'text-xs' : 'text-sm'} border-b border-white/10 py-1.5`} style={stakeholderAnimation}>
                                     <Editable as="p" value={s.name} onUpdate={v => onUpdate(`stakeholders[${i}].name`, v)} className="w-1/3 font-semibold text-white/90" />
                                     <Editable as="p" value={s.role} onUpdate={v => onUpdate(`stakeholders[${i}].role`, v)} className="w-2/3 text-white/70" />
                                 </div>
