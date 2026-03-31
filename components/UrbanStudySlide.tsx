@@ -871,50 +871,87 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                     </div>
 
                     {/* Chart Body */}
-                    <div className="flex-grow flex flex-col mt-2 relative overflow-y-auto content-scrollbar pr-2">
-                        <div className="relative min-h-full flex items-center">
+                    <div className="flex-grow flex flex-col mt-6 relative overflow-y-auto content-scrollbar pr-2">
+                        <div className="relative min-h-full">
                             {/* Vertical grid lines */}
                             <div className="absolute top-0 left-[30%] w-[70%] h-full grid" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
                                 {Array.from({ length: totalQuarters }).map((_, i) => <div key={i} className={`h-full ${ (i + 1) % 4 === 0 ? 'border-r border-white/20' : 'border-r border-white/10'}`}></div>)}
                             </div>
         
-                            {/* Labels and Bars */}
-                            <div className="w-full relative z-10 mt-2 space-y-1">
-                                {ensureArray(slide.phases).map((phase, pIndex) => 
-                                    ensureArray(phase.deliverables).map((d, dIndex) => {
-                                        const startIndex = parseQuarter(d.start_quarter);
-                                        const endIndex = parseQuarter(d.end_quarter);
-                                        if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) return null;
-                                        
-                                        const duration = endIndex - startIndex + 1;
-                                        const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
-                                        const deliverableAnimation = getAnimationStyles(isActive, 400 + (pIndex * (ensureArray(phase.deliverables).length) + dIndex) * 75, 'fade-in-up', disableAnimations);
-        
-                                        return (
-                                            <div key={`${pIndex}-${dIndex}`} className="flex items-center h-10 relative group" style={deliverableAnimation}>
-                                                <div className="w-[30%] flex-shrink-0 pr-4 text-right">
-                                                    <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-xs font-semibold text-white/90 truncate" />
-                                                    <div className="text-[10px] text-white/50 italic truncate flex justify-end items-center">
-                                                        <span className="mr-1">KPI:</span>
-                                                        <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} />
-                                                    </div>
+                            {/* Hierarchical Phases and Actions */}
+                            <div className="w-full relative z-10 mt-4 space-y-16">
+                                {ensureArray(slide.phases).map((phase, pIndex) => {
+                                    const deliverables = ensureArray(phase.deliverables);
+                                    const deliverableIndices = deliverables.map(d => ({
+                                        start: parseQuarter(d.start_quarter),
+                                        end: parseQuarter(d.end_quarter)
+                                    })).filter(idx => idx.start >= 0 && idx.end >= 0);
+
+                                    if (deliverableIndices.length === 0 && !phase.name) return null;
+
+                                    const phaseStart = deliverableIndices.length > 0 ? Math.min(...deliverableIndices.map(i => i.start)) : -1;
+                                    const phaseEnd = deliverableIndices.length > 0 ? Math.max(...deliverableIndices.map(i => i.end)) : -1;
+                                    const phaseDuration = phaseStart >= 0 ? phaseEnd - phaseStart + 1 : 0;
+                                    
+                                    const phaseAnimation = getAnimationStyles(isActive, 400 + pIndex * 200, 'fade-in-up', disableAnimations);
+
+                                    return (
+                                        <div key={pIndex} className="relative" style={phaseAnimation}>
+                                            {/* Phase Row */}
+                                            <div className="flex items-center h-10 relative mb-3">
+                                                <div className="w-[30%] pr-10 text-right flex flex-col justify-center">
+                                                    <Editable as="h3" value={phase.name} onUpdate={v => onUpdate(`phases[${pIndex}].name`, v)} className="text-xl font-black text-white tracking-tighter uppercase italic drop-shadow-lg" />
                                                 </div>
-                                                <div className="absolute h-4 transition-all duration-300 group-hover:h-5 z-20" style={{ 
-                                                    left: `calc(30% + ${(startIndex / totalQuarters) * 70}%)`, 
-                                                    width: `calc(${(duration / totalQuarters) * 70}%)`, 
-                                                    top: '50%', 
-                                                    transform: 'translateY(-50%)' 
-                                                }}>
-                                                    <div className="h-full bg-[var(--color-primary-medium)] rounded-full flex items-center justify-end px-1.5 shadow-lg transition-all duration-300 group-hover:brightness-125 border border-white/20"
-                                                         style={{ background: 'linear-gradient(90deg, #456882, #60829d)' }}
-                                                    >
-                                                        <div className="w-1 h-1 bg-white/80 rounded-full shadow-sm"></div>
+                                                {/* Main Phase Bar */}
+                                                {phaseStart >= 0 && (
+                                                    <div className="absolute h-6 rounded-sm shadow-2xl z-10 border-l-4 border-white/40" style={{ 
+                                                        left: `calc(30% + ${(phaseStart / totalQuarters) * 70}%)`, 
+                                                        width: `calc(${(phaseDuration / totalQuarters) * 70}%)`,
+                                                        background: 'linear-gradient(90deg, #007AFF, #00C6FF)',
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)'
+                                                    }}>
+                                                        <div className="absolute inset-0 bg-white/10 opacity-30"></div>
+                                                        {/* Phase End Marker */}
+                                                        <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
                                                     </div>
+                                                )}
+                                            </div>
+
+                                            {/* Actions (Deliverables) Row */}
+                                            <div className="flex relative min-h-[50px]">
+                                                <div className="w-[30%]" />
+                                                <div className="w-[70%] relative h-full">
+                                                    {deliverables.map((d, dIndex) => {
+                                                        const start = parseQuarter(d.start_quarter);
+                                                        const end = parseQuarter(d.end_quarter);
+                                                        if (start < 0 || end < 0) return null;
+                                                        const duration = end - start + 1;
+                                                        const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
+                                                        
+                                                        return (
+                                                            <div key={dIndex} className="absolute h-4 z-20 group" style={{
+                                                                left: `${((start) / totalQuarters) * 100}%`,
+                                                                width: `${(duration / totalQuarters) * 100}%`,
+                                                                top: '0'
+                                                            }}>
+                                                                <div className="h-full bg-cyan-400/80 backdrop-blur-sm rounded-sm border border-white/20 shadow-lg transition-all group-hover:brightness-125 group-hover:h-5" 
+                                                                     style={{ background: 'linear-gradient(180deg, rgba(90, 200, 250, 0.9) 0%, rgba(0, 162, 232, 0.9) 100%)' }}
+                                                                />
+                                                                <div className="absolute top-full mt-2 left-0 w-full px-1 overflow-visible">
+                                                                    <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-[10px] font-bold text-white/90 leading-none mb-1 whitespace-nowrap drop-shadow-md" />
+                                                                    <div className="text-[8px] text-white/50 font-medium italic border-l border-white/30 pl-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                                                                        <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
-                                        );
-                                    })
-                                )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

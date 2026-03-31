@@ -367,6 +367,11 @@ export const generatePresentation = async (
     - Roadmap: { layout: "Roadmap", phases: [{title, timeline (e.g. "Phase 1: 2025-2026"), action_steps: [{action, kpi}], outcome}] }
     - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year (number), timeline_end_year (number), phases: [{name, deliverables: [{name, start_quarter (1-4), end_quarter (1-4), kpi}]}] }
     
+    CRITICAL: For GanttChartRoadmap, you MUST provide exactly 3 phases (Phase 1, Phase 2, Phase 3) to reflect the standard strategic implementation lifecycle. Each phase must have 2-4 specific deliverables.
+    - Phase 1: Foundation & Planning (Immediate actions)
+    - Phase 2: Execution & Infrastructure (Core implementation)
+    - Phase 3: Monitoring & Optimization (Long-term sustainability)
+    
     CRITICAL: For Roadmap and GanttChartRoadmap, you MUST provide realistic, specific timeline data. DO NOT leave the 'timeline' or 'start_quarter'/'end_quarter' fields empty.
     - For Roadmap: 'timeline' should be a string like "Q1 2025 - Q4 2026".
     - For GanttChartRoadmap: 'timeline_start_year' and 'timeline_end_year' must be valid years (e.g. 2025, 2030). 'start_quarter' and 'end_quarter' must be numbers 1, 2, 3, or 4.
