@@ -367,11 +367,6 @@ export const generatePresentation = async (
     - Roadmap: { layout: "Roadmap", phases: [{title, timeline (e.g. "Phase 1: 2025-2026"), action_steps: [{action, kpi}], outcome}] }
     - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year (number), timeline_end_year (number), phases: [{name, deliverables: [{name, start_quarter (1-4), end_quarter (1-4), kpi}]}] }
     
-    CRITICAL: For GanttChartRoadmap, you MUST provide exactly 3 phases (Phase 1, Phase 2, Phase 3) to reflect the standard strategic implementation lifecycle. Each phase must have 2-4 specific deliverables.
-    - Phase 1: Foundation & Planning (Immediate actions)
-    - Phase 2: Execution & Infrastructure (Core implementation)
-    - Phase 3: Monitoring & Optimization (Long-term sustainability)
-    
     CRITICAL: For Roadmap and GanttChartRoadmap, you MUST provide realistic, specific timeline data. DO NOT leave the 'timeline' or 'start_quarter'/'end_quarter' fields empty.
     - For Roadmap: 'timeline' should be a string like "Q1 2025 - Q4 2026".
     - For GanttChartRoadmap: 'timeline_start_year' and 'timeline_end_year' must be valid years (e.g. 2025, 2030). 'start_quarter' and 'end_quarter' must be numbers 1, 2, 3, or 4.
@@ -439,7 +434,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     METRICS & CURRENCY: Use appropriate metrics and currency that fit the content and location context.
     
-    ADD/REMOVE SLIDES: You have full authority to add new slides, remove existing ones, or reorder them based on the user's request. When adding a slide, ensure it follows one of the allowed layouts and is populated with specific, high-quality content.
+    ADD/REMOVE SLIDES: You are strictly forbidden from adding, removing, or reordering slides unless the user explicitly asks you to do so (e.g., "add a new slide", "delete this slide"). By default, you MUST ONLY modify the content of the slide the user is currently viewing (Slide ${activeSlideIndex + 1}, which is index ${activeSlideIndex}). You MUST return the entire presentation JSON, but every other slide MUST remain exactly identical to the input.
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
@@ -448,7 +443,14 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
 
     const slides = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Update the following presentation JSON based on the user request. The slide structure is flexible; you can add, remove, reorder, or modify slides to best fulfill the request. Current presentation state: ${JSON.stringify(currentSlides)}. The user is viewing slide ${activeSlideIndex + 1}. User Request: "${userRequest}".` }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `CRITICAL: You are refining a presentation. The user is currently viewing Slide ${activeSlideIndex + 1} (index ${activeSlideIndex}). 
+        
+User Request: "${userRequest}"
+
+Unless the user explicitly asks to add, delete, or move slides, you MUST ONLY modify the content of Slide ${activeSlideIndex + 1}. You MUST return the full JSON array of all slides, but the content of all other slides MUST remain EXACTLY as provided below. Do not change a single character in the other slides.
+
+Current presentation state:
+${JSON.stringify(currentSlides)}` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'presentation');
 
@@ -464,6 +466,16 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
         const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
         const filtered = (parsedSlides || []).filter(s => s && typeof s === 'object' && s.layout);
         if (filtered.length === 0) throw new Error("No slides generated during refinement.");
+        
+        // Programmatic enforcement: If the user didn't explicitly ask for structural changes,
+        // and the AI returned the same number of slides, ONLY apply the changes to the active slide.
+        const isStructuralChange = /add|remove|delete|reorder|move|swap|insert/i.test(userRequest);
+        if (!isStructuralChange && filtered.length === currentSlides.length) {
+            const newSlides = [...currentSlides];
+            newSlides[activeSlideIndex] = filtered[activeSlideIndex];
+            return newSlides;
+        }
+        
         return filtered;
     });
 

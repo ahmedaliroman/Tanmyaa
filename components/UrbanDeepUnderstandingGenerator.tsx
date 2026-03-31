@@ -110,7 +110,22 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
 
     const renderResult = (result: UrbanDeepUnderstanding) => (
         <div className="space-y-12 animate-fade-in">
-            <div ref={boardRef} className="p-8 rounded-[3rem] bg-[#0a0a0a] border border-white/5 shadow-2xl">
+            <div ref={boardRef} className="p-8 md:p-12 rounded-[3rem] bg-[#0a0a0a] border border-white/5 shadow-2xl">
+                {/* Tanmyaa Branding Header */}
+                <div className="flex justify-between items-center mb-12 border-b border-white/10 pb-6">
+                    <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-blue-600/20">T</div>
+                        <div>
+                            <h1 className="text-xl font-black text-white tracking-tight">TANMYAA</h1>
+                            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Deep Understanding Module</p>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-sm text-gray-400 font-medium">Strategic Urban Planning</p>
+                        <p className="text-xs text-gray-500">{new Date().toLocaleDateString()}</p>
+                    </div>
+                </div>
+
                 {/* Teacher Intro */}
                 <div className="max-w-3xl mx-auto mb-16 text-center">
                     <div className="inline-flex items-center space-x-3 bg-blue-600/20 px-4 py-2 rounded-full mb-6 border border-blue-500/30">
@@ -133,14 +148,14 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{note.category}</span>
-                                <div className="flex space-x-1">
+                                <div className="flex space-x-1 flex-wrap justify-end gap-y-1">
                                     {note.tags.map((tag, i) => (
-                                        <span key={i} className="text-[8px] font-bold px-1.5 py-0.5 bg-black/10 rounded">#{tag}</span>
+                                        <span key={i} className="text-[9px] font-bold px-1.5 py-0.5 bg-black/10 rounded">#{tag}</span>
                                     ))}
                                 </div>
                             </div>
-                            <h3 className="text-lg font-black mb-3 leading-tight uppercase">{note.title}</h3>
-                            <p className="text-sm font-medium leading-relaxed opacity-90">{note.content}</p>
+                            <h3 className="text-xl font-black mb-3 leading-tight uppercase">{note.title}</h3>
+                            <p className="text-base font-medium leading-relaxed opacity-90">{note.content}</p>
                         </div>
                     ))}
                 </div>
@@ -173,7 +188,7 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
                     {selectedChoice && (
                         <div className="animate-slide-up bg-blue-600/10 border border-blue-500/30 p-6 rounded-2xl">
                             <p className="text-xs font-black text-blue-400 uppercase tracking-widest mb-2">Professor&apos;s Feedback</p>
-                            <p className="text-blue-100 italic leading-relaxed">
+                            <p className="text-blue-100 italic leading-relaxed text-lg">
                                 {result.lessonInteraction.feedback[selectedChoice]}
                             </p>
                         </div>
@@ -182,7 +197,7 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
 
                 {/* Teacher Closing */}
                 <div className="mt-16 pt-16 border-t border-white/5 text-center max-w-2xl mx-auto">
-                    <p className="text-lg text-gray-400 font-serif italic mb-4">
+                    <p className="text-xl text-gray-400 font-serif italic mb-4">
                         &ldquo;{result.teacherPersona.closing}&rdquo;
                     </p>
                     <div className="h-px w-12 bg-blue-600/50 mx-auto"></div>
