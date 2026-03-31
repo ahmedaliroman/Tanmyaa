@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const LOGO_KEY = 'tanmyaaCustomLogo';
 const COLORS_KEY = 'tanmyaaCustomColors';
@@ -14,6 +14,32 @@ export const useBranding = () => {
   const [presentationTemplateUrl, setPresentationTemplateUrl] = useState<string | null>(() => localStorage.getItem(PRESENTATION_TEMPLATE_URL_KEY));
   const [reportTemplate, setReportTemplate] = useState<string | null>(() => localStorage.getItem(REPORT_TEMPLATE_KEY));
   const [reportTemplateUrl, setReportTemplateUrl] = useState<string | null>(() => localStorage.getItem(REPORT_TEMPLATE_URL_KEY));
+
+  // Apply colors to CSS variables
+  useEffect(() => {
+    if (colors) {
+      const hexRegex = /#([0-9A-F]{6})/gi;
+      const matches = [...colors.matchAll(hexRegex)].map(m => '#' + m[1]);
+      
+      if (matches.length > 0) {
+        document.documentElement.style.setProperty('--color-primary-medium', matches[0]);
+        // Also update legacy variable
+        document.documentElement.style.setProperty('--tan-bright-blue', matches[0]);
+      }
+      if (matches.length > 1) {
+        document.documentElement.style.setProperty('--color-accent-light', matches[1]);
+      }
+      if (matches.length > 2) {
+        document.documentElement.style.setProperty('--color-accent-cream', matches[2]);
+      }
+    } else {
+      // Reset to defaults if no custom colors
+      document.documentElement.style.removeProperty('--color-primary-medium');
+      document.documentElement.style.removeProperty('--tan-bright-blue');
+      document.documentElement.style.removeProperty('--color-accent-light');
+      document.documentElement.style.removeProperty('--color-accent-cream');
+    }
+  }, [colors]);
 
   const saveLogo = useCallback((logoBase64: string) => {
     localStorage.setItem(LOGO_KEY, logoBase64);

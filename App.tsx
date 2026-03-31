@@ -18,7 +18,7 @@ import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 
-// Simple Error Boundary
+// Redesigned iOS-style Error Boundary
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
     super(props);
@@ -36,25 +36,51 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#050508] text-white flex flex-col items-center justify-center p-8 text-center">
-          <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-6">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+        <div className="min-h-screen bg-[#050508] text-white flex flex-col items-center justify-center p-8 text-center font-sans">
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-500/10 to-purple-500/10 pointer-events-none" />
+          
+          <div className="relative z-10 max-w-lg w-full animate-ios-reveal">
+            <div className="w-20 h-20 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] flex items-center justify-center mb-8 mx-auto shadow-2xl">
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse" />
+                <svg className="w-10 h-10 text-blue-400 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+            </div>
+
+            <h1 className="text-3xl font-black tracking-tight mb-4 text-white">I&apos;ve hit a small snag</h1>
+            <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+              Something unexpected happened while rendering this view. I&apos;m curious to help you fix it—usually a quick refresh clears things up, but I&apos;ve noted the technical details below.
+            </p>
+
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl text-left mb-10 w-full overflow-hidden group hover:bg-white/10 transition-all">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Technical Insight</span>
+                <span className="text-[10px] font-mono text-gray-500">Error Code: {this.state.error?.name || 'Unknown'}</span>
+              </div>
+              <p className="text-sm font-mono text-gray-300 break-all line-clamp-3 group-hover:line-clamp-none transition-all">
+                {this.state.error?.message || 'An unspecified rendering error occurred.'}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full sm:w-auto bg-white text-black px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95 shadow-xl"
+              >
+                Refresh View
+              </button>
+              <button 
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="w-full sm:w-auto bg-white/5 backdrop-blur-md border border-white/10 text-white px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95"
+              >
+                Try Again
+              </button>
+            </div>
+            
+            <p className="mt-12 text-[10px] text-gray-500 uppercase tracking-[0.3em] font-black">Urban Planning Intelligence System</p>
           </div>
-          <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
-          <p className="text-gray-400 max-w-md mb-8">
-            The application encountered an unexpected error. This might be due to a rendering issue or a failed data request.
-          </p>
-          <div className="bg-white/5 border border-white/10 p-4 rounded-lg text-left mb-8 w-full max-w-2xl overflow-auto">
-            <p className="text-xs font-mono text-red-400">{this.state.error?.toString()}</p>
-          </div>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors"
-          >
-            Reload Application
-          </button>
         </div>
       );
     }
@@ -75,20 +101,37 @@ const AppContent: React.FC<{
   return (
     <div className="min-h-screen bg-transparent text-gray-200">
       {authError && (
-          <div className="bg-red-600 text-white py-3 px-4 text-center text-sm font-bold animate-fade-in flex flex-col items-center justify-center gap-1 sticky top-0 z-[70]">
-              <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span>Database Error: {authError}</span>
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4 animate-ios-reveal">
+              <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-5 shadow-2xl flex items-start gap-4">
+                  <div className="w-10 h-10 bg-rose-500/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-rose-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                  </div>
+                  <div className="flex-1">
+                      <h3 className="text-white font-black text-sm uppercase tracking-widest mb-1">Database Sync Issue</h3>
+                      <p className="text-gray-300 text-xs leading-relaxed mb-3">
+                          I&apos;m having trouble connecting to the database. It looks like the schema might need an update.
+                      </p>
+                      <div className="flex items-center gap-3">
+                          <div className="bg-black/40 px-2 py-1 rounded-md border border-white/10">
+                              <code className="text-[10px] text-blue-400 font-mono">supabase/schema.sql</code>
+                          </div>
+                          <button 
+                              onClick={() => window.location.reload()}
+                              className="text-[10px] font-black uppercase tracking-widest text-white hover:text-blue-400 transition-colors"
+                          >
+                              Retry Connection
+                          </button>
+                      </div>
+                  </div>
               </div>
-              <p className="text-xs opacity-90 font-normal">Please run the SQL in <code className="bg-black/20 px-1 rounded">supabase/schema.sql</code> in your Supabase SQL Editor to fix this.</p>
           </div>
       )}
-      {!hasApiKey && window.aistudio && (
-          <div className="bg-blue-600 text-white py-2 px-4 text-center text-sm font-bold animate-fade-in flex items-center justify-center gap-4 sticky top-0 z-[60]">
-              <span>Connect your Gemini API Key to enable AI features on this domain.</span>
-              <button onClick={handleConnectApiKey} className="bg-white text-blue-600 px-4 py-1 rounded-full text-xs hover:bg-gray-100 transition-colors">
+      {!hasApiKey && !process.env.GEMINI_API_KEY && window.aistudio && (
+          <div className="bg-blue-600/90 backdrop-blur-md text-white py-2 px-4 text-center text-sm font-medium animate-fade-in flex items-center justify-center gap-4 sticky top-0 z-[60] border-b border-white/10">
+              <span>Connect your Google Cloud API Key to enable high-quota Business/Pro features.</span>
+              <button onClick={handleConnectApiKey} className="bg-white text-blue-600 px-4 py-1 rounded-full text-xs font-bold hover:bg-gray-100 transition-colors shadow-lg">
                   Connect Key
               </button>
           </div>
@@ -118,7 +161,7 @@ const App: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
 
   const initialOptions = {
-    "client-id": "test", // Replace with your real client ID
+    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test", // Replace with your real client ID
     currency: "USD",
     intent: "capture",
   };

@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generatePolicyReport, getPolicyBriefSuggestions } from '../services/geminiService';
+import { generatePolicyReport, getPolicyBriefSuggestions } from '../services/vertexService';
 import type { PolicyBrief as PolicyBriefType, BrandingInfo } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';

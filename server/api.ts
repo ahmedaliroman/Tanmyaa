@@ -32,7 +32,9 @@ router.get('/health', (req, res) => {
         env: {
             hasSupabaseUrl: !!process.env.SUPABASE_URL,
             hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+            hasVertexKey: !!process.env.VERTEX_API_KEY,
             hasGeminiKey: !!process.env.GEMINI_API_KEY,
+            hasApiKey: !!process.env.API_KEY,
             nodeEnv: process.env.NODE_ENV
         }
     });

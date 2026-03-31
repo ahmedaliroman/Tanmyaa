@@ -8,7 +8,7 @@ import app from './server/app.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Export app for Vercel (though api/index.ts is preferred)
 export default app;

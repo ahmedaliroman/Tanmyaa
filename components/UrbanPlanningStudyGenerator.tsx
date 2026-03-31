@@ -12,7 +12,7 @@ import GeneratorWelcome from './Welcome';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
 import jsPDF from 'jspdf';
-import { toJpeg } from 'html-to-image';
+import { toPng } from 'html-to-image';
 import pptxgen from 'pptxgenjs';
 
 interface ChatMessage {
@@ -254,8 +254,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 continue;
             }
 
-            const dataUrl = await toJpeg(slideElement, {
-                quality: 0.90,
+            const dataUrl = await toPng(slideElement, {
                 cacheBust: true,
                 width: slideWidth,
                 height: slideHeight,
@@ -265,7 +264,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             if (i > 0) {
                 pdf.addPage([slideWidth, slideHeight], 'landscape');
             }
-            pdf.addImage(dataUrl, 'JPEG', 0, 0, slideWidth, slideHeight);
+            pdf.addImage(dataUrl, 'PNG', 0, 0, slideWidth, slideHeight);
         }
         pdf.save('Tanmyaa_Presentation.pdf');
     } catch (error) {

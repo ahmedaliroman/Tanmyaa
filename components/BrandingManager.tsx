@@ -168,11 +168,6 @@ const BrandingManager: React.FC = () => {
         }
     };
 
-    const handleRemoveTemplateUrl = () => {
-        removeTemplateUrl();
-        toast.success("Template PDF removed.");
-    };
-
     const handleRemoveLogo = () => {
         removeLogo();
         setLogoPreview(null);

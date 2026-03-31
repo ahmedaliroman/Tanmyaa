@@ -21,6 +21,7 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
     const [data, setData] = useState<UrbanDeepUnderstanding | null>(null);
     const [refinementRequest, setRefinementRequest] = useState('');
     const [isRefining, setIsRefining] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
     const boardRef = useRef<HTMLDivElement>(null);
 
@@ -70,16 +71,19 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
 
     const exportBoard = async () => {
         if (!boardRef.current) return;
+        setIsExporting(true);
         try {
             const dataUrl = await toPng(boardRef.current, { quality: 0.95, backgroundColor: '#0a0a0a' });
             const pdf = new jsPDF('p', 'mm', 'a4');
             const imgProps = pdf.getImageProperties(dataUrl);
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight);
             pdf.save(`Thinking-Board-${data?.topic.replace(/\s+/g, '-')}.pdf`);
         } catch (err) {
             console.error('Export failed', err);
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -106,19 +110,6 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
 
     const renderResult = (result: UrbanDeepUnderstanding) => (
         <div className="space-y-12 animate-fade-in">
-            {/* Export Button */}
-            <div className="flex justify-end mb-4">
-                <button 
-                    onClick={exportBoard}
-                    className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all border border-white/10 text-sm font-medium"
-                >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    <span>Download Thinking Board</span>
-                </button>
-            </div>
-
             <div ref={boardRef} className="p-8 rounded-[3rem] bg-[#0a0a0a] border border-white/5 shadow-2xl">
                 {/* Teacher Intro */}
                 <div className="max-w-3xl mx-auto mb-16 text-center">
@@ -241,6 +232,16 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
             onLogin={signInWithGoogle}
             onUpgrade={onUpgrade}
             renderInputForm={renderInputForm}
+            renderExportControls={() => (
+                <button
+                    onClick={exportBoard}
+                    disabled={isExporting}
+                    className="bg-gray-700/80 text-gray-200 font-semibold py-1 px-4 rounded-full text-xs hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50 flex items-center"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    {isExporting ? 'Exporting...' : 'Export PDF'}
+                </button>
+            )}
             renderResult={renderResult}
         />
     );

@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { streamAssistantResponse } from '../services/geminiService';
+import { streamAssistantResponse } from '../services/vertexService';
 import { GenerateContentResponse } from '@google/genai';
 import { useAuth } from '../context/AuthContext';
 

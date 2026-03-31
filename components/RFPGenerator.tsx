@@ -10,6 +10,8 @@ import { useCompanyProfile } from '../hooks/useCompanyProfile';
 import { useAuth } from '../context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import AISuggestionButton from './AISuggestionButton';
+import jsPDF from 'jspdf';
+import { toPng } from 'html-to-image';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -32,9 +34,9 @@ const SectionIcon: React.FC = () => <svg xmlns="http://www.w3.org/2000/svg" clas
 
 
 
-const RFPReportDisplay: React.FC<{ content: RFPContent }> = ({ content }) => {
+const RFPReportDisplay: React.FC<{ content: RFPContent; reportRef?: React.RefObject<HTMLDivElement | null> }> = ({ content, reportRef }) => {
     return (
-        <div className="bg-white p-8 md:p-12 rounded-lg shadow-2xl border border-gray-200 text-gray-800">
+        <div ref={reportRef} className="bg-white p-8 md:p-12 rounded-lg shadow-2xl border border-gray-200 text-gray-800">
             <header className="text-center mb-12 border-b border-gray-200 pb-8">
                  <div className="flex justify-center items-center mb-4"><TanmyaaLogoPPTX /></div>
                  <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest">Request for Proposal / Terms of Reference</p>
@@ -95,7 +97,9 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
   const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reportRef = React.useRef<HTMLDivElement>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
 
@@ -154,6 +158,37 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
   const handleDownload = () => {
     if (generatedContent) {
         exportRFPToDocx(generatedContent, logo);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    const element = reportRef.current;
+    if (!element) return;
+    setIsExportingPdf(true);
+    try {
+        const dataUrl = await toPng(element, { cacheBust: true, pixelRatio: 1.5, backgroundColor: '#ffffff' });
+        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const img = new Image();
+        await new Promise<void>(resolve => { img.onload = () => resolve(); img.src = dataUrl; });
+        const ratio = img.width / pdfWidth;
+        const scaledHeight = img.height / ratio;
+        let position = 0;
+        let heightLeft = scaledHeight;
+        pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, scaledHeight);
+        heightLeft -= pdf.internal.pageSize.getHeight();
+        while (heightLeft > 0) {
+            position -= pdf.internal.pageSize.getHeight();
+            pdf.addPage();
+            pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, scaledHeight);
+            heightLeft -= pdf.internal.pageSize.getHeight();
+        }
+        pdf.save('Tanmyaa_RFP.pdf');
+    } catch (err) {
+        console.error('Failed to export PDF:', err);
+        setError('Could not export the RFP as PDF. Please try again.');
+    } finally {
+        setIsExportingPdf(false);
     }
   };
 
@@ -242,15 +277,25 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
       onUpgrade={onUpgrade}
       renderInputForm={renderInput}
        renderExportControls={() => (
-        <button
-          onClick={handleDownload}
-          className="bg-gray-700/80 text-gray-200 font-semibold py-1 px-4 rounded-full text-xs hover:bg-gray-700 transition duration-300 border border-gray-600/50 flex items-center"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-          Download as Word (.docx)
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleDownload}
+            className="bg-gray-700/80 text-gray-200 font-semibold py-1 px-4 rounded-full text-xs hover:bg-gray-700 transition duration-300 border border-gray-600/50 flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            Word (.docx)
+          </button>
+          <button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            className="bg-gray-700/80 text-gray-200 font-semibold py-1 px-4 rounded-full text-xs hover:bg-gray-700 disabled:opacity-50 transition duration-300 border border-gray-600/50 flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            {isExportingPdf ? 'Exporting...' : 'PDF'}
+          </button>
+        </div>
       )}
-      renderResult={(content) => <RFPReportDisplay content={content} />}
+      renderResult={(content) => <RFPReportDisplay content={content} reportRef={reportRef} />}
     />
   );
 };
