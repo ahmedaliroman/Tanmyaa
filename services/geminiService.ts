@@ -251,6 +251,8 @@ const deductCredits = async (amount: number, description: string, fileUrl?: stri
             const text = await response.text();
             if (text.includes('Missing database credentials')) {
                 errorMessage = 'Server is not configured with database credentials (SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY).';
+            } else if (text.includes('FUNCTION_INVOCATION_FAILED')) {
+                errorMessage = 'The server function failed to execute (Vercel Timeout or Crash). Please check your environment variables and logs.';
             } else {
                 errorMessage = `Server error (${response.status}): ${text.substring(0, 100)}...`;
             }

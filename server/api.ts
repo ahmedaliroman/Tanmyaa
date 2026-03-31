@@ -32,9 +32,7 @@ router.get('/health', (req, res) => {
         env: {
             hasSupabaseUrl: !!process.env.SUPABASE_URL,
             hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-            hasVertexKey: !!process.env.VERTEX_API_KEY,
             hasGeminiKey: !!process.env.GEMINI_API_KEY,
-            hasApiKey: !!process.env.API_KEY,
             nodeEnv: process.env.NODE_ENV
         }
     });
@@ -53,9 +51,11 @@ router.post('/deduct-credits', async (req, res) => {
             return res.status(401).json({ error: 'Invalid or missing authentication token.' });
         }
         
-        const { data: { user }, error: authError } = await client.auth.getUser(token);
+        const { data: authData, error: authError } = await client.auth.getUser(token);
+        const user = authData?.user;
 
         if (authError || !user) {
+            console.error('Auth error in deduct-credits:', authError);
             return res.status(401).json({ error: 'Invalid or expired token.' });
         }
 
