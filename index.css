@@ -1,8 +1,8 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-serif: "Playfair Display", serif;
   
@@ -16,22 +16,6 @@
 }
 
 @layer base {
-  :root {
-    --color-primary-dark: #007AB9;
-    --color-primary-medium: #50ABE7;
-    --color-primary-light: #6CBDE9;
-    --color-accent-dark: #D32F2F;
-    --color-accent-medium: #EF5350;
-    --color-accent-light: #87CEEB;
-    --color-accent-cream: #BAE0F3;
-    --color-bg-light: #EDF2FB;
-    --color-bg-dark: #050508;
-    --color-success: #10B981;
-    --color-warning: #F59E0B;
-    --color-info: #3B82F6;
-    --color-danger: #F43F5E;
-  }
-
   body {
     @apply bg-[#F2F2F7] text-[#1C1C1E] antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -39,45 +23,6 @@
 }
 
 @layer utilities {
-  .theme-light .text-white { color: #1a1a1a !important; }
-  .theme-light .text-white\/90 { color: rgba(26, 26, 26, 0.9) !important; }
-  .theme-light .text-white\/80 { color: rgba(26, 26, 26, 0.8) !important; }
-  .theme-light .text-white\/70 { color: rgba(26, 26, 26, 0.7) !important; }
-  .theme-light .text-white\/60 { color: rgba(26, 26, 26, 0.6) !important; }
-  .theme-light .text-white\/50 { color: rgba(26, 26, 26, 0.5) !important; }
-  .theme-light .text-white\/40 { color: rgba(26, 26, 26, 0.4) !important; }
-  .theme-light .text-white\/30 { color: rgba(26, 26, 26, 0.3) !important; }
-  .theme-light .text-white\/20 { color: rgba(26, 26, 26, 0.2) !important; }
-  .theme-light .text-white\/10 { color: rgba(26, 26, 26, 0.1) !important; }
-  
-  .theme-light .text-\[var\(--color-accent-cream\)\] { color: var(--color-primary-medium) !important; }
-  
-  .theme-light .bg-white\/5 { background-color: rgba(0, 0, 0, 0.02) !important; }
-  .theme-light .bg-white\/10 { background-color: rgba(0, 0, 0, 0.05) !important; }
-  .theme-light .bg-white\/20 { background-color: rgba(0, 0, 0, 0.1) !important; }
-  .theme-light .bg-white\/30 { background-color: rgba(0, 0, 0, 0.15) !important; }
-  
-  .theme-light .bg-black\/5 { background-color: rgba(255, 255, 255, 0.05) !important; }
-  .theme-light .bg-black\/10 { background-color: rgba(255, 255, 255, 0.1) !important; }
-  .theme-light .bg-black\/20 { background-color: rgba(255, 255, 255, 0.2) !important; }
-  .theme-light .bg-black\/40 { background-color: rgba(255, 255, 255, 0.4) !important; }
-  .theme-light .bg-black\/60 { background-color: rgba(255, 255, 255, 0.6) !important; }
-  .theme-light .bg-black\/70 { background-color: rgba(255, 255, 255, 0.7) !important; }
-  .theme-light .bg-black\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
-  
-  .theme-light .border-white\/5 { border-color: rgba(0, 0, 0, 0.05) !important; }
-  .theme-light .border-white\/10 { border-color: rgba(0, 0, 0, 0.1) !important; }
-  .theme-light .border-white\/20 { border-color: rgba(0, 0, 0, 0.2) !important; }
-  .theme-light .border-white\/30 { border-color: rgba(0, 0, 0, 0.3) !important; }
-
-  .theme-light .slide-footer-text { color: rgba(0, 0, 0, 0.4) !important; }
-  .theme-light .slide-footer-logo svg { color: rgba(0, 0, 0, 0.4) !important; }
-
-  .force-align-left h1, .force-align-left h2, .force-align-left h3, .force-align-left p, .force-align-left li { text-align: left !important; }
-  .force-align-center h1, .force-align-center h2, .force-align-center h3, .force-align-center p, .force-align-center li { text-align: center !important; }
-  .force-align-right h1, .force-align-right h2, .force-align-right h3, .force-align-right p, .force-align-right li { text-align: right !important; }
-  .force-align-justify h1, .force-align-justify h2, .force-align-justify h3, .force-align-justify p, .force-align-justify li { text-align: justify !important; }
-
   .ios-glass {
     @apply backdrop-blur-xl bg-white/70 border border-white/20 shadow-sm;
   }
@@ -145,5 +90,19 @@
   .custom-leaflet-popup .leaflet-popup-close-button {
     @apply text-gray-400 hover:text-white;
     padding: 0.5rem !important;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 }

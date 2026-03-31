@@ -198,7 +198,7 @@ const Editable: React.FC<{
 const AnalyticReflection: React.FC<{ text: string, onUpdate: (newValue: string) => void, animationStyle: CSSProperties, disableAnimations?: boolean }> = ({ text, onUpdate, animationStyle, disableAnimations }) => (
     <div className="mt-auto text-center text-white/70 p-4 bg-white/5 rounded-lg overflow-hidden" style={disableAnimations ? { opacity: 1 } : animationStyle}>
         <h4 className="text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Analytic Reflection</h4>
-        <Editable as="p" value={text} onUpdate={onUpdate} className={`${text.length > 200 ? 'text-[10px]' : 'text-xs'} italic`} />
+        <Editable as="p" value={text} onUpdate={onUpdate} className={`${(text?.length || 0) > 200 ? 'text-[10px]' : 'text-xs'} italic`} />
     </div>
 );
 
@@ -318,7 +318,7 @@ const SWOTCategory: React.FC<{ title: string; items: { title: string; descriptio
             {ensureArray(items).map((item, i) => (
                 <div key={i}>
                     <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-semibold text-white text-sm" useMarkdown/>
-                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${item.description.length > 120 ? 'text-[9px]' : 'text-[11px]'} text-white/70 mt-0.5 leading-tight`} />
+                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${(item.description?.length || 0) > 120 ? 'text-[9px]' : 'text-[11px]'} text-white/70 mt-0.5 leading-tight`} />
                 </div>
             ))}
         </div>
@@ -810,14 +810,14 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     const parseQuarter = (quarterStr: string | number | undefined | null): number => {
         if (typeof quarterStr !== 'string' || !quarterStr) return -1;
         
-        // Handle "Q1 2025", "Q1-2025", "Quarter 1 2025", "2025 Q1"
+        // Handle "Q1 2025", "Q1-2025", "Quarter 1 2025", "2025 Q1", or just "Q1"
         const qMatch = quarterStr.match(/Q(\d)/i) || quarterStr.match(/Quarter\s*(\d)/i);
         const yMatch = quarterStr.match(/(\d{4})/);
         
-        if (!qMatch || !yMatch) return -1;
+        if (!qMatch) return -1;
         
         const quarterIndex = parseInt(qMatch[1]) - 1;
-        const yearInt = parseInt(yMatch[1]);
+        const yearInt = yMatch ? parseInt(yMatch[1]) : startYear;
         const yearIndex = yearInt - startYear;
         
         if (isNaN(quarterIndex) || quarterIndex < 0 || quarterIndex > 3 || isNaN(yearIndex)) return -1;
@@ -882,7 +882,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                                         
                                         const duration = endIndex - startIndex + 1;
                                         const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
-                                        const deliverableAnimation = getAnimationStyles(isActive, 400 + (pIndex * (phase.deliverables.length) + dIndex) * 75, 'fade-in-up', disableAnimations);
+                                        const deliverableAnimation = getAnimationStyles(isActive, 400 + (pIndex * (ensureArray(phase.deliverables).length) + dIndex) * 75, 'fade-in-up', disableAnimations);
         
                                         return (
                                             <div key={`${pIndex}-${dIndex}`} className="flex items-center h-14 relative group" style={deliverableAnimation}>
@@ -1046,7 +1046,7 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
+        <SlideWrapper className="p-12 flex flex-col">
             <EditableImage 
                 src={slide.image_url || imageUrls['policy_image'] || ''} 
                 alt="Policy background" 
@@ -1054,8 +1054,8 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Required Policy Levers"} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
-            <div className="relative z-20 space-y-4 flex-grow pr-4 overflow-hidden">
+            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Required Policy Levers"} className="text-5xl font-extrabold tracking-tighter mb-6 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
+            <div className="relative z-20 space-y-2 flex-grow pr-4 overflow-y-auto custom-scrollbar">
                 {(slide.recommendations || []).length > 0 ? (slide.recommendations || []).slice(0, 3).map((rec, i) => {
                     const recommendationAnimation = getAnimationStyles(isActive, 350 + i * 150, 'fade-in-up', disableAnimations);
                     const strategyLen = rec.strategy?.length || 0;
