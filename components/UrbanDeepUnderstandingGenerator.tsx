@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
-import { generateDeepUnderstanding, refineDeepUnderstanding } from '../services/geminiService';
+import { generateDeepUnderstanding, refineDeepUnderstanding } from '@/services/geminiService';
 import type { UrbanDeepUnderstanding, BrandingInfo } from '../types';
 import GeneratorShell from './GeneratorShell';
 import UrbanDeepUnderstandingInputForm from './UrbanDeepUnderstandingInputForm';

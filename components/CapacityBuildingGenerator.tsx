@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { generateCapacityBuildingProgram, getCapacityBuildingSuggestions } from '../services/vertexService';
+import { generateCapacityBuildingProgram, getCapacityBuildingSuggestions } from '@/services/geminiService';
 import type { CapacityBuildingProgram, BrandingInfo } from '../types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';

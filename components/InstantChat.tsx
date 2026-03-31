@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { sendMessageToInstantChatStream } from '../services/vertexService';
+import { sendMessageToInstantChatStream } from '@/services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
 import { useAuth } from '../context/AuthContext';
 import { BrandingInfo } from '../types';
