@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { getRemainingCredits } from './middleware.js';
-import apiRouter from './api.js';
+import { getRemainingCredits } from './middleware';
+import apiRouter from './api';
 
 const app = express();
 

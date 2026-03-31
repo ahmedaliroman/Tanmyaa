@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useBranding } from '../hooks/useBranding';
 import { useAuth } from '../context/AuthContext';
@@ -30,8 +30,6 @@ const BrandingManager: React.FC = () => {
 
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const presentationInputRef = useRef<HTMLInputElement>(null);
-    const reportInputRef = useRef<HTMLInputElement>(null);
 
     const isBusiness = profile?.plan === 'Business';
 
@@ -303,7 +301,6 @@ const BrandingManager: React.FC = () => {
                                         <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">Upload PDF or Image</p>
                                         <input 
                                             type="file" 
-                                            ref={presentationInputRef}
                                             onChange={(e) => handleFileChange(e, 'presentation')}
                                             accept=".pdf,image/*"
                                             className="absolute inset-0 opacity-0 cursor-pointer"
@@ -383,7 +380,6 @@ const BrandingManager: React.FC = () => {
                                         <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">Upload PDF or Image</p>
                                         <input 
                                             type="file" 
-                                            ref={reportInputRef}
                                             onChange={(e) => handleFileChange(e, 'report')}
                                             accept=".pdf,image/*"
                                             className="absolute inset-0 opacity-0 cursor-pointer"
