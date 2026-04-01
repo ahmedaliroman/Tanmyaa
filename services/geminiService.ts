@@ -422,7 +422,7 @@ export const generatePresentation = async (
 export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PresentationSlide[]> => {
     const ai = getAi();
     const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
-    const systemInstruction = `You are a Lead Strategist at Tanmyaa Global. Your task is to intelligently refine the provided JSON presentation structure based on the user's request, ensuring technical coherence and strategic depth.
+    const systemInstruction = `You are a Lead Strategist at Tanmyaa Global, an elite Urban Planning consultancy. Your task is to intelligently refine the provided JSON presentation structure based on the user's request.
     
     ${getBrandingInstruction(plan, branding)}
     
@@ -434,7 +434,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     METRICS & CURRENCY: Use appropriate metrics and currency that fit the content and location context.
     
-    ADD/REMOVE SLIDES: You are strictly forbidden from adding, removing, or reordering slides unless the user explicitly asks you to do so (e.g., "add a new slide", "delete this slide"). By default, you MUST ONLY modify the content of the slide the user is currently viewing (Slide ${activeSlideIndex + 1}, which is index ${activeSlideIndex}). You MUST return the entire presentation JSON, but every other slide MUST remain exactly identical to the input.
+    ADD/REMOVE SLIDES: You are strictly forbidden from adding, removing, or reordering slides unless the user explicitly asks you to do so (e.g., "add a new slide", "delete this slide"). By default, you MUST ONLY modify the content of the slide the user is currently viewing (Slide ${activeSlideIndex + 1}). You MUST return the entire presentation JSON, but every other slide MUST remain exactly identical to the input.
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
     
@@ -443,13 +443,23 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
 
     const slides = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `CRITICAL: You are refining a presentation. The user is currently viewing Slide ${activeSlideIndex + 1} (index ${activeSlideIndex}). 
+        const activeSlide = currentSlides[activeSlideIndex];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `CRITICAL: You are refining an Urban Planning presentation. 
         
-User Request: "${userRequest}"
+TARGET SLIDE FOR MODIFICATION: Slide ${activeSlideIndex + 1} (Index: ${activeSlideIndex})
+CURRENT CONTENT OF TARGET SLIDE:
+${JSON.stringify(activeSlide, null, 2)}
 
-Unless the user explicitly asks to add, delete, or move slides, you MUST ONLY modify the content of Slide ${activeSlideIndex + 1}. You MUST return the full JSON array of all slides, but the content of all other slides MUST remain EXACTLY as provided below. Do not change a single character in the other slides.
+USER REQUEST: "${userRequest}"
 
-Current presentation state:
+INSTRUCTIONS:
+1. Focus your intelligence on the TARGET SLIDE. Apply the user's request to its content.
+2. If the request is about style, tone, or specific data points, update the TARGET SLIDE accordingly.
+3. You MUST return the ENTIRE presentation JSON array (all slides).
+4. Unless the user explicitly asks for structural changes (like "add a slide", "remove this slide", or "reorder"), you MUST keep all other slides EXACTLY as they are.
+5. Ensure the resulting JSON is valid and follows the established urban planning schema.
+
+FULL PRESENTATION STATE (FOR CONTEXT):
 ${JSON.stringify(currentSlides)}` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'presentation');
@@ -460,7 +470,8 @@ ${JSON.stringify(currentSlides)}` }];
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }]
+                tools: [{ googleSearch: {} }],
+                thinkingConfig: model.includes('pro') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
             },
         });
         const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
@@ -469,9 +480,12 @@ ${JSON.stringify(currentSlides)}` }];
         
         // Programmatic enforcement: If the user didn't explicitly ask for structural changes,
         // and the AI returned the same number of slides, ONLY apply the changes to the active slide.
-        const isStructuralChange = /add|remove|delete|reorder|move|swap|insert/i.test(userRequest);
+        const isStructuralChange = /(add|create|insert|new)\s+(a\s+)?slide|(delete|remove|drop|erase)\s+(this|the|slide\s+\d+)\s+slide|reorder|move|swap|rearrange/i.test(userRequest);
+        
         if (!isStructuralChange && filtered.length === currentSlides.length) {
             const newSlides = [...currentSlides];
+            // We find the slide in the AI's response that matches the active slide's layout or position
+            // Usually, if the AI followed instructions, it's at the same index.
             newSlides[activeSlideIndex] = filtered[activeSlideIndex];
             return newSlides;
         }

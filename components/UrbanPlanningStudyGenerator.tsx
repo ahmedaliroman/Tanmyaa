@@ -555,10 +555,39 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   }, [slides, currentIndex, companyProfile]);
 
 
-  const handleModifySlide = useCallback(() => {
+  const handleModifySlide = useCallback(async () => {
     setIsChatOpen(true);
     setChatInput(`I want to modify slide ${currentIndex + 1}: `);
-  }, [currentIndex]);
+    
+    if (slides && slides[currentIndex]) {
+        setIsSuggestionsLoading(true);
+        try {
+            const suggestions = await getSlideRefinementSuggestions(slides[currentIndex]);
+            setChatSuggestions(suggestions);
+        } catch (err) {
+            console.error("Failed to fetch suggestions:", err);
+        } finally {
+            setIsSuggestionsLoading(false);
+        }
+    }
+  }, [currentIndex, slides]);
+
+  useEffect(() => {
+    if (isChatOpen && slides && slides[currentIndex]) {
+        const fetchSuggestions = async () => {
+            setIsSuggestionsLoading(true);
+            try {
+                const suggestions = await getSlideRefinementSuggestions(slides[currentIndex]);
+                setChatSuggestions(suggestions);
+            } catch (err) {
+                console.error("Failed to fetch suggestions:", err);
+            } finally {
+                setIsSuggestionsLoading(false);
+            }
+        };
+        fetchSuggestions();
+    }
+  }, [isChatOpen, currentIndex, slides]);
 
   const handleSlideUpdate = (slideIndex: number, fieldPath: string, value: unknown) => {
     if (!fieldPath) return;

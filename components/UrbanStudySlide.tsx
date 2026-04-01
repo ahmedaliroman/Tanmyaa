@@ -91,6 +91,16 @@ const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(
 // Fix: Added 'style' prop to allow inline styling for components like Gantt charts that need specific backgrounds.
 const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties }> = ({ children, className = '', style }) => (
     <div className={`w-full h-full text-[var(--color-accent-cream)] flex flex-col overflow-hidden relative font-sans ${className}`} style={style}>
+        {/* Tanmyaa Branding Header */}
+        <div className="absolute top-4 right-6 z-50 flex items-center space-x-2 opacity-60 hover:opacity-100 transition-opacity pointer-events-none select-none">
+            <div className="flex flex-col items-end">
+                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 leading-none">Powered by</span>
+                <span className="text-sm font-black tracking-tighter text-white leading-none mt-0.5">TANMYAA</span>
+            </div>
+            <div className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/20">
+                <div className="w-4 h-4 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-sm rotate-45"></div>
+            </div>
+        </div>
         {children}
     </div>
 );
@@ -250,16 +260,16 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
             <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
             <div className="relative z-20 grid grid-cols-2 gap-12 flex-grow min-h-0">
                 <div className="flex flex-col pr-4" style={narrativeAnimation}>
-                    <Editable as="p" value={slide.narrative} onUpdate={v => onUpdate('narrative', v)} className={`${(slide.narrative?.length || 0) > 800 ? 'text-xs' : 'text-base'} leading-relaxed text-white/80`} useMarkdown />
+                    <Editable as="p" value={slide.narrative} onUpdate={v => onUpdate('narrative', v)} className={`${(slide.narrative?.length || 0) > 800 ? 'text-sm' : 'text-lg'} leading-relaxed text-white/80`} useMarkdown />
                 </div>
                 <div className="flex flex-col justify-center">
-                    <ul className="space-y-5">
+                    <ul className="space-y-6">
                         {ensureArray(slide.key_points).map((point, i) => {
                             const keyPointAnimation = getAnimationStyles(isActive, 500 + i * 150, 'fade-in-up', disableAnimations);
                             return (
                                 <li key={i} className="flex items-start" style={keyPointAnimation}>
-                                     <div className="w-9 h-9 rounded-full bg-[var(--color-primary-medium)] text-[var(--color-accent-cream)] text-sm font-bold flex items-center justify-center mr-4 flex-shrink-0">{String(i+1).padStart(2, '0')}</div>
-                                    <Editable value={point} onUpdate={v => onUpdate(`key_points[${i}]`, v)} className="text-base font-semibold pt-1" />
+                                     <div className="w-10 h-10 rounded-full bg-[var(--color-primary-medium)] text-[var(--color-accent-cream)] text-base font-bold flex items-center justify-center mr-5 flex-shrink-0 shadow-lg">{String(i+1).padStart(2, '0')}</div>
+                                    <Editable value={point} onUpdate={v => onUpdate(`key_points[${i}]`, v)} className="text-lg font-semibold pt-1" />
                                 </li>
                             )
                         })}
@@ -302,8 +312,8 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
                                 disableAnimations={disableAnimations}
                             />
                         </div>
-                        <Editable as="p" value={point.label} onUpdate={v => onUpdate(`key_data_points[${i}].label`, v)} className="text-white/90 uppercase tracking-[0.2em] font-bold text-xs md:text-sm" />
-                        <Editable as="p" value={point.description} onUpdate={v => onUpdate(`key_data_points[${i}].description`, v)} className="text-white/60 text-[10px] md:text-xs mt-4 max-w-[30ch] leading-snug" />
+                        <Editable as="p" value={point.label} onUpdate={v => onUpdate(`key_data_points[${i}].label`, v)} className="text-white/90 uppercase tracking-[0.2em] font-bold text-sm md:text-base" />
+                        <Editable as="p" value={point.description} onUpdate={v => onUpdate(`key_data_points[${i}].description`, v)} className="text-white/60 text-xs md:text-sm mt-4 max-w-[30ch] leading-snug" />
                     </div>
                 );
             })}
@@ -317,8 +327,8 @@ const SWOTCategory: React.FC<{ title: string; items: { title: string; descriptio
         <div className="space-y-3 mt-4">
             {ensureArray(items).map((item, i) => (
                 <div key={i}>
-                    <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-semibold text-white text-sm" useMarkdown/>
-                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${(item.description?.length || 0) > 120 ? 'text-[9px]' : 'text-[11px]'} text-white/70 mt-0.5 leading-tight`} />
+                    <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-bold text-white text-base" useMarkdown/>
+                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${(item.description?.length || 0) > 120 ? 'text-xs' : 'text-sm'} text-white/70 mt-1 leading-relaxed`} />
                 </div>
             ))}
         </div>
@@ -389,11 +399,11 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
                 </div>
                 <div className="w-full flex justify-between items-end gap-8 min-h-0 flex-grow mt-8">
                     <div className="w-2/3 bg-black/60 backdrop-blur-md p-6 rounded-lg border border-white/10 max-h-full" style={disableAnimations ? { opacity: 1 } : contentAnimation}>
-                        <Editable as="p" value={slide.introduction} onUpdate={v => onUpdate('introduction', v)} className={`${(slide.introduction?.length || 0) > 400 ? 'text-xs' : 'text-base'} text-white/80 mb-4`} useMarkdown />
+                        <Editable as="p" value={slide.introduction} onUpdate={v => onUpdate('introduction', v)} className={`${(slide.introduction?.length || 0) > 400 ? 'text-sm' : 'text-lg'} text-white/80 mb-6 leading-relaxed`} useMarkdown />
                         <div className="border-t border-[var(--color-primary-medium)] pt-4">
                             <h3 className="font-bold text-xs uppercase tracking-wider text-white/60">Proven Application</h3>
-                            <ul className="list-disc list-inside space-y-1 mt-2 text-sm text-white/90">
-                                {ensureArray(slide.key_findings).map((finding, i) => <li key={i}><Editable as="span" value={finding} onUpdate={v => onUpdate(`key_findings[${i}]`, v)} className={(finding?.length || 0) > 150 ? 'text-xs' : 'text-sm'} useMarkdown/></li>)}
+                            <ul className="list-disc list-inside space-y-2 mt-2 text-base text-white/90">
+                                {ensureArray(slide.key_findings).map((finding, i) => <li key={i}><Editable as="span" value={finding} onUpdate={v => onUpdate(`key_findings[${i}]`, v)} className={(finding?.length || 0) > 150 ? 'text-sm' : 'text-base'} useMarkdown/></li>)}
                             </ul>
                         </div>
                         <div className="border-t border-[var(--color-primary-medium)]/50 pt-4 mt-4">
@@ -457,12 +467,12 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
                 {ensureArray(slide.strategies).map((strategy, i) => {
                     const strategyAnimation = getAnimationStyles(isActive, 400 + i * 150, 'scale-in', disableAnimations);
                     return (
-                        <div key={i} className="bg-black/50 backdrop-blur-md p-5 rounded-lg border border-white/10 flex flex-col" style={strategyAnimation}>
-                            <Editable as="h3" value={strategy.title} onUpdate={v => onUpdate(`strategies[${i}].title`, v)} className="font-bold text-xl text-[var(--color-accent-light)]" />
-                            <Editable as="p" value={strategy.description} onUpdate={v => onUpdate(`strategies[${i}].description`, v)} className={`${(strategy.description?.length || 0) > 200 ? 'text-xs' : 'text-sm'} text-white/80 mt-2`} useMarkdown />
-                            <div className="mt-3 pt-3 border-t border-white/10">
+                        <div key={i} className="bg-black/50 backdrop-blur-md p-6 rounded-lg border border-white/10 flex flex-col" style={strategyAnimation}>
+                            <Editable as="h3" value={strategy.title} onUpdate={v => onUpdate(`strategies[${i}].title`, v)} className="font-bold text-2xl text-[var(--color-accent-light)]" />
+                            <Editable as="p" value={strategy.description} onUpdate={v => onUpdate(`strategies[${i}].description`, v)} className={`${(strategy.description?.length || 0) > 200 ? 'text-sm' : 'text-base'} text-white/80 mt-3 leading-relaxed`} useMarkdown />
+                            <div className="mt-4 pt-4 border-t border-white/10">
                                 <p className="text-xs font-bold text-white/50 uppercase tracking-wider">Rationale</p>
-                                <Editable as="p" value={strategy.rationale} onUpdate={v => onUpdate(`strategies[${i}].rationale`, v)} className={`${(strategy.rationale?.length || 0) > 100 ? 'text-[10px]' : 'text-xs'} text-white/70 mt-1 italic`}/>
+                                <Editable as="p" value={strategy.rationale} onUpdate={v => onUpdate(`strategies[${i}].rationale`, v)} className={`${(strategy.rationale?.length || 0) > 100 ? 'text-xs' : 'text-sm'} text-white/70 mt-2 italic leading-relaxed`}/>
                             </div>
                         </div>
                     )
@@ -808,26 +818,62 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     const totalQuarters = years.length * 4;
 
     const parseQuarter = (quarterStr: string | number | undefined | null): number => {
-        if (typeof quarterStr !== 'string' || !quarterStr) return -1;
+        if (quarterStr === undefined || quarterStr === null) return -1;
         
-        // Handle "Q1 2025", "Q1-2025", "Quarter 1 2025", "2025 Q1", "Q1 25", or just "Q1"
-        const qMatch = quarterStr.match(/Q(\d)/i) || quarterStr.match(/Quarter\s*(\d)/i);
-        const yMatch = quarterStr.match(/(\d{4})/) || quarterStr.match(/(\d{2})$/);
+        // If it's already a number, assume it's an index or a year
+        if (typeof quarterStr === 'number') {
+            if (quarterStr >= 2000) return (quarterStr - startYear) * 4;
+            return quarterStr;
+        }
+
+        const str = String(quarterStr).trim();
+        if (!str) return -1;
         
-        if (!qMatch) return -1;
+        // Handle "Q1 2025", "Q1-2025", "Quarter 1 2025", "2025 Q1", "2025-Q1", "Q1 25", or just "Q1"
+        const qMatch = str.match(/Q(\d)/i) || str.match(/Quarter\s*(\d)/i);
+        const yMatch = str.match(/(\d{4})/) || str.match(/(\d{2})$/);
         
-        const quarterIndex = parseInt(qMatch[1]) - 1;
+        let quarterIndex = 0;
+        if (qMatch) {
+            quarterIndex = parseInt(qMatch[1]) - 1;
+        } else {
+            // If no Q found, maybe it's just a year or a date
+            const date = new Date(str);
+            if (!isNaN(date.getTime())) {
+                const month = date.getMonth();
+                quarterIndex = Math.floor(month / 3);
+                const year = date.getFullYear();
+                return (year - startYear) * 4 + quarterIndex;
+            }
+        }
+        
         let yearInt = startYear;
-        
         if (yMatch) {
             const matchedYear = parseInt(yMatch[1]);
             yearInt = matchedYear < 100 ? 2000 + matchedYear : matchedYear;
+        } else if (str.includes('-')) {
+            // Handle "2025-01" or "2025-Q1"
+            const parts = str.split('-');
+            const firstPart = parseInt(parts[0]);
+            if (firstPart >= 2000) yearInt = firstPart;
+            
+            const secondPart = parts[1].toUpperCase();
+            if (secondPart.startsWith('Q')) {
+                quarterIndex = parseInt(secondPart.substring(1)) - 1;
+            } else {
+                const month = parseInt(secondPart);
+                if (!isNaN(month)) quarterIndex = Math.floor((month - 1) / 3);
+            }
         }
         
         const yearIndex = yearInt - startYear;
+        const finalIndex = yearIndex * 4 + quarterIndex;
         
-        if (isNaN(quarterIndex) || quarterIndex < 0 || quarterIndex > 3 || isNaN(yearIndex)) return -1;
-        return yearIndex * 4 + quarterIndex;
+        if (isNaN(quarterIndex) || quarterIndex < 0 || quarterIndex > 3 || isNaN(yearIndex) || finalIndex < 0 || finalIndex >= totalQuarters) {
+            console.warn(`Gantt Chart: Failed to parse quarter "${quarterStr}" (Result: ${finalIndex}, Range: 0-${totalQuarters-1})`);
+            return -1;
+        }
+        return finalIndex;
     };
 
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
@@ -919,29 +965,38 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                                             </div>
 
                                             {/* Actions (Deliverables) Row */}
-                                            <div className="flex relative min-h-[50px]">
-                                                <div className="w-[30%]" />
-                                                <div className="w-[70%] relative h-full">
+                                            <div className="flex relative" style={{ minHeight: `${Math.max(60, deliverables.length * 35 + 20)}px` }}>
+                                                <div className="w-[30%] pt-2">
+                                                    <div className="h-full border-r border-white/10 flex flex-col justify-start">
+                                                        <span className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-2">Deliverables</span>
+                                                    </div>
+                                                </div>
+                                                <div className="w-[70%] relative h-full pt-2">
                                                     {deliverables.map((d, dIndex) => {
                                                         const start = parseQuarter(d.start_quarter);
                                                         const end = parseQuarter(d.end_quarter);
                                                         if (start < 0 || end < 0) return null;
-                                                        const duration = end - start + 1;
+                                                        const duration = Math.max(1, end - start + 1);
                                                         const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
                                                         
                                                         return (
-                                                            <div key={dIndex} className="absolute h-4 z-20 group" style={{
-                                                                left: `${((start) / totalQuarters) * 100}%`,
+                                                            <div key={dIndex} className="absolute h-7 z-20 group" style={{
+                                                                left: `${(start / totalQuarters) * 100}%`,
                                                                 width: `${(duration / totalQuarters) * 100}%`,
-                                                                top: '0'
+                                                                top: `${dIndex * 40 + 20}px`
                                                             }}>
-                                                                <div className="h-full bg-cyan-400/80 backdrop-blur-sm rounded-sm border border-white/20 shadow-lg transition-all group-hover:brightness-125 group-hover:h-5" 
+                                                                <div className="h-full bg-cyan-400/80 backdrop-blur-sm rounded-sm border border-white/20 shadow-lg transition-all group-hover:brightness-125 group-hover:scale-y-110" 
                                                                      style={{ background: 'linear-gradient(180deg, rgba(90, 200, 250, 0.9) 0%, rgba(0, 162, 232, 0.9) 100%)' }}
-                                                                />
-                                                                <div className="absolute top-full mt-2 left-0 w-full px-1 overflow-visible">
-                                                                    <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-[10px] font-bold text-white/90 leading-none mb-1 whitespace-nowrap drop-shadow-md" />
-                                                                    <div className="text-[8px] text-white/50 font-medium italic border-l border-white/30 pl-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                                                                        <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} />
+                                                                >
+                                                                    <div className="absolute inset-0 bg-white/10 opacity-20"></div>
+                                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/40"></div>
+                                                                </div>
+                                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 ml-3 w-full pr-4 pointer-events-none">
+                                                                    <div className="flex items-center space-x-3 overflow-hidden">
+                                                                        <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-[11px] font-bold text-white leading-none whitespace-nowrap drop-shadow-md pointer-events-auto" />
+                                                                        <span className="text-[9px] text-white/70 font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                                                                            <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} className="pointer-events-auto" />
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>
