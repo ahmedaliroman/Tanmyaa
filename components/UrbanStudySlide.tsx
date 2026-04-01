@@ -406,7 +406,6 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
     const weaknessesAnimation = getAnimationStyles(isActive, 400, 'fade-in-up', disableAnimations);
     const opportunitiesAnimation = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
     const threatsAnimation = getAnimationStyles(isActive, 550, 'fade-in-up', disableAnimations);
-    const reflectionAnimation = getAnimationStyles(isActive, 700, 'fade-in-up', disableAnimations);
 
     return (
         <SlideWrapper className="p-16 flex flex-col">
@@ -439,9 +438,6 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
                         <SWOTCategory title="Threats" items={slide.threats} onUpdate={onUpdate} type="threats" animationStyle={threatsAnimation} />
                     </div>
                 </div>
-            </div>
-             <div className="relative z-20 mt-6 flex-shrink-0">
-                <AnalyticReflection text={slide.analytic_reflection} onUpdate={v => onUpdate('analytic_reflection', v)} animationStyle={reflectionAnimation} disableAnimations={disableAnimations} />
             </div>
         </SlideWrapper>
     );
@@ -687,24 +683,45 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                     </AutoFitText>
                     <Editable as="p" value={slide.site_rationale} onUpdate={v => onUpdate('site_rationale', v)} className="text-sm text-white/70 max-w-xl mx-auto mt-2 italic" />
                 </div>
-                <div className="grid grid-cols-3 gap-6 w-full max-w-5xl mx-auto">
+                <div className="flex flex-wrap justify-center items-center gap-4 w-full max-w-6xl mx-auto flex-grow overflow-hidden">
                     {ensureArray(slide.metrics).map((metric, i) => {
                         const metricAnimation = getAnimationStyles(isActive, 400 + i * 150, 'fade-in-up', disableAnimations);
+                        const metricCount = ensureArray(slide.metrics).length;
+                        
+                        // Dynamically adjust size based on count to prevent overlap
+                        let sizeClass = "w-64 h-64";
+                        let numberClass = "text-4xl";
+                        let labelClass = "text-xs";
+                        
+                        if (metricCount > 4) {
+                            sizeClass = "w-40 h-40";
+                            numberClass = "text-2xl";
+                            labelClass = "text-[8px]";
+                        } else if (metricCount > 3) {
+                            sizeClass = "w-48 h-48";
+                            numberClass = "text-3xl";
+                            labelClass = "text-[10px]";
+                        }
+                        
                         return (
-                            <div key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-full px-8 py-6 flex flex-col items-center justify-center text-center shadow-2xl" style={metricAnimation}>
+                            <div key={i} className={`${sizeClass} bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex flex-col items-center justify-center text-center shadow-2xl p-4 transition-all duration-300`} style={metricAnimation}>
                                 <MetricValueDisplay
                                     value={metric.value}
                                     isActive={isActive}
-                                    numberClass="text-4xl font-bold text-white"
-                                    suffixClass="text-xl text-white/80"
+                                    numberClass={`${numberClass} font-bold text-white`}
+                                    suffixClass={`${metricCount > 3 ? "text-base" : "text-xl"} text-white/80`}
                                     disableAnimations={disableAnimations}
                                 />
-                                <Editable as="p" value={metric.label} onUpdate={v => onUpdate(`metrics[${i}].label`, v)} className="text-xs text-white/60 uppercase tracking-widest mt-1" />
+                                <Editable as="p" value={metric.label} onUpdate={v => onUpdate(`metrics[${i}].label`, v)} className={`${labelClass} text-white/60 uppercase tracking-widest mt-1 px-2 font-bold`} />
                             </div>
                         )
                     })}
                 </div>
-                 <div style={conclusionAnimation}><Editable as="p" value={slide.conclusion} onUpdate={v => onUpdate('conclusion', v)} className="text-xl font-bold text-[var(--color-accent-light)]" useMarkdown /></div>
+                 <div style={conclusionAnimation} className="mt-4 flex-shrink-0">
+                    <AutoFitText maxFontSize={24} minFontSize={16}>
+                        <Editable as="p" value={slide.conclusion} onUpdate={v => onUpdate('conclusion', v)} className="font-bold text-[var(--color-accent-light)]" useMarkdown />
+                    </AutoFitText>
+                 </div>
             </div>
              <div className="relative z-20 px-8 pb-4 w-full max-w-2xl mx-auto">
                  <AnalyticReflection text={slide.analytic_reflection} onUpdate={v => onUpdate('analytic_reflection', v)} animationStyle={reflectionAnimation} disableAnimations={disableAnimations} />

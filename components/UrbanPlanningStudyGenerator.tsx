@@ -290,53 +290,159 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     setExportProgress(0);
     setError(null);
     
-    // Allow React to render the off-screen export container
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     try {
         const pptx = new pptxgen();
         pptx.layout = 'LAYOUT_16x9';
         pptx.defineLayout({ name: 'TANMYAA', width: 13.33, height: 7.5 });
         pptx.layout = 'TANMYAA';
 
-        const slideWidth = 1280;
-        const slideHeight = 720;
+        const logoUrl = profile?.branding_logo || '';
+        const accentColor = 'D2C1B6'; // Default accent light
+        const primaryColor = '3B82F6'; // Default primary
 
         for (let i = 0; i < slides.length; i++) {
             setExportProgress(i + 1);
-            
-            const slideElement = document.getElementById(`export-slide-container-${i}`);
-            if (!slideElement) {
-                throw new Error(`Slide ${i + 1} container not found in the DOM.`);
-            }
-
-            // Capture the slide as a high-quality PNG
-            const dataUrl = await domToPng(slideElement, {
-                width: slideWidth,
-                height: slideHeight,
-                scale: 2, // Higher scale for crisp PPTX images
-                backgroundColor: '#0A0A0A',
-                features: {
-                    removeControlCharacter: true
-                }
-            });
-
+            const slide = slides[i];
             const pptxSlide = pptx.addSlide();
             pptxSlide.background = { color: '0A0A0A' };
-            
-            // Add the captured image as the full slide content
-            pptxSlide.addImage({
-                data: dataUrl,
-                x: 0, y: 0, w: '100%', h: '100%',
-                sizing: { type: 'cover' }
+
+            // Determine background image
+            let bgImage = slide.image_url;
+            if (!bgImage) {
+                switch (slide.layout) {
+                    case 'Cover': bgImage = imageUrls['cover_image']; break;
+                    case 'Crisis': bgImage = imageUrls['crisis_image']; break;
+                    case 'Closing': bgImage = imageUrls['closing_image']; break;
+                    case 'CaseStudyDeepDive': bgImage = imageUrls[(slide as CaseStudyDeepDiveSlide).image_prompt]; break;
+                    case 'Vision': bgImage = imageUrls[(slide as VisionSlide).image_prompt]; break;
+                    case 'MacroStrategy': bgImage = imageUrls[(slide as MacroStrategySlide).image_prompt]; break;
+                }
+            }
+
+            // Node Assessment has two images
+            if (slide.layout === 'NodeAssessment') {
+                const s = slide as NodeAssessmentSlide;
+                const beforeImg = s.before_image_url || imageUrls[s.before_image_prompt];
+                const afterImg = s.after_image_url || imageUrls[s.after_image_prompt];
+                
+                if (beforeImg) {
+                    pptxSlide.addImage({ path: beforeImg, x: 0, y: 0, w: 6.66, h: 7.5, sizing: { type: 'cover' } });
+                    pptxSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 6.66, h: 7.5, fill: { color: '000000', transparency: 80 } });
+                }
+                if (afterImg) {
+                    pptxSlide.addImage({ path: afterImg, x: 6.66, y: 0, w: 6.67, h: 7.5, sizing: { type: 'cover' } });
+                    pptxSlide.addShape(pptx.ShapeType.rect, { x: 6.66, y: 0, w: 6.67, h: 7.5, fill: { color: '000000', transparency: 75 } });
+                }
+            } else if (bgImage && bgImage !== 'error' && !bgImage.includes('placeholder')) {
+                pptxSlide.addImage({ path: bgImage, x: 0, y: 0, w: '100%', h: '100%', sizing: { type: 'cover' } });
+                pptxSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 75 } });
+            }
+
+            // Add Logo if exists
+            if (logoUrl && !logoUrl.includes('placeholder')) {
+                pptxSlide.addImage({ path: logoUrl, x: 12.2, y: 0.3, w: 0.8, h: 0.8, sizing: { type: 'contain' } });
+            }
+
+            // Add Title
+            pptxSlide.addText(slide.title || 'Slide ' + (i + 1), {
+                x: 0.5, y: 0.5, w: 12, fontSize: 36, color: accentColor, bold: true, fontFace: 'Arial Black', margin: 0
             });
+
+            // Layout specific content
+            switch (slide.layout) {
+                case 'Cover': {
+                    const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+                    pptxSlide.addText(s.subtitle || '', { x: 0.5, y: 1.2, w: 12, fontSize: 18, color: 'FFFFFF', fontFace: 'Arial' });
+                    pptxSlide.addText(s.project_code || 'TAN-2026', { x: 0.5, y: 6.2, w: 3, fontSize: 14, color: primaryColor, bold: true });
+                    pptxSlide.addText(s.year || '2026', { x: 0.5, y: 6.5, w: 3, fontSize: 12, color: 'FFFFFF' });
+                    break;
+                }
+                case 'ExecutiveOverview': {
+                    const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+                    pptxSlide.addText(s.narrative || '', { x: 0.5, y: 1.5, w: 6, fontSize: 12, color: 'FFFFFF', fontFace: 'Arial', margin: 10 });
+                    (s.key_points || []).forEach((point: string, idx: number) => {
+                        pptxSlide.addText(`${idx + 1}. ${point}`, { x: 7.0, y: 1.5 + (idx * 0.8), w: 5.5, fontSize: 14, color: 'FFFFFF', bold: true });
+                    });
+                    break;
+                }
+                case 'NodeAssessment': {
+                    const s = slide as NodeAssessmentSlide;
+                    pptxSlide.addText(s.site_rationale || '', { x: 0.5, y: 1.2, w: 12, fontSize: 14, color: 'FFFFFF', italic: true, align: 'center' });
+                    
+                    const metrics = s.metrics || [];
+                    const metricCount = metrics.length;
+                    
+                    // Adjust sizing based on count
+                    let ellipseSize = 2.2;
+                    let fontSizeVal = 24;
+                    let fontSizeLabel = 10;
+                    let cols = 3;
+                    
+                    if (metricCount > 4) {
+                        ellipseSize = 1.6;
+                        fontSizeVal = 18;
+                        fontSizeLabel = 8;
+                        cols = 4;
+                    } else if (metricCount > 3) {
+                        ellipseSize = 1.8;
+                        fontSizeVal = 20;
+                        fontSizeLabel = 9;
+                        cols = 4;
+                    }
+                    
+                    const colWidth = 12 / cols;
+                    
+                    metrics.forEach((m, idx) => {
+                        const row = Math.floor(idx / cols);
+                        const col = idx % cols;
+                        const xPos = 0.6 + (col * colWidth) + (colWidth - ellipseSize) / 2;
+                        const yPos = 2.2 + (row * (ellipseSize + 0.5));
+                        
+                        pptxSlide.addShape(pptx.ShapeType.ellipse, { 
+                            x: xPos, y: yPos, w: ellipseSize, h: ellipseSize, 
+                            fill: { color: 'FFFFFF', transparency: 90 }, 
+                            line: { color: 'FFFFFF', width: 1 } 
+                        });
+                        pptxSlide.addText(m.value, { 
+                            x: xPos, y: yPos + (ellipseSize * 0.3), w: ellipseSize, 
+                            fontSize: fontSizeVal, color: 'FFFFFF', bold: true, align: 'center' 
+                        });
+                        pptxSlide.addText(m.label, { 
+                            x: xPos, y: yPos + (ellipseSize * 0.6), w: ellipseSize, 
+                            fontSize: fontSizeLabel, color: 'FFFFFF', align: 'center', bold: true 
+                        });
+                    });
+                    
+                    pptxSlide.addText(s.conclusion || '', { x: 0.5, y: 6.8, w: 12, fontSize: 18, color: accentColor, bold: true, align: 'center' });
+                    break;
+                }
+                case 'SWOT': {
+                    const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+                    const cats = [
+                        { label: 'STRENGTHS', data: s.strengths, x: 0.5, y: 1.5, color: '10B981' },
+                        { label: 'WEAKNESSES', data: s.weaknesses, x: 6.8, y: 1.5, color: 'EF4444' },
+                        { label: 'OPPORTUNITIES', data: s.opportunities, x: 0.5, y: 4.5, color: '3B82F6' },
+                        { label: 'THREATS', data: s.threats, x: 6.8, y: 4.5, color: 'F59E0B' }
+                    ];
+                    cats.forEach(cat => {
+                        pptxSlide.addText(cat.label, { x: cat.x, y: cat.y, w: 6, fontSize: 16, color: cat.color, bold: true });
+                        (cat.data || []).forEach((item: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                            pptxSlide.addText(`• ${item.title}`, { x: cat.x, y: cat.y + 0.4 + (idx * 0.6), w: 6, fontSize: 12, color: 'FFFFFF', bold: true });
+                            pptxSlide.addText(item.description, { x: cat.x + 0.2, y: cat.y + 0.6 + (idx * 0.6), w: 5.8, fontSize: 10, color: 'CCCCCC' });
+                        });
+                    });
+                    break;
+                }
+                default: {
+                    pptxSlide.addText(slide.description || '', { x: 0.5, y: 1.5, w: 12, fontSize: 14, color: 'FFFFFF' });
+                }
+            }
         }
 
         await pptx.writeFile({ fileName: 'Tanmyaa_Presentation.pptx' });
     } catch (error) {
         console.error('Error during PPTX export:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        setError(`PPTX Export Failed: ${errorMessage}. Please try again.`);
+        setError(`PPTX Export Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
         setIsExportingPptx(false);
         setExportProgress(0);
