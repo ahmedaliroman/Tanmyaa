@@ -205,9 +205,8 @@ const SubscriptionTier: React.FC<{
                                 });
                             }}
                             onApprove={async (data, actions) => {
-                                if (actions.order) {
-                                    const order = await actions.order.capture();
-                                    await handleCaptureOrder(order.id);
+                                if (data.orderID) {
+                                    await handleCaptureOrder(data.orderID);
                                 }
                             }}
                         />
