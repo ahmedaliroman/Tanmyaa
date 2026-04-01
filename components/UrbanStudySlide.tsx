@@ -381,15 +381,17 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
 const SWOTCategory: React.FC<{ title: string; items: { title: string; description: string }[]; onUpdate: (field: string, val: string) => void; type: 'strengths' | 'weaknesses' | 'opportunities' | 'threats'; animationStyle: CSSProperties }> = ({ title, items, onUpdate, type, animationStyle }) => (
     <div className="min-h-0 flex flex-col h-full" style={animationStyle}>
         <h3 className="font-bold text-lg mb-3 text-[var(--color-accent-light)] border-b border-white/20 pb-2 flex-shrink-0">{title}</h3>
-        <div className="space-y-3 mt-4 flex-grow overflow-hidden">
+        <div className="space-y-4 mt-2 flex-grow overflow-hidden flex flex-col">
             {ensureArray(items).map((item, i) => (
-                <div key={i} className="h-1/3 flex flex-col justify-center">
-                    <AutoFitText maxFontSize={18} minFontSize={14}>
-                        <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-bold text-white" useMarkdown/>
-                    </AutoFitText>
+                <div key={i} className="flex-1 min-h-0 flex flex-col justify-center py-1">
+                    <div className="flex-shrink-0">
+                        <AutoFitText maxFontSize={18} minFontSize={14}>
+                            <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-bold text-white leading-tight" useMarkdown/>
+                        </AutoFitText>
+                    </div>
                     <div className="flex-grow overflow-hidden mt-1">
-                        <AutoFitText maxFontSize={16} minFontSize={12}>
-                            <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className="text-white/70 leading-relaxed" />
+                        <AutoFitText maxFontSize={15} minFontSize={11}>
+                            <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className="text-white/90 font-medium leading-relaxed" />
                         </AutoFitText>
                     </div>
                 </div>
@@ -1095,23 +1097,28 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                                         {/* Actions (Deliverables) Row */}
                                         <div className="flex relative">
                                             <div className="w-[20%]"></div>
-                                            <div className="w-[80%] relative space-y-3">
+                                            <div className="w-[80%] relative space-y-2">
                                                 {deliverables.map((d, dIndex) => {
                                                     const start = parseQuarter(d.start_quarter);
                                                     const end = parseQuarter(d.end_quarter);
                                                     if (start < 0 || end < 0) return null;
-                                                    const duration = Math.max(1, end - start + 1);
+                                                    
+                                                    // Ensure start is within bounds
+                                                    const safeStart = Math.max(0, Math.min(start, totalQuarters - 1));
+                                                    const safeEnd = Math.max(safeStart, Math.min(end, totalQuarters - 1));
+                                                    const duration = safeEnd - safeStart + 1;
+                                                    
                                                     const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
                                                     
                                                     return (
-                                                        <div key={dIndex} className="relative h-9 group/item" style={{
-                                                            marginLeft: `${(start / totalQuarters) * 100}%`,
+                                                        <div key={dIndex} className="relative h-8 group/item" style={{
+                                                            marginLeft: `${(safeStart / totalQuarters) * 100}%`,
                                                             width: `${(duration / totalQuarters) * 100}%`,
                                                         }}>
-                                                            <div className="h-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all flex items-center px-4 overflow-hidden shadow-sm hover:shadow-md">
-                                                                <div className="w-2 h-2 rounded-full mr-3 flex-shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)]" style={{ background: color }}></div>
+                                                            <div className="h-full bg-black/40 hover:bg-black/60 border border-white/10 rounded-lg transition-all flex items-center px-3 overflow-hidden shadow-sm hover:shadow-md">
+                                                                <div className="w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0" style={{ background: color }}></div>
                                                                 <div className="flex-grow overflow-hidden">
-                                                                    <AutoFitText maxFontSize={12} minFontSize={8}>
+                                                                    <AutoFitText maxFontSize={11} minFontSize={8}>
                                                                         <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="font-bold text-white/90 whitespace-nowrap" />
                                                                     </AutoFitText>
                                                                 </div>

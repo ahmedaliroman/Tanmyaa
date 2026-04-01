@@ -366,12 +366,12 @@ export const generatePresentation = async (
     - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}], image_prompt }
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
     - Roadmap: { layout: "Roadmap", phases: [{title, timeline (e.g. "Phase 1: 2025-2026"), action_steps: [{action, kpi}], outcome}] }
-    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year (number), timeline_end_year (number), phases: [{name, deliverables: [{name, start_quarter (1-4), end_quarter (1-4), kpi}]}] }
-    **CRITICAL: For GanttChartRoadmap, you MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year). Phases should form an overlapping chain that spans the full duration. For example, if the project is 2024-2032, Phase 1 might be 2024-2026, Phase 2 2026-2029, and Phase 3 2029-2032. Ensure each phase has at least one deliverable in its respective years. DO NOT cluster all phases in the same year.**
+    - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year (number), timeline_end_year (number), phases: [{name, deliverables: [{name, start_quarter (string, e.g., "Q1 2026"), end_quarter (string, e.g., "Q4 2026"), kpi}]}] }
+    **CRITICAL: For GanttChartRoadmap, you MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year). Phases should form an overlapping chain that spans the full duration. For example, if the project is 2024-2032, Phase 1 might be 2024-2026, Phase 2 2026-2029, and Phase 3 2029-2032. Ensure each phase has at least one deliverable in its respective years. DO NOT cluster all phases in the same year. Quarters MUST include the year (e.g., "Q1 2027").**
     
     CRITICAL: For Roadmap and GanttChartRoadmap, you MUST provide realistic, specific timeline data. DO NOT leave the 'timeline' or 'start_quarter'/'end_quarter' fields empty.
     - For Roadmap: 'timeline' should be a string like "Q1 2025 - Q4 2026".
-    - For GanttChartRoadmap: 'timeline_start_year' and 'timeline_end_year' must be valid years (e.g. 2025, 2030). 'start_quarter' and 'end_quarter' must be numbers 1, 2, 3, or 4.
+    - For GanttChartRoadmap: 'timeline_start_year' and 'timeline_end_year' must be valid years (e.g. 2025, 2030). 'start_quarter' and 'end_quarter' must be strings like "Q1 2025".
     - ProjectedImpact: { layout: "ProjectedImpact", title, subtitle, metrics: [{label, baseline, projected, timeframe, assumption}], analytic_reflection }
     - FiscalFramework: { layout: "FiscalFramework", title, cost_items: [{component, capex, opex, funding_source, recovery_mechanism}], analytic_reflection }
     - Process: { layout: "Process", title, subtitle, steps: [{step_number, title, description}], analytic_reflection }
@@ -447,7 +447,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     **CRITICAL REFINEMENT RULES:**
     - SWOT: **You MUST generate meaningful data for ALL four SWOT categories (Strengths, Weaknesses, Opportunities, AND Threats).**
-    - GanttChartRoadmap: **You MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year). Phases should form an overlapping chain that spans the full duration. Ensure each phase covers its respective years and deliverables are distributed accordingly. DO NOT cluster all phases in the same year.**
+    - GanttChartRoadmap: **You MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year). Phases should form an overlapping chain that spans the full duration. Ensure each phase covers its respective years and deliverables are distributed accordingly. DO NOT cluster all phases in the same year. Quarters MUST include the year (e.g., "Q3 2028").**
     - Branding: **DO NOT include the text "Powered by Tanmyaa" anywhere in the slide content.**
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
