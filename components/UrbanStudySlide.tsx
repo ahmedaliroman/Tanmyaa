@@ -1062,7 +1062,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                     </div>
 
                     {/* Chart Body */}
-                    <div className="flex-grow relative overflow-hidden pr-2 min-h-0">
+                    <div className="flex-grow relative overflow-y-auto overflow-x-hidden pr-2 min-h-0 custom-scrollbar">
                         {/* Vertical grid lines */}
                         <div className="absolute top-0 left-[20%] w-[80%] h-full grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
                             {Array.from({ length: totalQuarters }).map((_, i) => (
@@ -1071,7 +1071,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                         </div>
     
                         {/* Hierarchical Phases and Actions */}
-                        <div className="w-full h-full relative z-10 flex flex-col justify-between pb-4">
+                        <div className="w-full relative z-10 flex flex-col justify-start space-y-6 pb-4">
                             {ensureArray(slide.phases).map((phase, pIndex) => {
                                 const deliverables = ensureArray(phase.deliverables);
                                 const deliverableIndices = deliverables.map(d => ({
