@@ -299,6 +299,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
         const logoUrl = profile?.branding_logo || '';
         const accentLight = 'D2C1B6';
         const accentCream = 'F5F5DC';
+        const primaryMedium = '456882';
 
         for (let i = 0; i < slides.length; i++) {
             setExportProgress(i + 1);
