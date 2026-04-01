@@ -683,13 +683,13 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                     </AutoFitText>
                     <Editable as="p" value={slide.site_rationale} onUpdate={v => onUpdate('site_rationale', v)} className="text-sm text-white/70 max-w-xl mx-auto mt-2 italic" />
                 </div>
-                <div className="flex flex-wrap justify-center items-center gap-4 w-full max-w-6xl mx-auto flex-grow overflow-hidden">
+                <div className="flex flex-wrap justify-center items-center gap-6 w-full max-w-6xl mx-auto flex-grow overflow-hidden">
                     {ensureArray(slide.metrics).map((metric, i) => {
                         const metricAnimation = getAnimationStyles(isActive, 400 + i * 150, 'fade-in-up', disableAnimations);
                         const metricCount = ensureArray(slide.metrics).length;
                         
                         // Dynamically adjust size based on count to prevent overlap
-                        let sizeClass = "w-64 h-64";
+                        let sizeClass = "w-52 h-52"; // Reduced default size
                         let numberClass = "text-4xl";
                         let labelClass = "text-xs";
                         
@@ -717,7 +717,7 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
                         )
                     })}
                 </div>
-                 <div style={conclusionAnimation} className="mt-4 flex-shrink-0">
+                 <div style={conclusionAnimation} className="mt-6 flex-shrink-0">
                     <AutoFitText maxFontSize={24} minFontSize={16}>
                         <Editable as="p" value={slide.conclusion} onUpdate={v => onUpdate('conclusion', v)} className="font-bold text-[var(--color-accent-light)]" useMarkdown />
                     </AutoFitText>
