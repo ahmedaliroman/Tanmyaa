@@ -405,8 +405,8 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 }
                 case 'ExecutiveOverview': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Executive Overview', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
-                    pptxSlide.addText(s.narrative || '', { x: 0.8, y: 1.8, w: 5.5, fontSize: 18, color: accentCream, margin: 10 });
+                    pptxSlide.addText(s.title || 'Executive Overview', { x: 0.8, y: 0.5, w: 11.73, h: 1.2, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.narrative || '', { x: 0.8, y: 1.8, w: 5.5, h: 5.0, fontSize: 16, color: accentCream, margin: 10 });
                     const keyPoints = s.key_points || [];
                     const pointSpacing = Math.min(1.0, 5.0 / Math.max(1, keyPoints.length));
                     keyPoints.forEach((point: string, idx: number) => {
@@ -414,14 +414,14 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         const ellipseSize = Math.min(0.4, pointSpacing * 0.8);
                         pptxSlide.addShape(pptx.ShapeType.ellipse, { x: 6.8, y: yPos, w: ellipseSize, h: ellipseSize, fill: { color: primaryMedium } });
                         pptxSlide.addText(`${idx + 1}`, { x: 6.8, y: yPos, w: ellipseSize, h: ellipseSize, fontSize: Math.max(8, Math.min(12, ellipseSize * 30)), color: accentCream, bold: true, align: 'center' });
-                        pptxSlide.addText(point, { x: 6.8 + ellipseSize + 0.2, y: yPos, w: 5.5 - ellipseSize - 0.2, fontSize: Math.max(10, Math.min(16, pointSpacing * 20)), color: accentCream });
+                        pptxSlide.addText(point, { x: 6.8 + ellipseSize + 0.2, y: yPos, w: 5.5 - ellipseSize - 0.2, h: pointSpacing, fontSize: Math.max(10, Math.min(16, pointSpacing * 20)), color: accentCream });
                     });
                     break;
                 }
                 case 'NodeAssessment': {
                     const s = slide as NodeAssessmentSlide;
-                    pptxSlide.addText(s.title || 'Node Assessment', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true, align: 'center' });
-                    pptxSlide.addText(s.site_rationale || '', { x: 0.8, y: 1.5, w: 11.73, fontSize: 18, color: accentCream, italic: true, align: 'center' });
+                    pptxSlide.addText(s.title || 'Node Assessment', { x: 0.8, y: 0.8, w: 11.73, h: 0.6, fontSize: 36, color: accentLight, bold: true, align: 'center' });
+                    pptxSlide.addText(s.site_rationale || '', { x: 0.8, y: 1.5, w: 11.73, h: 0.8, fontSize: 18, color: accentCream, italic: true, align: 'center' });
                     
                     const metrics = s.metrics || [];
                     const metricCount = metrics.length;
@@ -458,21 +458,21 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                             line: { color: 'FFFFFF', width: 1 } 
                         });
                         pptxSlide.addText(m.value, { 
-                            x: xPos, y: yPos + (ellipseSize * 0.3), w: ellipseSize, 
+                            x: xPos, y: yPos + (ellipseSize * 0.3), w: ellipseSize, h: ellipseSize * 0.3,
                             fontSize: fontSizeVal, color: accentCream, bold: true, align: 'center' 
                         });
                         pptxSlide.addText(m.label, { 
-                            x: xPos, y: yPos + (ellipseSize * 0.6), w: ellipseSize, 
+                            x: xPos, y: yPos + (ellipseSize * 0.6), w: ellipseSize, h: ellipseSize * 0.3,
                             fontSize: fontSizeLabel, color: accentCream, align: 'center', bold: true 
                         });
                     });
                     
-                    pptxSlide.addText(s.conclusion || '', { x: 0.8, y: 6.5, w: 11.73, fontSize: 20, color: accentLight, bold: true, align: 'center' });
+                    pptxSlide.addText(s.conclusion || '', { x: 0.8, y: 6.5, w: 11.73, h: 0.6, fontSize: 20, color: accentLight, bold: true, align: 'center' });
                     break;
                 }
                 case 'SWOT': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'SWOT Analysis', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'SWOT Analysis', { x: 0.8, y: 0.8, w: 11.73, h: 0.8, fontSize: 36, color: accentLight, bold: true });
                     const cats = [
                         { label: 'STRENGTHS', data: s.strengths, x: 0.8, y: 1.8, color: '10B981' },
                         { label: 'WEAKNESSES', data: s.weaknesses, x: 6.8, y: 1.8, color: 'EF4444' },
@@ -480,14 +480,14 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         { label: 'THREATS', data: s.threats, x: 6.8, y: 4.5, color: 'F59E0B' }
                     ];
                     cats.forEach(cat => {
-                        pptxSlide.addText(cat.label, { x: cat.x, y: cat.y, w: 5.7, fontSize: 18, color: cat.color, bold: true });
+                        pptxSlide.addText(cat.label, { x: cat.x, y: cat.y, w: 5.7, h: 0.4, fontSize: 18, color: cat.color, bold: true });
                         pptxSlide.addShape(pptx.ShapeType.line, { x: cat.x, y: cat.y + 0.4, w: 5.7, h: 0, line: { color: primaryMedium, width: 1 } });
                         const items = cat.data || [];
                         const itemSpacing = Math.min(0.8, 2.4 / Math.max(1, items.length));
                         items.forEach((item: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                             const yPos = cat.y + 0.6 + (idx * itemSpacing);
-                            pptxSlide.addText(item.title, { x: cat.x, y: yPos, w: 5.7, fontSize: Math.max(10, Math.min(14, itemSpacing * 20)), color: accentCream, bold: true });
-                            pptxSlide.addText(item.description, { x: cat.x, y: yPos + (itemSpacing * 0.3), w: 5.7, fontSize: Math.max(8, Math.min(12, itemSpacing * 15)), color: 'CCCCCC' });
+                            pptxSlide.addText(item.title, { x: cat.x, y: yPos, w: 5.7, h: itemSpacing * 0.3, fontSize: Math.max(10, Math.min(14, itemSpacing * 20)), color: accentCream, bold: true });
+                            pptxSlide.addText(item.description, { x: cat.x, y: yPos + (itemSpacing * 0.3), w: 5.7, h: itemSpacing * 0.7, fontSize: Math.max(8, Math.min(12, itemSpacing * 15)), color: 'CCCCCC' });
                         });
                     });
                     break;
@@ -495,78 +495,78 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
 
                 case 'CaseStudyDeepDive': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Case Study', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Case Study', { x: 0.8, y: 0.5, w: 11.73, h: 1.2, fontSize: 36, color: accentLight, bold: true });
                     pptxSlide.addShape(pptx.ShapeType.rect, { x: 0.8, y: 1.8, w: 6, h: 5.0, fill: { color: '000000', transparency: 50 } });
-                    pptxSlide.addText(s.introduction || '', { x: 1.0, y: 2.0, w: 5.6, fontSize: 16, color: accentCream });
-                    pptxSlide.addText('PROVEN APPLICATION', { x: 1.0, y: 3.5, w: 5.6, fontSize: 14, color: accentLight, bold: true });
+                    pptxSlide.addText(s.introduction || '', { x: 1.0, y: 2.0, w: 5.6, h: 1.5, fontSize: 16, color: accentCream });
+                    pptxSlide.addText('PROVEN APPLICATION', { x: 1.0, y: 3.5, w: 5.6, h: 0.4, fontSize: 14, color: accentLight, bold: true });
                     const findings = s.key_findings || [];
-                    const findingSpacing = Math.min(0.4, 2.0 / Math.max(1, findings.length));
+                    const findingSpacing = Math.min(0.8, 2.0 / Math.max(1, findings.length));
                     findings.forEach((finding: string, idx: number) => {
-                        pptxSlide.addText(`• ${finding}`, { x: 1.0, y: 3.9 + (idx * findingSpacing), w: 5.6, fontSize: Math.max(10, Math.min(14, findingSpacing * 40)), color: accentCream });
+                        pptxSlide.addText(`• ${finding}`, { x: 1.0, y: 3.9 + (idx * findingSpacing), w: 5.6, h: findingSpacing, fontSize: Math.max(10, Math.min(14, findingSpacing * 40)), color: accentCream });
                     });
-                    pptxSlide.addText(s.conclusion || '', { x: 1.0, y: 6.0, w: 5.6, fontSize: 16, color: accentLight, bold: true });
+                    pptxSlide.addText(s.conclusion || '', { x: 1.0, y: 6.0, w: 5.6, h: 0.8, fontSize: 16, color: accentLight, bold: true });
                     break;
                 }
                 case 'Vision': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Vision', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
-                    pptxSlide.addText(s.vision_statement || '', { x: 0.8, y: 3.0, w: 11.73, fontSize: 48, color: accentCream, bold: true, align: 'center' });
+                    pptxSlide.addText(s.title || 'Vision', { x: 0.8, y: 0.8, w: 11.73, h: 1.5, fontSize: 36, color: accentLight, bold: true, align: 'center' });
+                    pptxSlide.addText(s.vision_statement || '', { x: 0.8, y: 2.5, w: 11.73, h: 4.0, fontSize: 36, color: accentCream, bold: true, align: 'center' });
                     break;
                 }
                 case 'MacroStrategy': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Macro Strategy', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
-                    pptxSlide.addText(s.strategic_intent || '', { x: 0.8, y: 1.8, w: 11.73, fontSize: 18, color: accentCream, italic: true });
+                    pptxSlide.addText(s.title || 'Macro Strategy', { x: 0.8, y: 0.5, w: 11.73, h: 1.2, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.strategic_intent || '', { x: 0.8, y: 1.5, w: 11.73, h: 1.0, fontSize: 18, color: accentCream, italic: true });
                     const strats = s.strategies || [];
                     const colWidth = 11.73 / Math.max(1, strats.length);
                     strats.forEach((strat: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         const xPos = 0.8 + (idx * colWidth);
                         pptxSlide.addShape(pptx.ShapeType.rect, { x: xPos, y: 2.5, w: colWidth - 0.2, h: 4.5, fill: { color: '000000', transparency: 50 } });
-                        pptxSlide.addText(strat.title, { x: xPos + 0.2, y: 2.7, w: colWidth - 0.6, fontSize: Math.max(12, Math.min(20, colWidth * 5)), color: accentLight, bold: true });
-                        pptxSlide.addText(strat.description, { x: xPos + 0.2, y: 3.5, w: colWidth - 0.6, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: accentCream });
-                        pptxSlide.addText('RATIONALE', { x: xPos + 0.2, y: 5.5, w: colWidth - 0.6, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC', bold: true });
-                        pptxSlide.addText(strat.rationale, { x: xPos + 0.2, y: 5.8, w: colWidth - 0.6, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: accentCream, italic: true });
+                        pptxSlide.addText(strat.title, { x: xPos + 0.2, y: 2.7, w: colWidth - 0.6, h: 0.8, fontSize: Math.max(12, Math.min(20, colWidth * 5)), color: accentLight, bold: true });
+                        pptxSlide.addText(strat.description, { x: xPos + 0.2, y: 3.5, w: colWidth - 0.6, h: 2.0, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: accentCream });
+                        pptxSlide.addText('RATIONALE', { x: xPos + 0.2, y: 5.5, w: colWidth - 0.6, h: 0.3, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC', bold: true });
+                        pptxSlide.addText(strat.rationale, { x: xPos + 0.2, y: 5.8, w: colWidth - 0.6, h: 1.0, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: accentCream, italic: true });
                     });
                     break;
                 }
                 case 'EquityAnalysis': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Equity Analysis', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
-                    pptxSlide.addText('Distributional Impacts', { x: 0.8, y: 1.8, w: 5.5, fontSize: 20, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Equity Analysis', { x: 0.8, y: 0.5, w: 11.73, h: 1.2, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText('Distributional Impacts', { x: 0.8, y: 1.8, w: 5.5, h: 0.5, fontSize: 20, color: accentLight, bold: true });
                     const impacts = s.distributional_impacts || [];
-                    const impactSpacing = Math.min(1.2, 4.5 / Math.max(1, impacts.length));
+                    const impactSpacing = Math.min(1.5, 4.5 / Math.max(1, impacts.length));
                     impacts.forEach((imp: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                        pptxSlide.addText(imp.group, { x: 0.8, y: 2.5 + (idx * impactSpacing), w: 5.5, fontSize: Math.max(12, Math.min(16, impactSpacing * 14)), color: accentCream, bold: true });
-                        pptxSlide.addText(imp.impact, { x: 0.8, y: 2.5 + (idx * impactSpacing) + 0.3, w: 5.5, fontSize: Math.max(10, Math.min(14, impactSpacing * 12)), color: 'CCCCCC' });
+                        pptxSlide.addText(imp.group, { x: 0.8, y: 2.5 + (idx * impactSpacing), w: 5.5, h: 0.4, fontSize: Math.max(12, Math.min(16, impactSpacing * 14)), color: accentCream, bold: true });
+                        pptxSlide.addText(imp.impact, { x: 0.8, y: 2.5 + (idx * impactSpacing) + 0.4, w: 5.5, h: impactSpacing - 0.4, fontSize: Math.max(10, Math.min(14, impactSpacing * 12)), color: 'CCCCCC' });
                     });
                     
-                    pptxSlide.addText('Mitigation Strategies', { x: 6.8, y: 1.8, w: 5.5, fontSize: 20, color: accentLight, bold: true });
+                    pptxSlide.addText('Mitigation Strategies', { x: 6.8, y: 1.8, w: 5.5, h: 0.5, fontSize: 20, color: accentLight, bold: true });
                     const strats = s.mitigation_strategies || [];
-                    const stratSpacing = Math.min(0.8, 4.5 / Math.max(1, strats.length));
+                    const stratSpacing = Math.min(1.0, 4.5 / Math.max(1, strats.length));
                     strats.forEach((strat: string, idx: number) => {
-                        pptxSlide.addText(`• ${strat}`, { x: 6.8, y: 2.5 + (idx * stratSpacing), w: 5.5, fontSize: Math.max(10, Math.min(16, stratSpacing * 20)), color: accentCream });
+                        pptxSlide.addText(`• ${strat}`, { x: 6.8, y: 2.5 + (idx * stratSpacing), w: 5.5, h: stratSpacing, fontSize: Math.max(10, Math.min(16, stratSpacing * 20)), color: accentCream });
                     });
                     break;
                 }
                 case 'ScenarioComparison': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Scenario Comparison', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Scenario Comparison', { x: 0.8, y: 0.5, w: 11.73, h: 1.2, fontSize: 36, color: accentLight, bold: true });
                     const scenarios = s.scenarios || [];
                     const colWidth = 11.73 / Math.max(1, scenarios.length);
                     scenarios.forEach((scen: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         const xPos = 0.8 + (idx * colWidth);
                         pptxSlide.addShape(pptx.ShapeType.rect, { x: xPos, y: 1.8, w: colWidth - 0.2, h: 5.0, fill: { color: '000000', transparency: 50 } });
-                        pptxSlide.addText(scen.title, { x: xPos + 0.2, y: 2.0, w: colWidth - 0.6, fontSize: Math.max(12, Math.min(20, colWidth * 5)), color: accentCream, bold: true, align: 'center' });
-                        pptxSlide.addText(scen.description, { x: xPos + 0.2, y: 2.8, w: colWidth - 0.6, fontSize: Math.max(8, Math.min(14, colWidth * 4)), color: 'CCCCCC' });
-                        pptxSlide.addText(`Cost: ${scen.cost}`, { x: xPos + 0.2, y: 4.5, w: colWidth - 0.6, fontSize: Math.max(10, Math.min(16, colWidth * 4)), color: accentLight, bold: true });
-                        pptxSlide.addText(`Risk: ${scen.risk}`, { x: xPos + 0.2, y: 5.0, w: colWidth - 0.6, fontSize: Math.max(8, Math.min(14, colWidth * 4)), color: 'EF4444' });
-                        pptxSlide.addText(`ROI: ${scen.roi}`, { x: xPos + 0.2, y: 5.5, w: colWidth - 0.6, fontSize: Math.max(8, Math.min(14, colWidth * 4)), color: '10B981' });
+                        pptxSlide.addText(scen.title, { x: xPos + 0.2, y: 2.0, w: colWidth - 0.6, h: 0.8, fontSize: Math.max(12, Math.min(20, colWidth * 5)), color: accentCream, bold: true, align: 'center' });
+                        pptxSlide.addText(scen.description, { x: xPos + 0.2, y: 2.8, w: colWidth - 0.6, h: 1.5, fontSize: Math.max(8, Math.min(14, colWidth * 4)), color: 'CCCCCC' });
+                        pptxSlide.addText(`Cost: ${scen.cost}`, { x: xPos + 0.2, y: 4.5, w: colWidth - 0.6, h: 0.5, fontSize: Math.max(10, Math.min(16, colWidth * 4)), color: accentLight, bold: true });
+                        pptxSlide.addText(`Risk: ${scen.risk}`, { x: xPos + 0.2, y: 5.0, w: colWidth - 0.6, h: 0.5, fontSize: Math.max(8, Math.min(14, colWidth * 4)), color: 'EF4444' });
+                        pptxSlide.addText(`ROI: ${scen.roi}`, { x: xPos + 0.2, y: 5.5, w: colWidth - 0.6, h: 0.5, fontSize: Math.max(8, Math.min(14, colWidth * 4)), color: '10B981' });
                     });
                     break;
                 }
                 case 'RiskAssessment': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Risk Assessment', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Risk Assessment', { x: 0.8, y: 0.8, w: 11.73, h: 0.8, fontSize: 36, color: accentLight, bold: true });
                     const risks = s.risks || [];
                     const rows = Math.ceil(risks.length / 2);
                     const rowHeight = Math.min(2.6, 5.5 / Math.max(1, rows));
@@ -576,26 +576,26 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         const xPos = 0.8 + (col * 6.0);
                         const yPos = 1.8 + (row * rowHeight);
                         pptxSlide.addShape(pptx.ShapeType.rect, { x: xPos, y: yPos, w: 5.7, h: rowHeight - 0.3, fill: { color: '000000', transparency: 50 } });
-                        pptxSlide.addText(risk.category, { x: xPos + 0.2, y: yPos + (rowHeight * 0.05), w: 5.3, fontSize: Math.max(12, Math.min(16, rowHeight * 6)), color: accentLight, bold: true });
-                        pptxSlide.addText(risk.description, { x: xPos + 0.2, y: yPos + (rowHeight * 0.2), w: 5.3, fontSize: Math.max(10, Math.min(14, rowHeight * 5)), color: accentCream });
-                        pptxSlide.addText('MITIGATION:', { x: xPos + 0.2, y: yPos + (rowHeight * 0.55), w: 5.3, fontSize: Math.max(8, Math.min(12, rowHeight * 4)), color: 'CCCCCC', bold: true });
-                        pptxSlide.addText(risk.mitigation, { x: xPos + 0.2, y: yPos + (rowHeight * 0.7), w: 5.3, fontSize: Math.max(10, Math.min(14, rowHeight * 5)), color: '10B981' });
+                        pptxSlide.addText(risk.category, { x: xPos + 0.2, y: yPos + (rowHeight * 0.05), w: 5.3, h: rowHeight * 0.15, fontSize: Math.max(12, Math.min(16, rowHeight * 6)), color: accentLight, bold: true });
+                        pptxSlide.addText(risk.description, { x: xPos + 0.2, y: yPos + (rowHeight * 0.2), w: 5.3, h: rowHeight * 0.35, fontSize: Math.max(10, Math.min(14, rowHeight * 5)), color: accentCream });
+                        pptxSlide.addText('MITIGATION:', { x: xPos + 0.2, y: yPos + (rowHeight * 0.55), w: 5.3, h: rowHeight * 0.15, fontSize: Math.max(8, Math.min(12, rowHeight * 4)), color: 'CCCCCC', bold: true });
+                        pptxSlide.addText(risk.mitigation, { x: xPos + 0.2, y: yPos + (rowHeight * 0.7), w: 5.3, h: rowHeight * 0.25, fontSize: Math.max(10, Math.min(14, rowHeight * 5)), color: '10B981' });
                     });
                     break;
                 }
                 case 'Roadmap': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Implementation Doctrine', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Implementation Doctrine', { x: 0.8, y: 0.8, w: 11.73, h: 0.8, fontSize: 36, color: accentLight, bold: true });
                     const phases = s.phases || [];
                     const colWidth = 11.73 / Math.max(1, phases.length);
                     phases.forEach((phase: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         const xPos = 0.8 + (idx * colWidth);
                         pptxSlide.addShape(pptx.ShapeType.rect, { x: xPos, y: 1.8, w: colWidth - 0.2, h: 5.0, fill: { color: '000000', transparency: 50 } });
-                        pptxSlide.addText(phase.title || `Phase ${idx + 1}`, { x: xPos + 0.2, y: 2.0, w: colWidth - 0.6, fontSize: Math.max(12, Math.min(18, colWidth * 5)), color: accentCream, bold: true });
-                        pptxSlide.addText(phase.timeline || phase.timeframe || '', { x: xPos + 0.2, y: 2.3, w: colWidth - 0.6, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: 'CCCCCC', bold: true });
+                        pptxSlide.addText(phase.title || `Phase ${idx + 1}`, { x: xPos + 0.2, y: 2.0, w: colWidth - 0.6, h: 0.3, fontSize: Math.max(12, Math.min(18, colWidth * 5)), color: accentCream, bold: true });
+                        pptxSlide.addText(phase.timeline || phase.timeframe || '', { x: xPos + 0.2, y: 2.3, w: colWidth - 0.6, h: 0.3, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: 'CCCCCC', bold: true });
                         
                         let currentY = 2.7;
-                        pptxSlide.addText('Action Steps & KPIs:', { x: xPos + 0.2, y: currentY, w: colWidth - 0.6, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: 'CCCCCC', bold: true });
+                        pptxSlide.addText('Action Steps & KPIs:', { x: xPos + 0.2, y: currentY, w: colWidth - 0.6, h: 0.3, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: 'CCCCCC', bold: true });
                         currentY += 0.3;
                         
                         const actionSteps = phase.action_steps || [];
@@ -618,99 +618,99 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                             const kpiText = typeof step === 'string' ? '' : step.kpi;
                             const lines = estimatedLines[sIdx];
                             const stepHeight = lines * heightPerLine;
+                            const actionLines = Math.ceil(actionText.length / charsPerLine);
                             
-                            pptxSlide.addText(`• ${actionText}`, { x: xPos + 0.2, y: currentY, w: colWidth - 0.6, fontSize: fontSize, color: accentCream });
+                            pptxSlide.addText(`• ${actionText}`, { x: xPos + 0.2, y: currentY, w: colWidth - 0.6, h: actionLines * heightPerLine, fontSize: fontSize, color: accentCream });
                             if (kpiText) {
-                                const actionLines = Math.ceil(actionText.length / charsPerLine);
-                                pptxSlide.addText(`KPI: ${kpiText}`, { x: xPos + 0.4, y: currentY + (actionLines * heightPerLine), w: colWidth - 0.8, fontSize: Math.max(5, fontSize - 2), color: '3B82F6', italic: true });
+                                pptxSlide.addText(`KPI: ${kpiText}`, { x: xPos + 0.4, y: currentY + (actionLines * heightPerLine), w: colWidth - 0.8, h: (lines - actionLines) * heightPerLine, fontSize: Math.max(5, fontSize - 2), color: '3B82F6', italic: true });
                             }
                             currentY += stepHeight;
                         });
                         
-                        pptxSlide.addText('OUTCOME:', { x: xPos + 0.2, y: 5.5, w: colWidth - 0.6, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC', bold: true });
-                        pptxSlide.addText(phase.outcome || '', { x: xPos + 0.2, y: 5.8, w: colWidth - 0.6, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: accentCream, bold: true });
+                        pptxSlide.addText('OUTCOME:', { x: xPos + 0.2, y: 5.5, w: colWidth - 0.6, h: 0.3, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC', bold: true });
+                        pptxSlide.addText(phase.outcome || '', { x: xPos + 0.2, y: 5.8, w: colWidth - 0.6, h: 0.8, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: accentCream, bold: true });
                     });
                     break;
                 }
                 case 'ProjectedImpact': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Projected Impact', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Projected Impact', { x: 0.8, y: 0.5, w: 11.73, h: 1.2, fontSize: 36, color: accentLight, bold: true });
                     const metrics = s.metrics || [];
                     const colWidth = 11.73 / Math.max(1, metrics.length);
                     metrics.forEach((metric: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         const xPos = 0.8 + (idx * colWidth);
                         pptxSlide.addShape(pptx.ShapeType.rect, { x: xPos, y: 1.8, w: colWidth - 0.2, h: 5.0, fill: { color: '000000', transparency: 50 } });
-                        pptxSlide.addText(metric.label, { x: xPos + 0.2, y: 2.0, w: colWidth - 0.6, fontSize: Math.max(12, Math.min(18, colWidth * 5)), color: accentLight, bold: true });
-                        pptxSlide.addText('BASELINE', { x: xPos + 0.2, y: 2.8, w: (colWidth - 0.6) / 2, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC' });
-                        pptxSlide.addText(metric.baseline, { x: xPos + 0.2, y: 3.1, w: (colWidth - 0.6) / 2, fontSize: Math.max(14, Math.min(24, colWidth * 6)), color: accentCream, bold: true });
-                        pptxSlide.addText('PROJECTED', { x: xPos + 0.2 + (colWidth - 0.6) / 2, y: 2.8, w: (colWidth - 0.6) / 2, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC' });
-                        pptxSlide.addText(metric.projected, { x: xPos + 0.2 + (colWidth - 0.6) / 2, y: 3.1, w: (colWidth - 0.6) / 2, fontSize: Math.max(14, Math.min(24, colWidth * 6)), color: '10B981', bold: true });
-                        pptxSlide.addText(`Timeframe: ${metric.timeframe}`, { x: xPos + 0.2, y: 4.5, w: colWidth - 0.6, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: 'CCCCCC' });
-                        pptxSlide.addText(`Assumption: ${metric.assumption}`, { x: xPos + 0.2, y: 5.0, w: colWidth - 0.6, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC', italic: true });
+                        pptxSlide.addText(metric.label, { x: xPos + 0.2, y: 2.0, w: colWidth - 0.6, h: 0.8, fontSize: Math.max(12, Math.min(18, colWidth * 5)), color: accentLight, bold: true });
+                        pptxSlide.addText('BASELINE', { x: xPos + 0.2, y: 3.0, w: (colWidth - 0.6) / 2, h: 0.3, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC' });
+                        pptxSlide.addText(metric.baseline, { x: xPos + 0.2, y: 3.3, w: (colWidth - 0.6) / 2, h: 1.0, fontSize: Math.max(14, Math.min(24, colWidth * 6)), color: accentCream, bold: true });
+                        pptxSlide.addText('PROJECTED', { x: xPos + 0.2 + (colWidth - 0.6) / 2, y: 3.0, w: (colWidth - 0.6) / 2, h: 0.3, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC' });
+                        pptxSlide.addText(metric.projected, { x: xPos + 0.2 + (colWidth - 0.6) / 2, y: 3.3, w: (colWidth - 0.6) / 2, h: 1.0, fontSize: Math.max(14, Math.min(24, colWidth * 6)), color: '10B981', bold: true });
+                        pptxSlide.addText(`Timeframe: ${metric.timeframe}`, { x: xPos + 0.2, y: 4.5, w: colWidth - 0.6, h: 0.4, fontSize: Math.max(10, Math.min(14, colWidth * 4)), color: 'CCCCCC' });
+                        pptxSlide.addText(`Assumption: ${metric.assumption}`, { x: xPos + 0.2, y: 5.0, w: colWidth - 0.6, h: 1.5, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC', italic: true });
                     });
                     break;
                 }
                 case 'FiscalFramework': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Fiscal Framework', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Capital Allocation & Value Capture Mechanism', { x: 0.8, y: 0.5, w: 11.73, h: 1.2, fontSize: 36, color: accentLight, bold: true });
                     const comps = s.components || [];
                     const rowHeight = Math.min(1.0, 4.5 / Math.max(1, comps.length));
                     
                     // Header
-                    pptxSlide.addText('COMPONENT', { x: 0.8, y: 1.8, w: 3, fontSize: 14, color: 'CCCCCC', bold: true });
-                    pptxSlide.addText('CAPEX', { x: 3.8, y: 1.8, w: 2, fontSize: 14, color: 'CCCCCC', bold: true });
-                    pptxSlide.addText('OPEX', { x: 5.8, y: 1.8, w: 2, fontSize: 14, color: 'CCCCCC', bold: true });
-                    pptxSlide.addText('FUNDING SOURCE', { x: 7.8, y: 1.8, w: 2.5, fontSize: 14, color: 'CCCCCC', bold: true });
-                    pptxSlide.addText('RECOVERY MECHANISM', { x: 10.3, y: 1.8, w: 2.2, fontSize: 14, color: 'CCCCCC', bold: true });
+                    pptxSlide.addText('COMPONENT', { x: 0.8, y: 1.8, w: 3, h: 0.5, fontSize: 14, color: 'CCCCCC', bold: true });
+                    pptxSlide.addText('CAPEX', { x: 3.8, y: 1.8, w: 2, h: 0.5, fontSize: 14, color: 'CCCCCC', bold: true });
+                    pptxSlide.addText('OPEX', { x: 5.8, y: 1.8, w: 2, h: 0.5, fontSize: 14, color: 'CCCCCC', bold: true });
+                    pptxSlide.addText('FUNDING SOURCE', { x: 7.8, y: 1.8, w: 2.5, h: 0.5, fontSize: 14, color: 'CCCCCC', bold: true });
+                    pptxSlide.addText('RECOVERY MECHANISM', { x: 10.3, y: 1.8, w: 2.2, h: 0.5, fontSize: 14, color: 'CCCCCC', bold: true });
                     
                     comps.forEach((comp: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         const yPos = 2.5 + (idx * rowHeight);
                         pptxSlide.addShape(pptx.ShapeType.line, { x: 0.8, y: yPos - 0.2, w: 11.73, h: 0, line: { color: '333333', width: 1 } });
-                        pptxSlide.addText(comp.component, { x: 0.8, y: yPos, w: 3, fontSize: Math.max(10, Math.min(14, rowHeight * 20)), color: accentCream, bold: true });
-                        pptxSlide.addText(comp.capex, { x: 3.8, y: yPos, w: 2, fontSize: Math.max(10, Math.min(14, rowHeight * 20)), color: accentCream });
-                        pptxSlide.addText(comp.opex, { x: 5.8, y: yPos, w: 2, fontSize: Math.max(10, Math.min(14, rowHeight * 20)), color: accentCream });
-                        pptxSlide.addText(comp.funding_source, { x: 7.8, y: yPos, w: 2.5, fontSize: Math.max(10, Math.min(14, rowHeight * 20)), color: accentCream });
-                        pptxSlide.addText(comp.recovery_mechanism, { x: 10.3, y: yPos, w: 2.2, fontSize: Math.max(9, Math.min(12, rowHeight * 18)), color: 'CCCCCC' });
+                        pptxSlide.addText(comp.component, { x: 0.8, y: yPos, w: 3, h: rowHeight, fontSize: Math.max(10, Math.min(14, rowHeight * 20)), color: accentCream, bold: true });
+                        pptxSlide.addText(comp.capex, { x: 3.8, y: yPos, w: 2, h: rowHeight, fontSize: Math.max(10, Math.min(14, rowHeight * 20)), color: accentCream });
+                        pptxSlide.addText(comp.opex, { x: 5.8, y: yPos, w: 2, h: rowHeight, fontSize: Math.max(10, Math.min(14, rowHeight * 20)), color: accentCream });
+                        pptxSlide.addText(comp.funding_source, { x: 7.8, y: yPos, w: 2.5, h: rowHeight, fontSize: Math.max(10, Math.min(14, rowHeight * 20)), color: accentCream });
+                        pptxSlide.addText(comp.recovery_mechanism, { x: 10.3, y: yPos, w: 2.2, h: rowHeight, fontSize: Math.max(9, Math.min(12, rowHeight * 18)), color: 'CCCCCC' });
                     });
                     break;
                 }
                 case 'PolicyLevers': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Policy Levers', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Policy Levers', { x: 0.8, y: 0.5, w: 11.73, h: 1.2, fontSize: 36, color: accentLight, bold: true });
                     const levers = s.levers || [];
                     const rowHeight = Math.min(1.5, 5.5 / Math.max(1, levers.length));
                     levers.forEach((lever: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         const yPos = 1.8 + (idx * rowHeight);
-                        pptxSlide.addShape(pptx.ShapeType.rect, { x: 0.8, y: yPos, w: 11.73, h: rowHeight - 0.2, fill: { color: '000000', transparency: 50 } });
-                        pptxSlide.addText(lever.policy, { x: 1.0, y: yPos + (rowHeight * 0.1), w: 4, fontSize: Math.max(12, Math.min(18, rowHeight * 12)), color: accentLight, bold: true });
-                        pptxSlide.addText('MECHANISM:', { x: 5.2, y: yPos + (rowHeight * 0.1), w: 3.5, fontSize: Math.max(8, Math.min(12, rowHeight * 8)), color: 'CCCCCC', bold: true });
-                        pptxSlide.addText(lever.mechanism, { x: 5.2, y: yPos + (rowHeight * 0.3), w: 3.5, fontSize: Math.max(10, Math.min(14, rowHeight * 10)), color: accentCream });
-                        pptxSlide.addText('IMPACT:', { x: 9.0, y: yPos + (rowHeight * 0.1), w: 3.3, fontSize: Math.max(8, Math.min(12, rowHeight * 8)), color: 'CCCCCC', bold: true });
-                        pptxSlide.addText(lever.impact, { x: 9.0, y: yPos + (rowHeight * 0.3), w: 3.3, fontSize: Math.max(10, Math.min(14, rowHeight * 10)), color: '10B981' });
+                        pptxSlide.addShape(pptx.ShapeType.rect, { x: 0.8, y: yPos, w: 10.93, h: rowHeight - 0.2, fill: { color: '000000', transparency: 50 } });
+                        pptxSlide.addText(lever.policy, { x: 1.0, y: yPos + (rowHeight * 0.1), w: 3.5, h: rowHeight - 0.4, fontSize: Math.max(12, Math.min(18, rowHeight * 12)), color: accentLight, bold: true });
+                        pptxSlide.addText('MECHANISM:', { x: 4.7, y: yPos + (rowHeight * 0.1), w: 3.5, h: rowHeight * 0.2, fontSize: Math.max(8, Math.min(12, rowHeight * 8)), color: 'CCCCCC', bold: true });
+                        pptxSlide.addText(lever.mechanism, { x: 4.7, y: yPos + (rowHeight * 0.3), w: 3.5, h: rowHeight * 0.6, fontSize: Math.max(10, Math.min(14, rowHeight * 10)), color: accentCream });
+                        pptxSlide.addText('IMPACT:', { x: 8.4, y: yPos + (rowHeight * 0.1), w: 3.1, h: rowHeight * 0.2, fontSize: Math.max(8, Math.min(12, rowHeight * 8)), color: 'CCCCCC', bold: true });
+                        pptxSlide.addText(lever.impact, { x: 8.4, y: yPos + (rowHeight * 0.3), w: 3.1, h: rowHeight * 0.6, fontSize: Math.max(10, Math.min(14, rowHeight * 10)), color: '10B981' });
                     });
                     break;
                 }
                 case 'GovernanceFramework': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Governance Framework', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(s.title || 'Governance Framework', { x: 0.8, y: 0.8, w: 11.73, h: 0.8, fontSize: 36, color: accentLight, bold: true });
                     pptxSlide.addShape(pptx.ShapeType.rect, { x: 0.8, y: 1.8, w: 5.5, h: 5.0, fill: { color: '000000', transparency: 50 } });
-                    pptxSlide.addText('Lead Agency', { x: 1.0, y: 2.0, w: 5.1, fontSize: 16, color: accentLight, bold: true });
-                    pptxSlide.addText(s.lead_agency || '', { x: 1.0, y: 2.4, w: 5.1, fontSize: 18, color: accentCream, bold: true });
+                    pptxSlide.addText('Lead Agency', { x: 1.0, y: 2.0, w: 5.1, h: 0.4, fontSize: 16, color: accentLight, bold: true });
+                    pptxSlide.addText(s.lead_agency || '', { x: 1.0, y: 2.4, w: 5.1, h: 0.8, fontSize: 18, color: accentCream, bold: true });
                     
-                    pptxSlide.addText('Funding Model', { x: 1.0, y: 3.4, w: 5.1, fontSize: 16, color: accentLight, bold: true });
-                    pptxSlide.addText(s.funding_model || '', { x: 1.0, y: 3.8, w: 5.1, fontSize: 16, color: accentCream });
+                    pptxSlide.addText('Funding Model', { x: 1.0, y: 3.4, w: 5.1, h: 0.4, fontSize: 16, color: accentLight, bold: true });
+                    pptxSlide.addText(s.funding_model || '', { x: 1.0, y: 3.8, w: 5.1, h: 0.8, fontSize: 16, color: accentCream });
                     
-                    pptxSlide.addText('Regulatory Changes', { x: 1.0, y: 4.8, w: 5.1, fontSize: 16, color: accentLight, bold: true });
-                    pptxSlide.addText(s.regulatory_changes || '', { x: 1.0, y: 5.2, w: 5.1, fontSize: 16, color: accentCream });
+                    pptxSlide.addText('Regulatory Changes', { x: 1.0, y: 4.8, w: 5.1, h: 0.4, fontSize: 16, color: accentLight, bold: true });
+                    pptxSlide.addText(s.regulatory_changes || '', { x: 1.0, y: 5.2, w: 5.1, h: 1.4, fontSize: 16, color: accentCream });
                     
                     pptxSlide.addShape(pptx.ShapeType.rect, { x: 6.8, y: 1.8, w: 5.73, h: 5.0, fill: { color: '000000', transparency: 50 } });
-                    pptxSlide.addText('Key Stakeholder Roles', { x: 7.0, y: 2.0, w: 5.33, fontSize: 18, color: accentLight, bold: true });
+                    pptxSlide.addText('Key Stakeholder Roles', { x: 7.0, y: 2.0, w: 5.33, h: 0.4, fontSize: 18, color: accentLight, bold: true });
                     const roles = s.stakeholder_roles || [];
                     const roleSpacing = Math.min(0.8, 4.0 / Math.max(1, roles.length));
                     roles.forEach((role: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         const yPos = 2.6 + (idx * roleSpacing);
-                        pptxSlide.addText(role.stakeholder, { x: 7.0, y: yPos, w: 2.2, fontSize: Math.max(10, Math.min(14, roleSpacing * 20)), color: accentCream, bold: true });
-                        pptxSlide.addText(role.role, { x: 9.4, y: yPos, w: 3.0, fontSize: Math.max(10, Math.min(14, roleSpacing * 20)), color: 'CCCCCC' });
+                        pptxSlide.addText(role.stakeholder, { x: 7.0, y: yPos, w: 2.2, h: roleSpacing, fontSize: Math.max(10, Math.min(14, roleSpacing * 20)), color: accentCream, bold: true });
+                        pptxSlide.addText(role.role, { x: 9.4, y: yPos, w: 3.0, h: roleSpacing, fontSize: Math.max(10, Math.min(14, roleSpacing * 20)), color: 'CCCCCC' });
                     });
                     break;
                 }
@@ -748,7 +748,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         
                         // Phase Name
                         const phaseNameFontSize = Math.max(8, Math.min(14, phaseHeight * 15));
-                        pptxSlide.addText(phase.name, { x: 0.5, y: yPos, w: 1.8, fontSize: phaseNameFontSize, color: 'FFFFFF', bold: true, align: 'right' });
+                        pptxSlide.addText(phase.name, { x: 0.5, y: yPos, w: 1.8, h: phaseHeight, fontSize: phaseNameFontSize, color: 'FFFFFF', bold: true, align: 'right', valign: 'middle' });
                         
                         // Calculate Phase Start/End
                         const deliverables = phase.deliverables || [];
@@ -793,7 +793,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                                     const dyPos = yPos + barH + 0.1 + (dIdx * deliverableSpacing);
                                     
                                     pptxSlide.addShape(pptx.ShapeType.rect, { x: dBarX, y: dyPos, w: Math.max(dBarW, 1.5), h: deliverableH, fill: { color: '000000', transparency: 40 }, line: { color: color, width: 1 } });
-                                    pptxSlide.addText(d.name, { x: dBarX + 0.1, y: dyPos, w: Math.max(dBarW, 1.5) - 0.1, h: deliverableH, fontSize: Math.max(6, Math.min(9, deliverableH * 40)), color: 'FFFFFF', bold: true, whitespace: 'nowrap' });
+                                    pptxSlide.addText(d.name, { x: dBarX + 0.1, y: dyPos, w: Math.max(dBarW, 1.5) - 0.1, h: deliverableH, fontSize: Math.max(6, Math.min(9, deliverableH * 40)), color: 'FFFFFF', bold: true, valign: 'middle' });
                                 }
                             });
                         }
@@ -812,23 +812,23 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         const xPos = 0.8 + (col * 6.0);
                         const yPos = 1.8 + (row * rowHeight);
                         pptxSlide.addShape(pptx.ShapeType.rect, { x: xPos, y: yPos, w: 5.7, h: rowHeight - 0.2, fill: { color: '000000', transparency: 50 } });
-                        pptxSlide.addText(source.title, { x: xPos + 0.2, y: yPos + (rowHeight * 0.1), w: 5.3, fontSize: Math.max(10, Math.min(14, rowHeight * 10)), color: accentCream, bold: true });
-                        pptxSlide.addText(`${source.author} • ${source.year}`, { x: xPos + 0.2, y: yPos + (rowHeight * 0.4), w: 5.3, fontSize: Math.max(8, Math.min(12, rowHeight * 8)), color: 'CCCCCC' });
-                        pptxSlide.addText(source.relevance, { x: xPos + 0.2, y: yPos + (rowHeight * 0.6), w: 5.3, fontSize: Math.max(8, Math.min(12, rowHeight * 8)), color: '10B981', italic: true });
+                        pptxSlide.addText(source.title, { x: xPos + 0.2, y: yPos + (rowHeight * 0.05), w: 5.3, h: rowHeight * 0.35, fontSize: Math.max(10, Math.min(14, rowHeight * 10)), color: accentCream, bold: true });
+                        pptxSlide.addText(`${source.author} • ${source.year}`, { x: xPos + 0.2, y: yPos + (rowHeight * 0.4), w: 5.3, h: rowHeight * 0.2, fontSize: Math.max(8, Math.min(12, rowHeight * 8)), color: 'CCCCCC' });
+                        pptxSlide.addText(source.relevance, { x: xPos + 0.2, y: yPos + (rowHeight * 0.6), w: 5.3, h: rowHeight * 0.35, fontSize: Math.max(8, Math.min(12, rowHeight * 8)), color: '10B981', italic: true });
                     });
                     break;
                 }
                 case 'Crisis': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
                     pptxSlide.addText(s.title || 'Problem Statement', { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
-                    pptxSlide.addText(s.problem_statement || '', { x: 0.8, y: 1.8, w: 11.73, fontSize: 24, color: accentCream, italic: true });
+                    pptxSlide.addText(s.problem_statement || '', { x: 0.8, y: 1.8, w: 11.73, h: 1.5, fontSize: 24, color: accentCream, italic: true });
                     const points = s.key_data_points || [];
                     const colWidth = 11.73 / Math.max(1, points.length);
                     points.forEach((pt: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         const xPos = 0.8 + (idx * colWidth);
-                        pptxSlide.addText(pt.value, { x: xPos, y: 4.0, w: colWidth - 0.2, fontSize: Math.max(16, Math.min(48, colWidth * 12)), color: accentCream, bold: true, align: 'center' });
-                        pptxSlide.addText(pt.label, { x: xPos, y: 5.0, w: colWidth - 0.2, fontSize: Math.max(10, Math.min(16, colWidth * 4)), color: accentCream, bold: true, align: 'center' });
-                        pptxSlide.addText(pt.description, { x: xPos, y: 5.5, w: colWidth - 0.2, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC', align: 'center' });
+                        pptxSlide.addText(pt.value, { x: xPos, y: 3.5, w: colWidth - 0.2, fontSize: Math.max(16, Math.min(48, colWidth * 12)), color: accentCream, bold: true, align: 'center' });
+                        pptxSlide.addText(pt.label, { x: xPos, y: 4.5, w: colWidth - 0.2, fontSize: Math.max(10, Math.min(16, colWidth * 4)), color: accentCream, bold: true, align: 'center' });
+                        pptxSlide.addText(pt.description, { x: xPos, y: 5.0, w: colWidth - 0.2, h: 1.5, fontSize: Math.max(8, Math.min(12, colWidth * 3)), color: 'CCCCCC', align: 'center' });
                     });
                     break;
                 }
@@ -844,26 +844,26 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         pptxSlide.addShape(pptx.ShapeType.rect, { x: xPos, y: 2.2, w: colWidth - 0.2, h: 4.0, fill: { color: '000000', transparency: 50 } });
                         pptxSlide.addShape(pptx.ShapeType.ellipse, { x: xPos - 0.2, y: 2.0, w: 0.6, h: 0.6, fill: { color: primaryMedium } });
                         pptxSlide.addText(`${step.step_number || idx + 1}`, { x: xPos - 0.2, y: 2.0, w: 0.6, h: 0.6, fontSize: 14, color: 'FFFFFF', bold: true, align: 'center' });
-                        pptxSlide.addText(step.title, { x: xPos + 0.2, y: 2.5, w: colWidth - 0.6, fontSize: Math.max(10, Math.min(18, colWidth * 5)), color: accentCream, bold: true });
-                        pptxSlide.addText(step.description, { x: xPos + 0.2, y: 3.2, w: colWidth - 0.6, fontSize: Math.max(8, Math.min(14, colWidth * 4)), color: 'CCCCCC' });
+                        pptxSlide.addText(step.title, { x: xPos + 0.2, y: 2.3, w: colWidth - 0.6, h: 0.8, fontSize: Math.max(10, Math.min(18, colWidth * 5)), color: accentCream, bold: true });
+                        pptxSlide.addText(step.description, { x: xPos + 0.2, y: 3.2, w: colWidth - 0.6, h: 2.8, fontSize: Math.max(8, Math.min(14, colWidth * 4)), color: 'CCCCCC' });
                     });
                     
                     if (s.analytic_reflection) {
                         pptxSlide.addShape(pptx.ShapeType.rect, { x: 0.8, y: 6.5, w: 11.73, h: 0.8, fill: { color: '000000', transparency: 70 } });
-                        pptxSlide.addText(s.analytic_reflection, { x: 1.0, y: 6.6, w: 11.33, fontSize: 14, color: '10B981', italic: true });
+                        pptxSlide.addText(s.analytic_reflection, { x: 1.0, y: 6.6, w: 11.33, h: 0.6, fontSize: 14, color: '10B981', italic: true });
                     }
                     break;
                 }
                 case 'Closing': {
                     const s = slide as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-                    pptxSlide.addText(s.title || 'Closing', { x: 0.8, y: 2.5, w: 11.73, fontSize: 54, color: accentCream, bold: true, align: 'center' });
-                    pptxSlide.addText(s.subtitle || '', { x: 0.8, y: 3.8, w: 11.73, fontSize: 28, color: accentLight, align: 'center' });
-                    pptxSlide.addText(s.contact_info || '', { x: 0.8, y: 6.5, w: 11.73, fontSize: 16, color: 'CCCCCC', align: 'center' });
+                    pptxSlide.addText(s.title || 'Closing', { x: 0.8, y: 2.5, w: 11.73, h: 1.0, fontSize: 54, color: accentCream, bold: true, align: 'center' });
+                    pptxSlide.addText(s.subtitle || '', { x: 0.8, y: 3.8, w: 11.73, h: 1.0, fontSize: 28, color: accentLight, align: 'center' });
+                    pptxSlide.addText(s.contact_info || '', { x: 0.8, y: 6.5, w: 11.73, h: 0.5, fontSize: 16, color: 'CCCCCC', align: 'center' });
                     break;
                 }
                 default: {
-                    pptxSlide.addText(slide.title || 'Slide ' + (i + 1), { x: 0.8, y: 0.8, w: 11.73, fontSize: 36, color: accentLight, bold: true });
-                    pptxSlide.addText(slide.description || '', { x: 0.8, y: 1.8, w: 11.73, fontSize: 18, color: accentCream });
+                    pptxSlide.addText(slide.title || 'Slide ' + (i + 1), { x: 0.8, y: 0.8, w: 11.73, h: 0.8, fontSize: 36, color: accentLight, bold: true });
+                    pptxSlide.addText(slide.description || '', { x: 0.8, y: 1.8, w: 11.73, h: 5.0, fontSize: 18, color: accentCream });
                 }
             }
         }
