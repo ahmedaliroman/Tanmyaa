@@ -303,7 +303,7 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
             </div>
             <div className="relative z-20 grid grid-cols-2 gap-12 flex-grow min-h-0">
                 <div className="flex flex-col pr-4 overflow-hidden" style={narrativeAnimation}>
-                    <AutoFitText maxFontSize={28} minFontSize={16} className="leading-relaxed text-white/80">
+                    <AutoFitText maxFontSize={32} minFontSize={18} className="leading-relaxed text-white/80">
                         <Editable as="div" value={slide.narrative} onUpdate={v => onUpdate('narrative', v)} useMarkdown />
                     </AutoFitText>
                 </div>
@@ -315,7 +315,7 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
                                 <li key={i} className="flex items-start flex-shrink-0" style={keyPointAnimation}>
                                      <div className="w-10 h-10 rounded-full bg-[var(--color-primary-medium)] text-[var(--color-accent-cream)] text-base font-bold flex items-center justify-center mr-5 flex-shrink-0 shadow-lg">{String(i+1).padStart(2, '0')}</div>
                                      <div className="flex-grow overflow-hidden h-20">
-                                        <AutoFitText maxFontSize={28} minFontSize={14}>
+                                        <AutoFitText maxFontSize={32} minFontSize={16}>
                                             <Editable value={point} onUpdate={v => onUpdate(`key_points[${i}]`, v)} className="font-semibold" />
                                         </AutoFitText>
                                      </div>
@@ -385,12 +385,12 @@ const SWOTCategory: React.FC<{ title: string; items: { title: string; descriptio
             {ensureArray(items).map((item, i) => (
                 <div key={i} className="flex-1 min-h-0 flex flex-col justify-center py-1">
                     <div className="flex-shrink-0">
-                        <AutoFitText maxFontSize={18} minFontSize={14}>
+                        <AutoFitText maxFontSize={20} minFontSize={16}>
                             <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-bold text-white leading-tight" useMarkdown/>
                         </AutoFitText>
                     </div>
                     <div className="flex-grow overflow-hidden mt-1">
-                        <AutoFitText maxFontSize={15} minFontSize={11}>
+                        <AutoFitText maxFontSize={18} minFontSize={14}>
                             <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className="text-white/90 font-medium leading-relaxed" />
                         </AutoFitText>
                     </div>
