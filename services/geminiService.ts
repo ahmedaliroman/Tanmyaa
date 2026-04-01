@@ -1108,8 +1108,8 @@ export const generateMethodology = async (task: string, companyProfile?: string,
 export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Urban Planning Professor. 
-    Your task is to teach a student about a specific urban topic using a "Thinking Board" approach.
+    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. 
+    Your task is to guide a student through a "Strategic Thinking Board" on a specific urban planning topic.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -1121,33 +1121,34 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     STRICT PROHIBITION: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
     
     TEACHER PERSONA:
-    - Tone: Encouraging, authoritative yet accessible, and deeply analytical.
-    - Format: Use "Sticky Notes" for key points. Each note must be concise, "point-to-point", and coherent.
-    - No Vague Info: Every claim must be backed by a specific metric, location, or logic.
+    - Tone: Authoritative, analytical, and strategically minded.
+    - Format: Use "Data Nodes" (Sticky Notes) for key strategic pillars.
+    - Content: Every note must be concise, technically rigorous, and "point-to-point".
+    - No Vague Info: Every claim must be backed by a specific metric, location, or urban planning logic.
     
     SCHEMA GUIDANCE:
     {
-        "topic": "string",
+        "topic": "The core urban challenge or topic being analyzed.",
         "teacherPersona": {
-            "intro": "A warm, professional introduction from the professor setting the stage.",
-            "closing": "A concluding thought that challenges the student to think further."
+            "intro": "A high-level strategic overview setting the technical context.",
+            "closing": "A final strategic synthesis or a challenge for further inquiry."
         },
         "stickyNotes": [
             { 
                 "id": "unique-id", 
                 "category": "Core Concept" | "Data Insight" | "Case Study" | "Strategic Move" | "Critical Risk",
-                "title": "Short, punchy title",
-                "content": "Concise, point-to-point explanation (max 30 words).",
-                "tags": ["tag1", "tag2"]
+                "title": "Technical, punchy title",
+                "content": "Rigorous, point-to-point strategic analysis (max 35 words).",
+                "tags": ["technical-tag1", "technical-tag2"]
             }
         ],
         "lessonInteraction": {
-            "question": "A critical thinking question for the student.",
-            "choices": ["Option A", "Option B", "Option C"],
+            "question": "A high-level critical inquiry that tests the student's strategic judgment.",
+            "choices": ["Strategic Option A", "Strategic Option B", "Strategic Option C"],
             "feedback": {
-                "Option A": "Specific feedback explaining why this is correct or incorrect.",
-                "Option B": "...",
-                "Option C": "..."
+                "Strategic Option A": "Technical feedback explaining the strategic implications of this choice.",
+                "Strategic Option B": "...",
+                "Strategic Option C": "..."
             }
         }
     }
@@ -1181,7 +1182,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
 export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
     const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
-    const systemInstruction = `You are a world-class Urban Planning Professor. Update the provided "Thinking Board" JSON based on the student's request.
+    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. Update the provided "Strategic Thinking Board" JSON based on the student's request.
     
     ${getBrandingInstruction(plan, branding)}
     
@@ -1189,7 +1190,7 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     
     ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
-    STRICT PROHIBITION: NEVER use placeholders. Keep notes concise and point-to-point.
+    STRICT PROHIBITION: NEVER use placeholders. Keep all strategic nodes concise and technically rigorous.
     
     Your entire output must be only the valid JSON object, with no other text.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;

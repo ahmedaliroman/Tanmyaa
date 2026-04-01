@@ -30,7 +30,7 @@ export const TanmyaaLogo: React.FC<TanmyaaLogoProps> = ({ className = '' }) => {
 
   return (
     <div className={`flex items-center ${className}`}>
-      <LogoSvg className="text-white" />
+      <LogoSvg />
     </div>
   );
 };

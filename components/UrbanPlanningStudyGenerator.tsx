@@ -601,7 +601,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         const actionSteps = phase.action_steps || [];
                         let totalLines = 0;
                         const charsPerLine = Math.max(15, (colWidth - 0.6) * 12);
-                        const estimatedLines = actionSteps.map((step: any) => {
+                        const estimatedLines = actionSteps.map((step: string | { action: string; kpi?: string }) => {
                             const actionText = typeof step === 'string' ? step : step.action;
                             const kpiText = typeof step === 'string' ? '' : step.kpi;
                             const lines = Math.ceil(actionText.length / charsPerLine) + (kpiText ? Math.ceil(kpiText.length / charsPerLine) : 0);
@@ -613,7 +613,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                         const heightPerLine = Math.min(0.25, availableHeight / Math.max(1, totalLines));
                         const fontSize = Math.max(6, Math.min(11, heightPerLine * 50));
                         
-                        actionSteps.forEach((step: any, sIdx: number) => {
+                        actionSteps.forEach((step: string | { action: string; kpi?: string }, sIdx: number) => {
                             const actionText = typeof step === 'string' ? step : step.action;
                             const kpiText = typeof step === 'string' ? '' : step.kpi;
                             const lines = estimatedLines[sIdx];
