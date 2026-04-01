@@ -359,13 +359,15 @@ export const generatePresentation = async (
     - Cover: { layout: "Cover", title, subtitle, project_code, year }
     - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
     - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}] }
-    - SWOT: { layout: "SWOT", strengths: [{title, description}], weaknesses, opportunities, threats, analytic_reflection }
+    - SWOT: { layout: "SWOT", strengths: [{title, description}], weaknesses: [{title, description}], opportunities: [{title, description}], threats: [{title, description}], analytic_reflection }
+    **CRITICAL: You MUST generate meaningful data for ALL four SWOT categories (Strengths, Weaknesses, Opportunities, AND Threats). Do not leave any category empty or with placeholder text.**
     - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, image_prompt, analytic_reflection }
     - Vision: { layout: "Vision", title, vision_statement, image_prompt }
     - MacroStrategy: { layout: "MacroStrategy", title, strategic_intent, strategies: [{title, description, rationale}], image_prompt }
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
     - Roadmap: { layout: "Roadmap", phases: [{title, timeline (e.g. "Phase 1: 2025-2026"), action_steps: [{action, kpi}], outcome}] }
     - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year (number), timeline_end_year (number), phases: [{name, deliverables: [{name, start_quarter (1-4), end_quarter (1-4), kpi}]}] }
+    **CRITICAL: For GanttChartRoadmap, you MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year). Do not cluster all phases in the same period.**
     
     CRITICAL: For Roadmap and GanttChartRoadmap, you MUST provide realistic, specific timeline data. DO NOT leave the 'timeline' or 'start_quarter'/'end_quarter' fields empty.
     - For Roadmap: 'timeline' should be a string like "Q1 2025 - Q4 2026".
@@ -377,6 +379,11 @@ export const generatePresentation = async (
     - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}, {name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection: "string" }
     - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
     - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}] }
+
+    **BRANDING & STYLE:**
+    - Use a professional, data-driven tone.
+    - **MANDATORY: DO NOT include the text "Powered by Tanmyaa" anywhere in the slide content.** The logo at the bottom is sufficient for branding.
+    - Ensure all text is concise and fits well within a standard 16:9 slide layout.
     `;
 
     const prompt = `
@@ -437,6 +444,11 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     ADD/REMOVE SLIDES: You are strictly forbidden from adding, removing, or reordering slides unless the user explicitly asks you to do so (e.g., "add a new slide", "delete this slide"). By default, you MUST ONLY modify the content of the slide the user is currently viewing (Slide ${activeSlideIndex + 1}). You MUST return the entire presentation JSON, but every other slide MUST remain exactly identical to the input.
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
+    
+    **CRITICAL REFINEMENT RULES:**
+    - SWOT: **You MUST generate meaningful data for ALL four SWOT categories (Strengths, Weaknesses, Opportunities, AND Threats).**
+    - GanttChartRoadmap: **You MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year).**
+    - Branding: **DO NOT include the text "Powered by Tanmyaa" anywhere in the slide content.**
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
     

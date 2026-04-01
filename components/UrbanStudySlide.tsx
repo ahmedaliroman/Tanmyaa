@@ -292,10 +292,14 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/75 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title} className="font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 grid grid-cols-2 gap-12 flex-grow min-h-0">
                 <div className="flex flex-col pr-4 overflow-hidden" style={narrativeAnimation}>
-                    <AutoFitText maxFontSize={18} minFontSize={12} className="leading-relaxed text-white/80">
+                    <AutoFitText maxFontSize={24} minFontSize={12} className="leading-relaxed text-white/80">
                         <Editable as="div" value={slide.narrative} onUpdate={v => onUpdate('narrative', v)} useMarkdown />
                     </AutoFitText>
                 </div>
@@ -306,8 +310,8 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
                             return (
                                 <li key={i} className="flex items-start flex-shrink-0" style={keyPointAnimation}>
                                      <div className="w-10 h-10 rounded-full bg-[var(--color-primary-medium)] text-[var(--color-accent-cream)] text-base font-bold flex items-center justify-center mr-5 flex-shrink-0 shadow-lg">{String(i+1).padStart(2, '0')}</div>
-                                     <div className="flex-grow overflow-hidden h-12">
-                                        <AutoFitText maxFontSize={18} minFontSize={10}>
+                                     <div className="flex-grow overflow-hidden h-16">
+                                        <AutoFitText maxFontSize={24} minFontSize={10}>
                                             <Editable value={point} onUpdate={v => onUpdate(`key_points[${i}]`, v)} className="font-semibold" />
                                         </AutoFitText>
                                      </div>
@@ -371,13 +375,19 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
 )};
 
 const SWOTCategory: React.FC<{ title: string; items: { title: string; description: string }[]; onUpdate: (field: string, val: string) => void; type: 'strengths' | 'weaknesses' | 'opportunities' | 'threats'; animationStyle: CSSProperties }> = ({ title, items, onUpdate, type, animationStyle }) => (
-    <div className="min-h-0" style={animationStyle}>
-        <h3 className="font-bold text-lg mb-3 text-[var(--color-accent-light)] border-b border-white/20 pb-2">{title}</h3>
-        <div className="space-y-3 mt-4">
+    <div className="min-h-0 flex flex-col h-full" style={animationStyle}>
+        <h3 className="font-bold text-lg mb-3 text-[var(--color-accent-light)] border-b border-white/20 pb-2 flex-shrink-0">{title}</h3>
+        <div className="space-y-3 mt-4 flex-grow overflow-hidden">
             {ensureArray(items).map((item, i) => (
-                <div key={i}>
-                    <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-bold text-white text-base" useMarkdown/>
-                    <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className={`${(item.description?.length || 0) > 120 ? 'text-xs' : 'text-sm'} text-white/70 mt-1 leading-relaxed`} />
+                <div key={i} className="h-1/3 flex flex-col justify-center">
+                    <AutoFitText maxFontSize={16} minFontSize={12}>
+                        <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-bold text-white" useMarkdown/>
+                    </AutoFitText>
+                    <div className="flex-grow overflow-hidden mt-1">
+                        <AutoFitText maxFontSize={14} minFontSize={8}>
+                            <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className="text-white/70 leading-relaxed" />
+                        </AutoFitText>
+                    </div>
                 </div>
             ))}
         </div>
@@ -446,17 +456,29 @@ const CaseStudyDeepDiveSlideLayout: React.FC<{ slide: CaseStudyDeepDiveSlide, on
                 <div style={titleAnimation}>
                     <Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter leading-tight max-w-3xl" onUpdate={v => onUpdate('title', v)} />
                 </div>
-                <div className="w-full flex justify-between items-end gap-8 min-h-0 flex-grow mt-8">
-                    <div className="w-2/3 bg-black/60 backdrop-blur-md p-6 rounded-lg border border-white/10 max-h-full" style={disableAnimations ? { opacity: 1 } : contentAnimation}>
-                        <Editable as="p" value={slide.introduction} onUpdate={v => onUpdate('introduction', v)} className={`${(slide.introduction?.length || 0) > 400 ? 'text-sm' : 'text-lg'} text-white/80 mb-6 leading-relaxed`} useMarkdown />
-                        <div className="border-t border-[var(--color-primary-medium)] pt-4">
-                            <h3 className="font-bold text-xs uppercase tracking-wider text-white/60">Proven Application</h3>
-                            <ul className="list-disc list-inside space-y-2 mt-2 text-base text-white/90">
-                                {ensureArray(slide.key_findings).map((finding, i) => <li key={i}><Editable as="span" value={finding} onUpdate={v => onUpdate(`key_findings[${i}]`, v)} className={(finding?.length || 0) > 150 ? 'text-sm' : 'text-base'} useMarkdown/></li>)}
+                <div className="w-full flex justify-between items-end gap-8 min-h-0 flex-grow mt-8 overflow-hidden">
+                    <div className="w-2/3 bg-black/60 backdrop-blur-md p-6 rounded-lg border border-white/10 h-full flex flex-col" style={disableAnimations ? { opacity: 1 } : contentAnimation}>
+                        <div className="flex-grow overflow-hidden mb-6">
+                            <AutoFitText maxFontSize={20} minFontSize={12}>
+                                <Editable as="p" value={slide.introduction} onUpdate={v => onUpdate('introduction', v)} className="text-white/80 leading-relaxed" useMarkdown />
+                            </AutoFitText>
+                        </div>
+                        <div className="border-t border-[var(--color-primary-medium)] pt-4 flex-grow overflow-hidden">
+                            <h3 className="font-bold text-xs uppercase tracking-wider text-white/60 mb-2">Proven Application</h3>
+                            <ul className="list-disc list-inside space-y-2 text-white/90">
+                                {ensureArray(slide.key_findings).map((finding, i) => (
+                                    <li key={i} className="overflow-hidden">
+                                        <AutoFitText maxFontSize={16} minFontSize={10}>
+                                            <Editable as="span" value={finding} onUpdate={v => onUpdate(`key_findings[${i}]`, v)} useMarkdown/>
+                                        </AutoFitText>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
-                        <div className="border-t border-[var(--color-primary-medium)]/50 pt-4 mt-4">
-                            <Editable as="p" value={slide.conclusion} onUpdate={v => onUpdate('conclusion', v)} className="text-[var(--color-accent-light)] font-semibold text-lg" />
+                        <div className="border-t border-[var(--color-primary-medium)]/50 pt-4 mt-4 flex-shrink-0">
+                            <AutoFitText maxFontSize={20} minFontSize={14}>
+                                <Editable as="p" value={slide.conclusion} onUpdate={v => onUpdate('conclusion', v)} className="text-[var(--color-accent-light)] font-semibold" />
+                            </AutoFitText>
                         </div>
                     </div>
                     <div className="w-1/3 flex-shrink-0">
@@ -949,14 +971,14 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     };
 
     const phaseColors = [
-        'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)', // Deep Blue
-        'linear-gradient(135deg, #059669 0%, #065F46 100%)', // Forest Green
-        'linear-gradient(135deg, #D97706 0%, #92400E 100%)', // Burnt Orange
-        'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)', // Royal Purple
-        'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)', // Deep Red
-        'linear-gradient(135deg, #0891B2 0%, #155E75 100%)', // Dark Cyan
-        'linear-gradient(135deg, #DB2777 0%, #9D174D 100%)', // Magenta
-        'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)', // Indigo
+        'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', // Bright Blue
+        'linear-gradient(135deg, #10B981 0%, #047857 100%)', // Emerald Green
+        'linear-gradient(135deg, #F59E0B 0%, #B45309 100%)', // Amber
+        'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)', // Violet
+        'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)', // Red
+        'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)', // Cyan
+        'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)', // Pink
+        'linear-gradient(135deg, #6366F1 0%, #4338CA 100%)', // Indigo
     ];
 
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
@@ -1013,7 +1035,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                     </div>
 
                     {/* Chart Body */}
-                    <div className="flex-grow relative overflow-y-auto content-scrollbar pr-2 min-h-0">
+                    <div className="flex-grow relative overflow-hidden pr-2 min-h-0">
                         {/* Vertical grid lines */}
                         <div className="absolute top-0 left-[20%] w-[80%] h-full grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
                             {Array.from({ length: totalQuarters }).map((_, i) => (
@@ -1022,7 +1044,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                         </div>
     
                         {/* Hierarchical Phases and Actions */}
-                        <div className="w-full relative z-10 space-y-10 pb-8">
+                        <div className="w-full h-full relative z-10 flex flex-col justify-between pb-4">
                             {ensureArray(slide.phases).map((phase, pIndex) => {
                                 const deliverables = ensureArray(phase.deliverables);
                                 const deliverableIndices = deliverables.map(d => ({
@@ -1375,16 +1397,24 @@ const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: stri
                 </AutoFitText>
                 <Editable as="p" value={slide.subtitle} onUpdate={v => onUpdate('subtitle', v)} className="text-white/60 mb-10" />
             </div>
-            <div className="relative z-20 flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-y-auto content-scrollbar pr-2">
+            <div className="relative z-20 flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 overflow-hidden p-4">
                 {(slide.steps || []).map((step, i) => {
                     const stepAnimation = getAnimationStyles(isActive, 350 + i * 150, 'fade-in-up', disableAnimations);
                     return (
-                        <div key={i} className="relative bg-black/40 backdrop-blur-md p-6 rounded-lg border border-white/10 flex flex-col min-h-[200px]" style={stepAnimation}>
-                            <div className="absolute -top-4 -left-4 w-10 h-10 bg-[var(--color-primary-medium)] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                        <div key={i} className="relative bg-black/40 backdrop-blur-md p-8 rounded-lg border border-white/10 flex flex-col min-h-[200px]" style={stepAnimation}>
+                            <div className="absolute -top-4 -left-4 w-12 h-12 bg-[var(--color-primary-medium)] rounded-full flex items-center justify-center text-white font-bold shadow-xl z-30">
                                 {step.step_number || i + 1}
                             </div>
-                            <Editable as="h3" value={step.title} onUpdate={v => onUpdate(`steps[${i}].title`, v)} className="font-bold text-lg text-white mb-3 mt-2" />
-                            <Editable as="p" value={step.description} onUpdate={v => onUpdate(`steps[${i}].description`, v)} className="text-sm text-white/70" />
+                            <div className="flex-shrink-0 mb-3 mt-2">
+                                <AutoFitText maxFontSize={20} minFontSize={14}>
+                                    <Editable as="h3" value={step.title} onUpdate={v => onUpdate(`steps[${i}].title`, v)} className="font-bold text-white" />
+                                </AutoFitText>
+                            </div>
+                            <div className="flex-grow overflow-hidden">
+                                <AutoFitText maxFontSize={14} minFontSize={10}>
+                                    <Editable as="p" value={step.description} onUpdate={v => onUpdate(`steps[${i}].description`, v)} className="text-white/70" />
+                                </AutoFitText>
+                            </div>
                         </div>
                     )
                 })}
