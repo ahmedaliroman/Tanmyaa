@@ -91,19 +91,54 @@ const ensureArray = <T,>(val: T | T[] | undefined | null): T[] => Array.isArray(
 // Fix: Added 'style' prop to allow inline styling for components like Gantt charts that need specific backgrounds.
 const SlideWrapper: React.FC<{ children: React.ReactNode, className?: string, style?: CSSProperties }> = ({ children, className = '', style }) => (
     <div className={`w-full h-full text-[var(--color-accent-cream)] flex flex-col overflow-hidden relative font-sans ${className}`} style={style}>
-        {/* Tanmyaa Branding Header */}
-        <div className="absolute top-4 right-6 z-50 flex items-center space-x-2 opacity-60 hover:opacity-100 transition-opacity pointer-events-none select-none">
-            <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 leading-none">Powered by</span>
-                <span className="text-sm font-black tracking-tighter text-white leading-none mt-0.5">TANMYAA</span>
-            </div>
-            <div className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/20">
-                <div className="w-4 h-4 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-sm rotate-45"></div>
-            </div>
-        </div>
         {children}
     </div>
 );
+
+const AutoFitText: React.FC<{ 
+    children: React.ReactNode, 
+    maxFontSize?: number, 
+    minFontSize?: number, 
+    className?: string,
+    containerClassName?: string
+}> = ({ children, maxFontSize = 100, minFontSize = 12, className = '', containerClassName = '' }) => {
+    const [fontSize, setFontSize] = useState(maxFontSize);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const textRef = React.useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const resize = () => {
+            if (!containerRef.current || !textRef.current) return;
+            
+            let currentSize = maxFontSize;
+            textRef.current.style.fontSize = `${currentSize}px`;
+            
+            while (
+                (textRef.current.scrollHeight > containerRef.current.clientHeight || 
+                 textRef.current.scrollWidth > containerRef.current.clientWidth) && 
+                currentSize > minFontSize
+            ) {
+                currentSize -= 1;
+                textRef.current.style.fontSize = `${currentSize}px`;
+            }
+            setFontSize(currentSize);
+        };
+
+        const observer = new ResizeObserver(resize);
+        if (containerRef.current) observer.observe(containerRef.current);
+        resize();
+
+        return () => observer.disconnect();
+    }, [children, maxFontSize, minFontSize]);
+
+    return (
+        <div ref={containerRef} className={`w-full h-full overflow-hidden flex items-center ${containerClassName}`}>
+            <div ref={textRef} className={className} style={{ fontSize: `${fontSize}px`, lineHeight: '1.2' }}>
+                {children}
+            </div>
+        </div>
+    );
+};
 
 const renderWithBold = (text: string) => {
     if (!text) return text;
@@ -259,17 +294,23 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
             <div className="absolute inset-0 bg-black/75 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
             <div className="relative z-20 grid grid-cols-2 gap-12 flex-grow min-h-0">
-                <div className="flex flex-col pr-4" style={narrativeAnimation}>
-                    <Editable as="p" value={slide.narrative} onUpdate={v => onUpdate('narrative', v)} className={`${(slide.narrative?.length || 0) > 800 ? 'text-sm' : 'text-lg'} leading-relaxed text-white/80`} useMarkdown />
+                <div className="flex flex-col pr-4 overflow-hidden" style={narrativeAnimation}>
+                    <AutoFitText maxFontSize={18} minFontSize={12} className="leading-relaxed text-white/80">
+                        <Editable as="div" value={slide.narrative} onUpdate={v => onUpdate('narrative', v)} useMarkdown />
+                    </AutoFitText>
                 </div>
-                <div className="flex flex-col justify-center">
-                    <ul className="space-y-6">
+                <div className="flex flex-col justify-center overflow-hidden">
+                    <ul className="space-y-4 h-full flex flex-col justify-center">
                         {ensureArray(slide.key_points).map((point, i) => {
                             const keyPointAnimation = getAnimationStyles(isActive, 500 + i * 150, 'fade-in-up', disableAnimations);
                             return (
-                                <li key={i} className="flex items-start" style={keyPointAnimation}>
+                                <li key={i} className="flex items-start flex-shrink-0" style={keyPointAnimation}>
                                      <div className="w-10 h-10 rounded-full bg-[var(--color-primary-medium)] text-[var(--color-accent-cream)] text-base font-bold flex items-center justify-center mr-5 flex-shrink-0 shadow-lg">{String(i+1).padStart(2, '0')}</div>
-                                    <Editable value={point} onUpdate={v => onUpdate(`key_points[${i}]`, v)} className="text-lg font-semibold pt-1" />
+                                     <div className="flex-grow overflow-hidden h-12">
+                                        <AutoFitText maxFontSize={18} minFontSize={10}>
+                                            <Editable value={point} onUpdate={v => onUpdate(`key_points[${i}]`, v)} className="font-semibold" />
+                                        </AutoFitText>
+                                     </div>
                                 </li>
                             )
                         })}
@@ -296,8 +337,16 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
         />
         <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
         <div className="relative z-20 pt-8">
-            <div style={titleAnim}><Editable as="h1" value={slide.title} className="text-4xl md:text-6xl font-extrabold tracking-tighter leading-tight" onUpdate={v => onUpdate('title', v)} /></div>
-            <div style={problemAnim}><Editable as="p" value={slide.problem_statement} className="text-base md:text-lg text-white/80 max-w-4xl mx-auto mt-6 leading-relaxed" onUpdate={v => onUpdate('problem_statement', v)} /></div>
+            <div style={titleAnim}>
+                <AutoFitText maxFontSize={64} minFontSize={32} className="w-full">
+                    <Editable as="h1" value={slide.title} className="font-extrabold tracking-tighter leading-tight" onUpdate={v => onUpdate('title', v)} />
+                </AutoFitText>
+            </div>
+            <div style={problemAnim} className="mt-6">
+                <AutoFitText maxFontSize={24} minFontSize={14} className="max-w-4xl mx-auto">
+                    <Editable as="p" value={slide.problem_statement} className="text-white/80 leading-relaxed" onUpdate={v => onUpdate('problem_statement', v)} />
+                </AutoFitText>
+            </div>
         </div>
         <div className="relative z-20 w-full grid grid-cols-3 gap-8 pb-12">
             {ensureArray(slide.key_data_points).map((point, i) => {
@@ -424,12 +473,6 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const statementAnimation = getAnimationStyles(isActive, 400, 'fade-in-up', disableAnimations);
     
-    const textLength = slide.vision_statement?.length || 0;
-    const fontSizeClass = textLength > 250 ? 'text-xl md:text-2xl lg:text-3xl' : 
-                          textLength > 150 ? 'text-2xl md:text-3xl lg:text-4xl' : 
-                          textLength > 80 ? 'text-3xl md:text-4xl lg:text-5xl' : 
-                          'text-4xl md:text-5xl lg:text-6xl';
-
     return (
         <SlideWrapper className="justify-center items-center text-center p-16">
             <EditableImage 
@@ -439,9 +482,15 @@ const VisionSlideLayout: React.FC<{ slide: VisionSlide, onUpdate: (field: string
                 onUpdate={(newUrl) => onUpdate(`image_url`, newUrl)}
             />
             <div className="absolute inset-0 bg-black/75 z-10 pointer-events-none"></div>
-            <div className="relative z-20 w-full max-w-6xl">
-                <div style={titleAnimation}><Editable as="h2" value={slide.title} className="text-xl font-bold text-white/50 uppercase tracking-[0.3em]" onUpdate={v => onUpdate('title', v)} /></div>
-                <div style={statementAnimation}><Editable as="p" value={slide.vision_statement} onUpdate={v => onUpdate('vision_statement', v)} className={`${fontSizeClass} font-extrabold my-8 leading-tight tracking-tighter whitespace-pre-line`} /></div>
+            <div className="relative z-20 w-full max-w-6xl flex flex-col items-center">
+                <div style={titleAnimation} className="mb-4">
+                    <Editable as="h2" value={slide.title} className="text-xl font-bold text-white/50 uppercase tracking-[0.3em]" onUpdate={v => onUpdate('title', v)} />
+                </div>
+                <div style={statementAnimation} className="w-full">
+                    <AutoFitText maxFontSize={72} minFontSize={24} className="w-full">
+                        <Editable as="p" value={slide.vision_statement} onUpdate={v => onUpdate('vision_statement', v)} className="font-extrabold leading-tight tracking-tighter whitespace-pre-line" />
+                    </AutoFitText>
+                </div>
             </div>
         </SlideWrapper>
     );
@@ -460,8 +509,12 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
             />
             <div className="absolute inset-0 bg-black/70 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}>
-                 <Editable as="h1" value={slide.title} className="text-5xl font-extrabold tracking-tighter" onUpdate={v => onUpdate('title', v)} />
-                 <Editable as="p" value={slide.strategic_intent} className="text-base text-white/70 max-w-3xl mt-2" onUpdate={v => onUpdate('strategic_intent', v)} />
+                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title} className="font-extrabold tracking-tighter" onUpdate={v => onUpdate('title', v)} />
+                 </AutoFitText>
+                 <AutoFitText maxFontSize={18} minFontSize={12} className="max-w-3xl mt-2">
+                    <Editable as="p" value={slide.strategic_intent} className="text-white/70" onUpdate={v => onUpdate('strategic_intent', v)} />
+                 </AutoFitText>
             </div>
             <div className="relative z-20 grid grid-cols-3 gap-5">
                 {ensureArray(slide.strategies).map((strategy, i) => {
@@ -497,7 +550,11 @@ const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Equity Analysis"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title || "Equity Analysis"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 grid grid-cols-2 gap-12 flex-grow">
                 <div style={impactsAnimation}>
                     <h3 className="font-bold text-lg text-[var(--color-accent-light)] border-b border-white/20 pb-2 mb-4">Distributional Impacts</h3>
@@ -593,7 +650,9 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
             </div>
             <div className="relative z-20 flex-grow flex flex-col justify-between p-12">
                 <div style={titleAnimation}>
-                    <Editable as="h2" value={slide.title} className="text-4xl font-extrabold tracking-tighter break-words" onUpdate={v => onUpdate('title', v)} />
+                    <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                        <Editable as="h2" value={slide.title} className="font-extrabold tracking-tighter break-words" onUpdate={v => onUpdate('title', v)} />
+                    </AutoFitText>
                     <Editable as="p" value={slide.site_rationale} onUpdate={v => onUpdate('site_rationale', v)} className="text-sm text-white/70 max-w-xl mx-auto mt-2 italic" />
                 </div>
                 <div className="grid grid-cols-3 gap-6 w-full max-w-5xl mx-auto">
@@ -660,9 +719,6 @@ const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field
                     ))}
                 </div>
             </div>
-            <div className="absolute bottom-4 right-8 text-[9px] font-mono text-white/20 z-20">
-                TANMYAA STRATEGIC DOCTRINE // REF_BASE_V1.0
-            </div>
         </SlideWrapper>
     );
 };
@@ -680,7 +736,11 @@ const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, 
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Scenario Comparison"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title || "Scenario Comparison"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 flex-grow grid grid-cols-3 gap-6">
                 {ensureArray(slide.scenarios).map((scenario, i) => {
                     const scenarioAnimation = getAnimationStyles(isActive, 350 + i * 150, 'scale-in', disableAnimations);
@@ -725,7 +785,11 @@ const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Risk Assessment"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title || "Risk Assessment"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 flex-grow space-y-3 pr-2">
                 {ensureArray(slide.risks).map((risk, i) => {
                     const riskAnimation = getAnimationStyles(isActive, 350 + i * 100, 'fade-in-up', disableAnimations);
@@ -763,7 +827,11 @@ const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: stri
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Implementation Doctrine"} className="text-5xl font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title || "Implementation Doctrine"} className="font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 flex justify-between items-stretch gap-6 flex-grow">
                 {ensureArray(slide.phases).map((phase, i) => {
                     const phaseAnimation = getAnimationStyles(isActive, 350 + i * 150, 'scale-in', disableAnimations);
@@ -802,7 +870,7 @@ const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: stri
     );
 };
 
-const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, onUpdate: (field: string, val: string | number | {name: string, start_quarter: string, end_quarter: string, kpi: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, onUpdate: (field: string, val: string | number | {name: string, start_quarter: string, end_quarter: string, kpi: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const parseYear = (val: string | number | undefined | null): number => {
         if (typeof val === 'number') return val;
         if (typeof val === 'string') {
@@ -811,8 +879,22 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
         }
         return 0;
     };
-    const startYear = parseYear(slide.timeline_start_year) || 2024;
-    const endYear = parseYear(slide.timeline_end_year) || 2026;
+
+    // Extract all years from deliverables to ensure the timeline covers the whole project
+    const allDeliverables = ensureArray(slide.phases).flatMap(p => ensureArray(p.deliverables));
+    const extractYear = (str: string | undefined | null) => {
+        if (!str) return null;
+        const match = String(str).match(/(\d{4})/);
+        return match ? parseInt(match[1]) : null;
+    };
+
+    const deliverableYears = allDeliverables.flatMap(d => [extractYear(d.start_quarter), extractYear(d.end_quarter)]).filter((y): y is number => y !== null);
+    
+    const dataMinYear = deliverableYears.length > 0 ? Math.min(...deliverableYears) : 2024;
+    const dataMaxYear = deliverableYears.length > 0 ? Math.max(...deliverableYears) : 2026;
+
+    const startYear = Math.min(parseYear(slide.timeline_start_year) || 2024, dataMinYear);
+    const endYear = Math.max(parseYear(slide.timeline_end_year) || 2026, dataMaxYear);
     
     const years = Array.from({ length: Math.max(1, endYear - startYear + 1) }, (_, i) => startYear + i);
     const totalQuarters = years.length * 4;
@@ -820,194 +902,206 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     const parseQuarter = (quarterStr: string | number | undefined | null): number => {
         if (quarterStr === undefined || quarterStr === null) return -1;
         
-        // If it's already a number, assume it's an index or a year
         if (typeof quarterStr === 'number') {
             if (quarterStr >= 2000) return (quarterStr - startYear) * 4;
+            // If it's a small number, assume it's a quarter index relative to startYear
+            if (quarterStr >= 1 && quarterStr <= 4) return quarterStr - 1;
             return quarterStr;
         }
 
         const str = String(quarterStr).trim();
         if (!str) return -1;
         
-        // Handle "Q1 2025", "Q1-2025", "Quarter 1 2025", "2025 Q1", "2025-Q1", "Q1 25", or just "Q1"
+        // Handle "Q1 2025" or "2025 Q1"
         const qMatch = str.match(/Q(\d)/i) || str.match(/Quarter\s*(\d)/i);
-        const yMatch = str.match(/(\d{4})/) || str.match(/(\d{2})$/);
+        const yMatch = str.match(/(\d{4})/);
         
         let quarterIndex = 0;
         if (qMatch) {
             quarterIndex = parseInt(qMatch[1]) - 1;
-        } else {
-            // If no Q found, maybe it's just a year or a date
-            const date = new Date(str);
-            if (!isNaN(date.getTime())) {
-                const month = date.getMonth();
-                quarterIndex = Math.floor(month / 3);
-                const year = date.getFullYear();
-                return (year - startYear) * 4 + quarterIndex;
-            }
         }
         
-        let yearInt = startYear;
         if (yMatch) {
-            const matchedYear = parseInt(yMatch[1]);
-            yearInt = matchedYear < 100 ? 2000 + matchedYear : matchedYear;
-        } else if (str.includes('-')) {
-            // Handle "2025-01" or "2025-Q1"
+            const yearInt = parseInt(yMatch[1]);
+            const yearIndex = yearInt - startYear;
+            return yearIndex * 4 + quarterIndex;
+        }
+
+        // Handle "2025-2026" or similar
+        if (str.includes('-')) {
             const parts = str.split('-');
-            const firstPart = parseInt(parts[0]);
-            if (firstPart >= 2000) yearInt = firstPart;
-            
-            const secondPart = parts[1].toUpperCase();
-            if (secondPart.startsWith('Q')) {
-                quarterIndex = parseInt(secondPart.substring(1)) - 1;
-            } else {
-                const month = parseInt(secondPart);
-                if (!isNaN(month)) quarterIndex = Math.floor((month - 1) / 3);
+            const yearPart = parts[0].match(/\d{4}/);
+            if (yearPart) {
+                const yearInt = parseInt(yearPart[0]);
+                const yearIndex = yearInt - startYear;
+                return yearIndex * 4 + quarterIndex;
             }
         }
-        
-        const yearIndex = yearInt - startYear;
-        const finalIndex = yearIndex * 4 + quarterIndex;
-        
-        if (isNaN(quarterIndex) || quarterIndex < 0 || quarterIndex > 3 || isNaN(yearIndex) || finalIndex < 0 || finalIndex >= totalQuarters) {
-            console.warn(`Gantt Chart: Failed to parse quarter "${quarterStr}" (Result: ${finalIndex}, Range: 0-${totalQuarters-1})`);
-            return -1;
+
+        // Fallback to basic number parsing
+        const numericOnly = parseInt(str.replace(/\D/g, ''));
+        if (!isNaN(numericOnly)) {
+            if (numericOnly >= 2000) return (numericOnly - startYear) * 4;
+            if (numericOnly >= 1 && numericOnly <= 4) return numericOnly - 1;
         }
-        return finalIndex;
+
+        return -1;
     };
+
+    const phaseColors = [
+        'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)', // Deep Blue
+        'linear-gradient(135deg, #059669 0%, #065F46 100%)', // Forest Green
+        'linear-gradient(135deg, #D97706 0%, #92400E 100%)', // Burnt Orange
+        'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)', // Royal Purple
+        'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)', // Deep Red
+        'linear-gradient(135deg, #0891B2 0%, #155E75 100%)', // Dark Cyan
+        'linear-gradient(135deg, #DB2777 0%, #9D174D 100%)', // Magenta
+        'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)', // Indigo
+    ];
 
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const yearHeaderAnimation = getAnimationStyles(isActive, 300, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-12 flex flex-col" style={{background: 'linear-gradient(to bottom, #1B3C53, #102434)'}}>
-            <EditableImage 
-                src={slide.image_url || imageUrls['gantt_image'] || ''} 
-                alt="Gantt background" 
-                className="absolute inset-0 w-full h-full z-0 opacity-20"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="relative z-20 flex flex-col h-full">
-                <div style={titleAnimation} className="flex items-baseline justify-between mb-8">
-                    <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tight text-[var(--color-accent-light)]" />
-                    <div className="flex items-center space-x-2 text-white/40 text-sm font-mono bg-white/5 px-3 py-1 rounded-full">
-                        <Editable value={String(startYear)} onUpdate={v => onUpdate('timeline_start_year', parseInt(v) || startYear)} className="hover:text-white transition-colors" />
-                        <span className="opacity-30">&mdash;</span>
-                        <Editable value={String(endYear)} onUpdate={v => onUpdate('timeline_end_year', parseInt(v) || endYear)} className="hover:text-white transition-colors" />
+        <SlideWrapper className="p-10 flex flex-col" style={{background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)'}}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+            </div>
+            
+            <div className="relative z-20 flex flex-col h-full max-h-full overflow-hidden">
+                <div style={titleAnimation} className="flex items-center justify-between mb-6 flex-shrink-0">
+                    <div className="flex flex-col max-w-[60%]">
+                        <AutoFitText maxFontSize={48} minFontSize={24} containerClassName="h-16">
+                            <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="font-black tracking-tight text-white" />
+                        </AutoFitText>
+                        <div className="h-1 w-24 bg-blue-500 mt-1 rounded-full"></div>
+                    </div>
+                    <div className="flex items-center space-x-4 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl flex-shrink-0">
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] uppercase tracking-widest text-white/40 font-black">Timeline Start</span>
+                            <Editable value={String(startYear)} onUpdate={v => onUpdate('timeline_start_year', parseInt(v) || startYear)} className="text-lg font-mono font-bold text-blue-400" />
+                        </div>
+                        <div className="w-px h-8 bg-white/10"></div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] uppercase tracking-widest text-white/40 font-black">Timeline End</span>
+                            <Editable value={String(endYear)} onUpdate={v => onUpdate('timeline_end_year', parseInt(v) || endYear)} className="text-lg font-mono font-bold text-emerald-400" />
+                        </div>
                     </div>
                 </div>
                 
-                <div className="flex-grow flex flex-col">
+                <div className="flex-grow flex flex-col min-h-0 overflow-hidden bg-black/20 backdrop-blur-sm rounded-2xl border border-white/5 p-6 shadow-inner">
                     {/* Timeline Header */}
-                    <div className="flex pl-[30%]">
-                        <div className="w-full grid" style={{ gridTemplateColumns: `repeat(${years.length}, 1fr)` }}>
+                    <div className="flex mb-2 flex-shrink-0">
+                        <div className="w-[20%]"></div>
+                        <div className="w-[80%] grid" style={{ gridTemplateColumns: `repeat(${years.length}, 1fr)` }}>
                             {years.map(year => (
-                                <div key={year} className="text-center" style={yearHeaderAnimation}>
-                                    <p className="font-bold text-white/80 text-sm">{year}</p>
+                                <div key={year} className="text-center border-l border-white/10" style={yearHeaderAnimation}>
+                                    <p className="font-black text-white/90 text-sm tracking-widest">{year}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
-                    <div className="flex pl-[30%] -mt-1">
-                        <div className="w-full grid" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
+                    <div className="flex mb-6 flex-shrink-0">
+                        <div className="w-[20%] flex items-end">
+                            <span className="text-[10px] uppercase tracking-[0.3em] text-white/30 font-black">Phases</span>
+                        </div>
+                        <div className="w-[80%] grid" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
                             {Array.from({length: totalQuarters}).map((_, i) => (
-                                 <div key={i} className="text-center text-[10px] text-white/50">Q{ (i % 4) + 1 }</div>
+                                 <div key={i} className="text-center text-[9px] text-white/40 font-mono border-l border-white/5">Q{ (i % 4) + 1 }</div>
                             ))}
                         </div>
                     </div>
 
                     {/* Chart Body */}
-                    <div className="flex-grow flex flex-col mt-6 relative overflow-y-auto content-scrollbar pr-2">
-                        <div className="relative min-h-full">
-                            {/* Vertical grid lines */}
-                            <div className="absolute top-0 left-[30%] w-[70%] h-full grid" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
-                                {Array.from({ length: totalQuarters }).map((_, i) => <div key={i} className={`h-full ${ (i + 1) % 4 === 0 ? 'border-r border-white/20' : 'border-r border-white/10'}`}></div>)}
-                            </div>
-        
-                            {/* Hierarchical Phases and Actions */}
-                            <div className="w-full relative z-10 mt-4 space-y-16">
-                                {ensureArray(slide.phases).map((phase, pIndex) => {
-                                    const deliverables = ensureArray(phase.deliverables);
-                                    const deliverableIndices = deliverables.map(d => ({
-                                        start: parseQuarter(d.start_quarter),
-                                        end: parseQuarter(d.end_quarter)
-                                    })).filter(idx => idx.start >= 0 && idx.end >= 0);
+                    <div className="flex-grow relative overflow-y-auto content-scrollbar pr-2 min-h-0">
+                        {/* Vertical grid lines */}
+                        <div className="absolute top-0 left-[20%] w-[80%] h-full grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
+                            {Array.from({ length: totalQuarters }).map((_, i) => (
+                                <div key={i} className={`h-full ${ (i + 1) % 4 === 0 ? 'border-r border-white/10' : 'border-r border-white/5'}`}></div>
+                            ))}
+                        </div>
+    
+                        {/* Hierarchical Phases and Actions */}
+                        <div className="w-full relative z-10 space-y-10 pb-8">
+                            {ensureArray(slide.phases).map((phase, pIndex) => {
+                                const deliverables = ensureArray(phase.deliverables);
+                                const deliverableIndices = deliverables.map(d => ({
+                                    start: parseQuarter(d.start_quarter),
+                                    end: parseQuarter(d.end_quarter)
+                                })).filter(idx => idx.start >= 0 && idx.end >= 0);
 
-                                    if (deliverableIndices.length === 0 && !phase.name) return null;
+                                if (deliverableIndices.length === 0 && !phase.name) return null;
 
-                                    const phaseStart = deliverableIndices.length > 0 ? Math.min(...deliverableIndices.map(i => i.start)) : -1;
-                                    const phaseEnd = deliverableIndices.length > 0 ? Math.max(...deliverableIndices.map(i => i.end)) : -1;
-                                    const phaseDuration = phaseStart >= 0 ? phaseEnd - phaseStart + 1 : 0;
-                                    
-                                    const phaseAnimation = getAnimationStyles(isActive, 400 + pIndex * 200, 'fade-in-up', disableAnimations);
+                                const phaseStart = deliverableIndices.length > 0 ? Math.min(...deliverableIndices.map(i => i.start)) : -1;
+                                const phaseEnd = deliverableIndices.length > 0 ? Math.max(...deliverableIndices.map(i => i.end)) : -1;
+                                const phaseDuration = phaseStart >= 0 ? phaseEnd - phaseStart + 1 : 0;
+                                
+                                const phaseAnimation = getAnimationStyles(isActive, 400 + pIndex * 150, 'fade-in-up', disableAnimations);
+                                const color = phaseColors[pIndex % phaseColors.length];
 
-                                    return (
-                                        <div key={pIndex} className="relative" style={phaseAnimation}>
-                                            {/* Phase Row */}
-                                            <div className="flex items-center h-10 relative mb-3">
-                                                <div className="w-[30%] pr-10 text-right flex flex-col justify-center">
-                                                    <Editable as="h3" value={phase.name} onUpdate={v => onUpdate(`phases[${pIndex}].name`, v)} className="text-xl font-black text-white tracking-tighter uppercase italic drop-shadow-lg" />
-                                                </div>
-                                                {/* Main Phase Bar */}
-                                                {phaseStart >= 0 && (
-                                                    <div className="absolute h-6 rounded-sm shadow-2xl z-10 border-l-4 border-white/40" style={{ 
-                                                        left: `calc(30% + ${(phaseStart / totalQuarters) * 70}%)`, 
-                                                        width: `calc(${(phaseDuration / totalQuarters) * 70}%)`,
-                                                        background: 'linear-gradient(90deg, #007AFF, #00C6FF)',
-                                                        top: '50%',
-                                                        transform: 'translateY(-50%)'
-                                                    }}>
-                                                        <div className="absolute inset-0 bg-white/10 opacity-30"></div>
-                                                        {/* Phase End Marker */}
-                                                        <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
-                                                    </div>
-                                                )}
+                                return (
+                                    <div key={pIndex} className="group/phase" style={phaseAnimation}>
+                                        {/* Phase Row */}
+                                        <div className="flex items-center h-12 relative mb-4">
+                                            <div className="w-[20%] pr-6 text-right flex flex-col justify-center">
+                                                <Editable as="h3" value={phase.name} onUpdate={v => onUpdate(`phases[${pIndex}].name`, v)} className="text-base font-bold text-white tracking-tight leading-tight group-hover/phase:text-blue-400 transition-colors" />
                                             </div>
-
-                                            {/* Actions (Deliverables) Row */}
-                                            <div className="flex relative" style={{ minHeight: `${Math.max(60, deliverables.length * 35 + 20)}px` }}>
-                                                <div className="w-[30%] pt-2">
-                                                    <div className="h-full border-r border-white/10 flex flex-col justify-start">
-                                                        <span className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-2">Deliverables</span>
-                                                    </div>
+                                            {/* Main Phase Bar */}
+                                            {phaseStart >= 0 && (
+                                                <div className="absolute h-8 rounded-lg shadow-lg z-10 overflow-hidden" style={{ 
+                                                    left: `calc(20% + ${(phaseStart / totalQuarters) * 80}%)`, 
+                                                    width: `calc(${(phaseDuration / totalQuarters) * 80}%)`,
+                                                    background: color,
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)'
+                                                }}>
+                                                    <div className="absolute inset-0 bg-white/20 mix-blend-overlay"></div>
+                                                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent"></div>
+                                                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(45deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent)', backgroundSize: '20px 20px' }}></div>
                                                 </div>
-                                                <div className="w-[70%] relative h-full pt-2">
-                                                    {deliverables.map((d, dIndex) => {
-                                                        const start = parseQuarter(d.start_quarter);
-                                                        const end = parseQuarter(d.end_quarter);
-                                                        if (start < 0 || end < 0) return null;
-                                                        const duration = Math.max(1, end - start + 1);
-                                                        const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
-                                                        
-                                                        return (
-                                                            <div key={dIndex} className="absolute h-7 z-20 group" style={{
-                                                                left: `${(start / totalQuarters) * 100}%`,
-                                                                width: `${(duration / totalQuarters) * 100}%`,
-                                                                top: `${dIndex * 40 + 20}px`
-                                                            }}>
-                                                                <div className="h-full bg-cyan-400/80 backdrop-blur-sm rounded-sm border border-white/20 shadow-lg transition-all group-hover:brightness-125 group-hover:scale-y-110" 
-                                                                     style={{ background: 'linear-gradient(180deg, rgba(90, 200, 250, 0.9) 0%, rgba(0, 162, 232, 0.9) 100%)' }}
-                                                                >
-                                                                    <div className="absolute inset-0 bg-white/10 opacity-20"></div>
-                                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/40"></div>
+                                            )}
+                                        </div>
+
+                                        {/* Actions (Deliverables) Row */}
+                                        <div className="flex relative">
+                                            <div className="w-[20%]"></div>
+                                            <div className="w-[80%] relative space-y-3">
+                                                {deliverables.map((d, dIndex) => {
+                                                    const start = parseQuarter(d.start_quarter);
+                                                    const end = parseQuarter(d.end_quarter);
+                                                    if (start < 0 || end < 0) return null;
+                                                    const duration = Math.max(1, end - start + 1);
+                                                    const deliverablePath = `phases[${pIndex}].deliverables[${dIndex}]`;
+                                                    
+                                                    return (
+                                                        <div key={dIndex} className="relative h-9 group/item" style={{
+                                                            marginLeft: `${(start / totalQuarters) * 100}%`,
+                                                            width: `${(duration / totalQuarters) * 100}%`,
+                                                        }}>
+                                                            <div className="h-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all flex items-center px-4 overflow-hidden shadow-sm hover:shadow-md">
+                                                                <div className="w-2 h-2 rounded-full mr-3 flex-shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)]" style={{ background: color }}></div>
+                                                                <div className="flex-grow overflow-hidden">
+                                                                    <AutoFitText maxFontSize={12} minFontSize={8}>
+                                                                        <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="font-bold text-white/90 whitespace-nowrap" />
+                                                                    </AutoFitText>
                                                                 </div>
-                                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 ml-3 w-full pr-4 pointer-events-none">
-                                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                                        <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="text-[11px] font-bold text-white leading-none whitespace-nowrap drop-shadow-md pointer-events-auto" />
-                                                                        <span className="text-[9px] text-white/70 font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                                                                            <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} className="pointer-events-auto" />
-                                                                        </span>
+                                                                
+                                                                {/* KPI Tooltip-like badge */}
+                                                                <div className="absolute left-full ml-3 opacity-0 group-hover/item:opacity-100 transition-all z-30 pointer-events-none translate-x-2 group-hover/item:translate-x-0">
+                                                                    <div className="bg-slate-800/95 backdrop-blur-md text-[10px] font-bold text-white px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap border border-white/10">
+                                                                        <span className="text-blue-400 mr-1">KPI:</span>
+                                                                        <Editable as="span" value={d.kpi} onUpdate={v => onUpdate(`${deliverablePath}.kpi`, v)} className="pointer-events-auto" />
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -1031,7 +1125,9 @@ const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpda
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}>
-                <Editable as="h1" value={slide.title || 'Projected Impact'} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-3 text-[var(--color-accent-light)]" />
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title || 'Projected Impact'} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-3 text-[var(--color-accent-light)]" />
+                </AutoFitText>
             </div>
             <div className="relative z-20" style={subtitleAnimation}>
                 <Editable as="p" value={slide.subtitle || "The quantified outcomes of the doctrine."} onUpdate={v => onUpdate('subtitle', v)} className="text-white/60 mb-12 max-w-3xl mx-auto" />
@@ -1105,7 +1201,11 @@ const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpda
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Fiscal Framework"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title || "Fiscal Framework"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 flex-grow bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-1">
                 <div className="grid grid-cols-5 text-xs font-bold text-white/60 uppercase p-4 border-b border-white/10 tracking-wider">
                     <span>Component</span>
@@ -1152,7 +1252,11 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Required Policy Levers"} className="text-4xl font-extrabold tracking-tighter mb-4 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title || "Required Policy Levers"} className="font-extrabold tracking-tighter mb-4 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 space-y-2 flex-grow pr-4 overflow-hidden">
                 {(slide.recommendations || []).length > 0 ? (slide.recommendations || []).slice(0, 3).map((rec, i) => {
                     const recommendationAnimation = getAnimationStyles(isActive, 350 + i * 150, 'fade-in-up', disableAnimations);
@@ -1206,7 +1310,11 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "Governance Framework"} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title || "Governance Framework"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 flex-grow grid grid-cols-2 gap-10 min-h-0 overflow-hidden">
                 <div className="space-y-4">
                     <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10" style={leadAgencyAnimation}>
@@ -1262,7 +1370,9 @@ const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: stri
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}>
-                <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="text-5xl font-extrabold tracking-tighter mb-2 text-[var(--color-accent-light)]" />
+                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                    <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-2 text-[var(--color-accent-light)]" />
+                </AutoFitText>
                 <Editable as="p" value={slide.subtitle} onUpdate={v => onUpdate('subtitle', v)} className="text-white/60 mb-10" />
             </div>
             <div className="relative z-20 flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-y-auto content-scrollbar pr-2">
@@ -1301,7 +1411,11 @@ const ClosingSlideLayout: React.FC<{ slide: ClosingSlide, onUpdate: (field: stri
             />
             <div className="absolute inset-0 bg-black/70 z-10 pointer-events-none"></div>
             <div className="relative z-20">
-                <div style={taglineAnimation}><Editable as="h2" value={slide.tagline} onUpdate={v => onUpdate('tagline', v)} className="text-5xl md:text-7xl font-black leading-tight tracking-tighter" /></div>
+                <div style={taglineAnimation}>
+                    <AutoFitText maxFontSize={72} minFontSize={32} className="w-full">
+                        <Editable as="h2" value={slide.tagline} onUpdate={v => onUpdate('tagline', v)} className="font-black leading-tight tracking-tighter" />
+                    </AutoFitText>
+                </div>
                 <div style={lineAnimation}><div className="w-20 h-1.5 bg-[var(--color-primary-medium)] my-8 mx-auto"></div></div>
                 <div style={creditsAnimation}><Editable as="p" value={slide.credits} onUpdate={v => onUpdate('credits', v)} className="text-lg md:text-xl text-white/70" /></div>
             </div>

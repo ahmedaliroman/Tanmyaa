@@ -1388,7 +1388,10 @@ export const getPolicyContextSuggestions = async (location: string, challenge: s
 
 export const getSlideRefinementSuggestions = async (slideContent: PresentationSlide): Promise<string[]> => {
     const ai = getAi();
-    const prompt = `Generate 3 refinement suggestions for this slide: ${JSON.stringify(slideContent)}. Return a JSON array of strings.`;
+    const prompt = `As a Principal Urban Strategist, analyze this slide content: ${JSON.stringify(slideContent)}. 
+    Generate 3 highly specific, technically sound, and creative refinement suggestions to improve its strategic value, data depth, or visual clarity. 
+    Focus on urban planning concepts (e.g., "Add specific FAR calculations", "Include a heat island mitigation strategy", "Elaborate on the TOD benefits").
+    Return ONLY a JSON array of strings.`;
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-flash-lite-preview',
         contents: prompt,

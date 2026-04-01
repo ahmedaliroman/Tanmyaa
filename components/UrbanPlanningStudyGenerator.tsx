@@ -504,7 +504,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             }
 
             // Add a footer
-            pptxSlide.addText(`Tanmyaa Strategic Planning | ${index + 1}`, {
+            pptxSlide.addText(`${index + 1}`, {
                 x: 0.5,
                 y: 7.0,
                 w: '90%',
@@ -557,7 +557,9 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
 
   const handleModifySlide = useCallback(async () => {
     setIsChatOpen(true);
-    setChatInput(`I want to modify slide ${currentIndex + 1}: `);
+    const slide = slides?.[currentIndex];
+    const slideSummary = slide ? `(Current Title: "${slide.title || 'Untitled'}")` : '';
+    setChatInput(`I want to modify slide ${currentIndex + 1} ${slideSummary}: `);
     
     if (slides && slides[currentIndex]) {
         setIsSuggestionsLoading(true);
