@@ -23,6 +23,7 @@ export interface CoverSlide {
     subtitle: string;
     project_code: string;
     year: string;
+    image_prompt: string;
     image_url?: string;
     design_system_svg?: string;
     design_system?: DesignSystem;
@@ -37,6 +38,7 @@ export interface ExecutiveOverviewSlide {
     key_points: string[];
     analytic_reflection: string;
     reference_doc?: string;
+    image_prompt: string;
     image_url?: string;
 }
 
@@ -49,6 +51,7 @@ export interface CrisisSlide {
         label: string;
         description: string;
     }[];
+    image_prompt: string;
     image_url?: string;
     analytic_reflection: string;
     reference_doc?: string;

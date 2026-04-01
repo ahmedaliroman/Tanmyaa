@@ -348,6 +348,19 @@ export const generatePresentation = async (
     - For PolicyLevers slide: You MUST provide at least 3 actionable policy recommendations.
     - For References slide: You MUST provide at least 5 real, local references (reports, studies, laws, or news articles) relevant to the data and context of the presentation.
     
+    IMAGE GENERATION RULES (STRICT):
+    You MUST ONLY provide 'image_prompt' (or 'before_image_prompt'/'after_image_prompt') for the following layouts:
+    - Cover (Slide 1)
+    - ExecutiveOverview (Slide 2)
+    - Crisis (Slide 3)
+    - CaseStudyDeepDive (Slide 5)
+    - Vision (Slide 6)
+    - MacroStrategy (Slide 7)
+    - NodeAssessment (Slide 8)
+    - Closing (Last Slide)
+    
+    DO NOT provide image prompts for any other layout (SWOT, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, etc.).
+    
     If specific real-world data is unavailable, use your expert knowledge to synthesize highly plausible, technically sound, and data-driven estimates based on similar global benchmarks. DO NOT leave any field blank or use placeholder text.
     Every field in the JSON must be filled with high-quality, professional, and specific content.
     The output MUST be a JSON array of slide objects.
@@ -356,9 +369,9 @@ export const generatePresentation = async (
     NO GENERIC CONTENT: Tailor every slide specifically to the location and challenge provided.
     
     SCHEMA GUIDANCE:
-    - Cover: { layout: "Cover", title, subtitle, project_code, year }
-    - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection }
-    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}] }
+    - Cover: { layout: "Cover", title, subtitle, project_code, year, image_prompt }
+    - ExecutiveOverview: { layout: "ExecutiveOverview", title, narrative, key_points: [], analytic_reflection, image_prompt }
+    - Crisis: { layout: "Crisis", title, problem_statement, key_data_points: [{label, value, description}], image_prompt }
     - SWOT: { layout: "SWOT", strengths: [{title, description}], weaknesses: [{title, description}], opportunities: [{title, description}], threats: [{title, description}], analytic_reflection }
     **CRITICAL: You MUST generate meaningful data for ALL four SWOT categories (Strengths, Weaknesses, Opportunities, AND Threats). Do not leave any category empty or with placeholder text.**
     - CaseStudyDeepDive: { layout: "CaseStudyDeepDive", title, introduction, key_findings: [], conclusion, image_prompt, analytic_reflection }
@@ -379,6 +392,7 @@ export const generatePresentation = async (
     - ScenarioComparison: { layout: "ScenarioComparison", title, scenarios: [{name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}, {name: "string", outcomes: [{metric: "string", value: "string"}], risk: "string", cost: "string"}], analytic_reflection: "string" }
     - PolicyLevers: { layout: "PolicyLevers", title, recommendations: [{title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}, {title: "string", strategy: "string", expected_impact: "string", measurement_framework: "string"}] }
     - References: { layout: "References", title, sources: [{title: "string", author: "string", year: "string", link: "string", relevance: "string"}] }
+    - Closing: { layout: "Closing", title, message, image_prompt }
 
     **BRANDING & STYLE:**
     - Use a professional, data-driven tone.
@@ -444,6 +458,19 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     ADD/REMOVE SLIDES: You are strictly forbidden from adding, removing, or reordering slides unless the user explicitly asks you to do so (e.g., "add a new slide", "delete this slide"). By default, you MUST ONLY modify the content of the slide the user is currently viewing (Slide ${activeSlideIndex + 1}). You MUST return the entire presentation JSON, but every other slide MUST remain exactly identical to the input.
     
     Allowed layouts: Cover, ExecutiveOverview, Crisis, SWOT, Vision, MacroStrategy, EquityAnalysis, NodeAssessment, ScenarioComparison, RiskAssessment, Roadmap, GanttChartRoadmap, ProjectedImpact, FiscalFramework, PolicyLevers, GovernanceFramework, Process, References, Closing.
+    
+    IMAGE GENERATION RULES (STRICT):
+    You MUST ONLY provide 'image_prompt' (or 'before_image_prompt'/'after_image_prompt') for the following layouts:
+    - Cover (Slide 1)
+    - ExecutiveOverview (Slide 2)
+    - Crisis (Slide 3)
+    - CaseStudyDeepDive (Slide 5)
+    - Vision (Slide 6)
+    - MacroStrategy (Slide 7)
+    - NodeAssessment (Slide 8)
+    - Closing (Last Slide)
+    
+    DO NOT provide image prompts for any other layout.
     
     **CRITICAL REFINEMENT RULES:**
     - SWOT: **You MUST generate meaningful data for ALL four SWOT categories (Strengths, Weaknesses, Opportunities, AND Threats).**

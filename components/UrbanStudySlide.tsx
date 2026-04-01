@@ -262,7 +262,7 @@ const CoverSlideLayout: React.FC<{ slide: CoverSlide, onUpdate: (field: string, 
     return (
     <SlideWrapper className="justify-center p-16 text-center">
         <EditableImage 
-            src={slide.image_url || imageUrls['cover_image'] || ''} 
+            src={slide.image_url || imageUrls[slide.image_prompt] || imageUrls['cover_image'] || ''} 
             alt="Cover background" 
             className="absolute inset-0 w-full h-full z-0"
             onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
@@ -290,7 +290,7 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
     return (
         <SlideWrapper className="p-16 flex flex-col">
             <EditableImage 
-                src={slide.image_url || imageUrls['overview_image'] || ''} 
+                src={slide.image_url || imageUrls[slide.image_prompt] || imageUrls['overview_image'] || ''} 
                 alt="Overview background" 
                 className="absolute inset-0 w-full h-full z-0"
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
@@ -338,7 +338,7 @@ const CrisisSlideLayout: React.FC<{ slide: CrisisSlide, onUpdate: (field: string
     return (
     <SlideWrapper className="p-16 flex flex-col justify-between text-center">
         <EditableImage 
-            src={slide.image_url || imageUrls['crisis_image'] || ''} 
+            src={slide.image_url || imageUrls[slide.image_prompt] || imageUrls['crisis_image'] || ''} 
             alt="Crisis background" 
             className="absolute inset-0 w-full h-full z-0"
             onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
@@ -1466,7 +1466,7 @@ const ClosingSlideLayout: React.FC<{ slide: ClosingSlide, onUpdate: (field: stri
     return (
         <SlideWrapper className="p-16 justify-center text-center">
             <EditableImage 
-                src={slide.image_url || imageUrls['closing_image'] || ''} 
+                src={slide.image_url || imageUrls[slide.image_prompt] || imageUrls['closing_image'] || ''} 
                 alt="Closing background" 
                 className="absolute inset-0 w-full h-full z-0"
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}

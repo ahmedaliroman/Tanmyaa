@@ -64,8 +64,26 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     slides.forEach(slide => {
         switch (slide.layout) {
             case 'Cover':
-                 promptsMap.set('cover_image', `Cinematic, photorealistic aerial shot of ${projectInfo.location} skyline at dusk, focusing on a ${projectInfo.scale} scale, with dramatic lighting.`);
-                 break;
+                if ((slide as CoverSlide).image_prompt) {
+                    promptsMap.set((slide as CoverSlide).image_prompt, (slide as CoverSlide).image_prompt);
+                } else {
+                    promptsMap.set('cover_image', `Professional architectural rendering of ${projectInfo.location} at a ${projectInfo.scale} scale, focusing on ${projectInfo.mainChallenge.toLowerCase()}.`);
+                }
+                break;
+            case 'ExecutiveOverview':
+                if ((slide as ExecutiveOverviewSlide).image_prompt) {
+                    promptsMap.set((slide as ExecutiveOverviewSlide).image_prompt, (slide as ExecutiveOverviewSlide).image_prompt);
+                } else {
+                    promptsMap.set('overview_image', `Professional, clean architectural rendering of a master plan for ${projectInfo.location}, focusing on ${projectInfo.scale} scale.`);
+                }
+                break;
+            case 'Crisis':
+                if ((slide as CrisisSlide).image_prompt) {
+                    promptsMap.set((slide as CrisisSlide).image_prompt, (slide as CrisisSlide).image_prompt);
+                } else {
+                    promptsMap.set('crisis_image', `High-contrast, dramatic photo of ${projectInfo.mainChallenge.toLowerCase()} in ${projectInfo.location}, sun-bleached city.`);
+                }
+                break;
             case 'CaseStudyDeepDive':
                 if ((slide as CaseStudyDeepDiveSlide).image_prompt) {
                     promptsMap.set((slide as CaseStudyDeepDiveSlide).image_prompt, (slide as CaseStudyDeepDiveSlide).image_prompt);
@@ -87,44 +105,15 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                 if(s.after_image_prompt) promptsMap.set(s.after_image_prompt, s.after_image_prompt);
                 break;
             }
-            case 'Crisis':
-                promptsMap.set('crisis_image', `High-contrast, dramatic photo of ${projectInfo.mainChallenge.toLowerCase()} in ${projectInfo.location}, sun-bleached city.`);
-                break;
-            case 'ExecutiveOverview':
-                promptsMap.set('overview_image', `Professional, clean architectural rendering of a master plan for ${projectInfo.location}, focusing on ${projectInfo.scale} scale.`);
-                break;
-            case 'SWOT':
-                promptsMap.set('swot_image', `Abstract, geometric representation of urban planning analysis, with four distinct quadrants, modern and professional.`);
-                break;
-            case 'EquityAnalysis':
-                promptsMap.set('equity_image', `Diverse community members interacting in a well-designed, accessible public space in ${projectInfo.location}, warm and inviting.`);
-                break;
-            case 'References':
-                promptsMap.set('references_image', `A modern urban planning library or archive, with blueprints and books, professional and academic.`);
-                break;
-            case 'ScenarioComparison':
-                promptsMap.set('scenario_image', `Split-screen conceptual image showing two different urban futures for ${projectInfo.location}, one highly dense and one green and sprawling.`);
-                break;
-            case 'RiskAssessment':
-                promptsMap.set('risk_image', `Dramatic, moody image of urban infrastructure facing a challenge, like a storm or heavy traffic, in ${projectInfo.location}.`);
-                break;
-            case 'GanttChartRoadmap':
-                promptsMap.set('roadmap_image', `Abstract, dynamic visualization of time and progress in an urban setting, with light trails or construction phases.`);
-                break;
-            case 'ProjectedImpact':
-                promptsMap.set('impact_image', `Utopian, highly successful realization of ${projectInfo.location}'s future, thriving economy and environment.`);
-                break;
-            case 'FiscalFramework':
-                promptsMap.set('fiscal_image', `Abstract representation of urban economy, with subtle charts and financial elements overlaid on a cityscape.`);
-                break;
-            case 'PolicyLevers':
-                promptsMap.set('policy_image', `A modern city hall or government building in ${projectInfo.location}, conveying authority and structure.`);
-                break;
-            case 'GovernanceFramework':
-                promptsMap.set('governance_image', `A diverse group of stakeholders and city officials in a modern boardroom, discussing urban plans.`);
-                break;
             case 'Closing':
-                promptsMap.set('closing_image', `An inspiring, futuristic image of a green, vibrant ${projectInfo.location} with people enjoying public spaces, reflecting a successful project at a ${projectInfo.scale} scale.`);
+                if ((slide as ClosingSlide).image_prompt) {
+                    promptsMap.set((slide as ClosingSlide).image_prompt, (slide as ClosingSlide).image_prompt);
+                } else {
+                    promptsMap.set('closing_image', `An inspiring, futuristic image of a green, vibrant ${projectInfo.location} with people enjoying public spaces, reflecting a successful project at a ${projectInfo.scale} scale.`);
+                }
+                break;
+            default:
+                // No image generation for other layouts
                 break;
         }
     });
