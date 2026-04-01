@@ -1045,7 +1045,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                         <div className="w-[80%] grid" style={{ gridTemplateColumns: `repeat(${years.length}, 1fr)` }}>
                             {years.map(year => (
                                 <div key={year} className="text-center border-l border-white/10" style={yearHeaderAnimation}>
-                                    <p className="font-black text-white/90 text-sm tracking-widest">{year}</p>
+                                    <p className="font-black text-white/90 text-base tracking-widest">{year}</p>
                                 </div>
                             ))}
                         </div>
@@ -1056,7 +1056,7 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                         </div>
                         <div className="w-[80%] grid" style={{ gridTemplateColumns: `repeat(${totalQuarters}, 1fr)` }}>
                             {Array.from({length: totalQuarters}).map((_, i) => (
-                                 <div key={i} className="text-center text-[9px] text-white/40 font-mono border-l border-white/5">Q{ (i % 4) + 1 }</div>
+                                 <div key={i} className="text-center text-[11px] text-white/50 font-mono border-l border-white/5">Q{ (i % 4) + 1 }</div>
                             ))}
                         </div>
                     </div>
@@ -1135,8 +1135,8 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
                                                             <div className="h-full bg-black/40 hover:bg-black/60 border border-white/10 rounded-lg transition-all flex items-center px-3 overflow-hidden shadow-sm hover:shadow-md">
                                                                 <div className="w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0" style={{ background: color }}></div>
                                                                 <div className="flex-grow overflow-hidden">
-                                                                    <AutoFitText maxFontSize={11} minFontSize={8}>
-                                                                        <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="font-bold text-white/90 whitespace-nowrap" />
+                                                                    <AutoFitText maxFontSize={13} minFontSize={9}>
+                                                                        <Editable as="p" value={d.name} onUpdate={v => onUpdate(`${deliverablePath}.name`, v)} className="font-bold text-white/90 whitespace-nowrap px-1" />
                                                                     </AutoFitText>
                                                                 </div>
                                                                 
@@ -1261,7 +1261,7 @@ const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpda
                 </AutoFitText>
             </div>
             <div className="relative z-20 flex-grow bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-1">
-                <div className="grid grid-cols-5 text-xs font-bold text-white/60 uppercase p-4 border-b border-white/10 tracking-wider">
+                <div className="grid grid-cols-5 text-sm font-bold text-white/60 uppercase p-4 border-b border-white/10 tracking-wider">
                     <span>Component</span>
                     <span className="text-center">CapEx</span>
                     <span className="text-center">OpEx</span>
@@ -1272,12 +1272,12 @@ const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpda
                     {(slide.cost_items || []).length > 0 ? (slide.cost_items || []).map((item, i) => {
                         const itemAnimation = getAnimationStyles(isActive, 350 + i * 100, 'fade-in-up', disableAnimations);
                         return (
-                            <div key={i} className="grid grid-cols-5 gap-4 p-4 items-center text-sm transition-all duration-200 hover:bg-white/10" style={itemAnimation}>
+                            <div key={i} className="grid grid-cols-5 gap-4 p-4 items-center text-base transition-all duration-200 hover:bg-white/10" style={itemAnimation}>
                                 <Editable as="p" value={item.component} onUpdate={v => onUpdate(`cost_items[${i}].component`, v)} className="font-semibold text-white" />
                                 <Editable as="p" value={item.capex} onUpdate={v => onUpdate(`cost_items[${i}].capex`, v)} className="text-center text-white/80" />
                                 <Editable as="p" value={item.opex} onUpdate={v => onUpdate(`cost_items[${i}].opex`, v)} className="text-center text-white/80" />
-                                <Editable as="p" value={item.funding_source} onUpdate={v => onUpdate(`cost_items[${i}].funding_source`, v)} className="text-white/80 text-xs" />
-                                <Editable as="p" value={item.recovery_mechanism} onUpdate={v => onUpdate(`cost_items[${i}].recovery_mechanism`, v)} className="text-white/80 text-xs" />
+                                <Editable as="p" value={item.funding_source} onUpdate={v => onUpdate(`cost_items[${i}].funding_source`, v)} className="text-white/80 text-sm" />
+                                <Editable as="p" value={item.recovery_mechanism} onUpdate={v => onUpdate(`cost_items[${i}].recovery_mechanism`, v)} className="text-white/80 text-sm" />
                             </div>
                         )
                     }) : (
@@ -1372,17 +1372,17 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
             <div className="relative z-20 flex-grow grid grid-cols-2 gap-10 min-h-0 overflow-hidden">
                 <div className="space-y-4">
                     <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10" style={leadAgencyAnimation}>
-                        <h3 className="font-bold text-base text-[var(--color-accent-light)] mb-1">Lead Agency</h3>
-                        <Editable as="p" value={slide.lead_agency?.name} onUpdate={v => onUpdate('lead_agency.name', v)} className="text-sm font-semibold text-white truncate" />
-                        <Editable as="p" value={slide.lead_agency?.rationale} onUpdate={v => onUpdate('lead_agency.rationale', v)} className="text-[10px] text-white/70 mt-0.5 leading-tight" />
+                        <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-1">Lead Agency</h3>
+                        <Editable as="p" value={slide.lead_agency?.name} onUpdate={v => onUpdate('lead_agency.name', v)} className="text-base font-semibold text-white truncate" />
+                        <Editable as="p" value={slide.lead_agency?.rationale} onUpdate={v => onUpdate('lead_agency.rationale', v)} className="text-xs text-white/70 mt-0.5 leading-tight" />
                     </div>
                      <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10" style={fundingModelAnimation}>
-                        <h3 className="font-bold text-base text-[var(--color-accent-light)] mb-1">Funding Model</h3>
-                        <Editable as="p" value={slide.funding_model} onUpdate={v => onUpdate('funding_model', v)} className="text-xs text-white leading-tight" />
+                        <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-1">Funding Model</h3>
+                        <Editable as="p" value={slide.funding_model} onUpdate={v => onUpdate('funding_model', v)} className="text-sm text-white leading-tight" />
                     </div>
                      <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg border border-white/10" style={regulatoryChangesAnimation}>
-                        <h3 className="font-bold text-base text-[var(--color-accent-light)] mb-1">Regulatory Changes</h3>
-                         <ul className="list-disc list-inside space-y-0.5 text-xs text-white/90">
+                        <h3 className="font-bold text-lg text-[var(--color-accent-light)] mb-1">Regulatory Changes</h3>
+                         <ul className="list-disc list-inside space-y-0.5 text-sm text-white/90">
                             {(slide.regulatory_changes || []).slice(0, 4).map((change, i) => <li key={i} className="truncate"><Editable as="span" value={change} onUpdate={v => onUpdate(`regulatory_changes[${i}]`, v)} /></li>)}
                             {(slide.regulatory_changes || []).length === 0 && <p className="text-white/40 italic list-none">No regulatory changes identified.</p>}
                         </ul>
