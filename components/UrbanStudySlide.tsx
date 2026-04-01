@@ -241,9 +241,13 @@ const Editable: React.FC<{
 };
 
 const AnalyticReflection: React.FC<{ text: string, onUpdate: (newValue: string) => void, animationStyle: CSSProperties, disableAnimations?: boolean }> = ({ text, onUpdate, animationStyle, disableAnimations }) => (
-    <div className="mt-auto text-center text-white/70 p-4 bg-white/5 rounded-lg overflow-hidden" style={disableAnimations ? { opacity: 1 } : animationStyle}>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-white/50 mb-1">Analytic Reflection</h4>
-        <Editable as="p" value={text} onUpdate={onUpdate} className={`${(text?.length || 0) > 200 ? 'text-[10px]' : 'text-xs'} italic`} />
+    <div className="mt-auto text-center text-white/70 p-4 bg-white/5 rounded-lg overflow-hidden flex flex-col justify-center min-h-[80px]" style={disableAnimations ? { opacity: 1 } : animationStyle}>
+        <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Analytic Reflection</h4>
+        <div className="flex-grow overflow-hidden">
+            <AutoFitText maxFontSize={14} minFontSize={10}>
+                <Editable as="p" value={text} onUpdate={onUpdate} className="italic text-white/80" />
+            </AutoFitText>
+        </div>
     </div>
 );
 
@@ -293,13 +297,13 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
             />
             <div className="absolute inset-0 bg-black/75 z-10 pointer-events-none"></div>
             <div className="relative z-20" style={titleAnimation}>
-                <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
+                <AutoFitText maxFontSize={64} minFontSize={32} className="w-full">
                     <Editable as="h1" value={slide.title} className="font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} />
                 </AutoFitText>
             </div>
             <div className="relative z-20 grid grid-cols-2 gap-12 flex-grow min-h-0">
                 <div className="flex flex-col pr-4 overflow-hidden" style={narrativeAnimation}>
-                    <AutoFitText maxFontSize={24} minFontSize={12} className="leading-relaxed text-white/80">
+                    <AutoFitText maxFontSize={28} minFontSize={16} className="leading-relaxed text-white/80">
                         <Editable as="div" value={slide.narrative} onUpdate={v => onUpdate('narrative', v)} useMarkdown />
                     </AutoFitText>
                 </div>
@@ -310,8 +314,8 @@ const ExecutiveOverviewSlideLayout: React.FC<{ slide: ExecutiveOverviewSlide, on
                             return (
                                 <li key={i} className="flex items-start flex-shrink-0" style={keyPointAnimation}>
                                      <div className="w-10 h-10 rounded-full bg-[var(--color-primary-medium)] text-[var(--color-accent-cream)] text-base font-bold flex items-center justify-center mr-5 flex-shrink-0 shadow-lg">{String(i+1).padStart(2, '0')}</div>
-                                     <div className="flex-grow overflow-hidden h-16">
-                                        <AutoFitText maxFontSize={24} minFontSize={10}>
+                                     <div className="flex-grow overflow-hidden h-20">
+                                        <AutoFitText maxFontSize={28} minFontSize={14}>
                                             <Editable value={point} onUpdate={v => onUpdate(`key_points[${i}]`, v)} className="font-semibold" />
                                         </AutoFitText>
                                      </div>
@@ -380,11 +384,11 @@ const SWOTCategory: React.FC<{ title: string; items: { title: string; descriptio
         <div className="space-y-3 mt-4 flex-grow overflow-hidden">
             {ensureArray(items).map((item, i) => (
                 <div key={i} className="h-1/3 flex flex-col justify-center">
-                    <AutoFitText maxFontSize={16} minFontSize={12}>
+                    <AutoFitText maxFontSize={18} minFontSize={14}>
                         <Editable as="p" value={item.title} onUpdate={v => onUpdate(`${type}[${i}].title`, v)} className="font-bold text-white" useMarkdown/>
                     </AutoFitText>
                     <div className="flex-grow overflow-hidden mt-1">
-                        <AutoFitText maxFontSize={14} minFontSize={8}>
+                        <AutoFitText maxFontSize={16} minFontSize={12}>
                             <Editable as="p" value={item.description} onUpdate={v => onUpdate(`${type}[${i}].description`, v)} className="text-white/70 leading-relaxed" />
                         </AutoFitText>
                     </div>
@@ -411,7 +415,11 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
                 onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
             />
             <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
-            <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || "SWOT Analysis"} className="text-5xl font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
+            <div className="relative z-20" style={titleAnimation}>
+                <AutoFitText maxFontSize={64} minFontSize={32} className="w-full">
+                    <Editable as="h1" value={slide.title || "SWOT Analysis"} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} />
+                </AutoFitText>
+            </div>
             <div className="relative z-20 flex-grow grid grid-cols-2 gap-x-12 min-h-0">
                 <div className="space-y-6 flex flex-col min-h-0">
                     <div className="flex-1 pr-2">

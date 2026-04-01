@@ -367,7 +367,7 @@ export const generatePresentation = async (
     - NodeAssessment: { layout: "NodeAssessment", title, site_location, site_rationale, metrics: [{label, value}], conclusion, analytic_reflection, before_image_prompt, after_image_prompt }
     - Roadmap: { layout: "Roadmap", phases: [{title, timeline (e.g. "Phase 1: 2025-2026"), action_steps: [{action, kpi}], outcome}] }
     - GanttChartRoadmap: { layout: "GanttChartRoadmap", title, timeline_start_year (number), timeline_end_year (number), phases: [{name, deliverables: [{name, start_quarter (1-4), end_quarter (1-4), kpi}]}] }
-    **CRITICAL: For GanttChartRoadmap, you MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year). Do not cluster all phases in the same period.**
+    **CRITICAL: For GanttChartRoadmap, you MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year). Phases should form an overlapping chain that spans the full duration. For example, if the project is 2024-2032, Phase 1 might be 2024-2026, Phase 2 2026-2029, and Phase 3 2029-2032. Ensure each phase has at least one deliverable in its respective years. DO NOT cluster all phases in the same year.**
     
     CRITICAL: For Roadmap and GanttChartRoadmap, you MUST provide realistic, specific timeline data. DO NOT leave the 'timeline' or 'start_quarter'/'end_quarter' fields empty.
     - For Roadmap: 'timeline' should be a string like "Q1 2025 - Q4 2026".
@@ -447,7 +447,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     **CRITICAL REFINEMENT RULES:**
     - SWOT: **You MUST generate meaningful data for ALL four SWOT categories (Strengths, Weaknesses, Opportunities, AND Threats).**
-    - GanttChartRoadmap: **You MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year).**
+    - GanttChartRoadmap: **You MUST distribute the project phases logically across the ENTIRE timeline (from timeline_start_year to timeline_end_year). Phases should form an overlapping chain that spans the full duration. Ensure each phase covers its respective years and deliverables are distributed accordingly. DO NOT cluster all phases in the same year.**
     - Branding: **DO NOT include the text "Powered by Tanmyaa" anywhere in the slide content.**
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
