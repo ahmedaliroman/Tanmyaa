@@ -155,8 +155,15 @@ const SubscriptionTier: React.FC<{
                     window.location.reload();
                 }
             } else {
-                const error = await response.json();
-                toast.error(`Payment failed: ${error.error || 'Unknown error'}`);
+                let errorMessage = 'Unknown error';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorData.message || 'Unknown error';
+                } catch (e) {
+                    // If response is not JSON (e.g. 404 or 500 crash)
+                    errorMessage = `Server error (${response.status})`;
+                }
+                toast.error(`Payment failed: ${errorMessage}`);
             }
         } catch (error) {
             console.error('Failed to capture order:', error);
