@@ -3,13 +3,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TanmyaaLogo } from './TanmyaaLogo';
 import { useAuth } from '@/context/AuthContext';
 import { AuthModal } from './AuthModal';
-import { LogOut, CreditCard, Clock, Gift } from 'lucide-react';
+import { LogOut, CreditCard, Clock, Gift, Database } from 'lucide-react';
 import UsageHistoryModal from './UsageHistoryModal';
 import ReferralModal from './ReferralModal';
 import PasswordResetModal from './PasswordResetModal';
 
 interface HeaderProps {
-    onNavigate: (page: 'home' | 'subscription') => void;
+    onNavigate: (page: 'home' | 'subscription' | 'knowledge-base') => void;
     showHomeButton: boolean;
     hasApiKey?: boolean;
     onSelectKey?: () => void;
@@ -118,6 +118,16 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
                       <p className="text-[10px] uppercase tracking-widest font-bold text-white/40 mt-1">{profile?.plan || 'Free'} Plan</p>
                     </div>
                     <div className="p-2">
+                      <button 
+                        onClick={() => {
+                          onNavigate('knowledge-base');
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-blue-400 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-colors"
+                      >
+                        <Database size={16} />
+                        <span className="font-medium">Knowledge Base</span>
+                      </button>
                       <button 
                         onClick={() => {
                           setIsReferralModalOpen(true);

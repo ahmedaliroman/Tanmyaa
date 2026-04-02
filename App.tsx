@@ -12,6 +12,7 @@ import StakeholderPlanGenerator from './components/StakeholderPlanGenerator';
 import SubscriptionPage from './components/SubscriptionPage';
 import MethodologyGenerator from './components/MethodologyGenerator';
 import UrbanDeepUnderstandingGenerator from './components/UrbanDeepUnderstandingGenerator';
+import KnowledgeBaseManager from './components/KnowledgeBaseManager';
 import AuthCallback from './components/AuthCallback';
 import ResetPasswordPage from './components/ResetPasswordPage';
 import { Toaster } from 'sonner';
@@ -90,10 +91,10 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 }
 
 const AppContent: React.FC<{
-  view: { page: 'home' | 'service' | 'subscription', serviceId: string | null },
+  view: { page: 'home' | 'service' | 'subscription' | 'knowledge-base', serviceId: string | null },
   hasApiKey: boolean,
   handleConnectApiKey: () => void,
-  handleNavigate: (page: 'home' | 'subscription') => void,
+  handleNavigate: (page: 'home' | 'subscription' | 'knowledge-base') => void,
   renderPage: () => React.ReactNode
 }> = ({ view, hasApiKey, handleConnectApiKey, handleNavigate, renderPage }) => {
   const { authError } = useAuth();
@@ -156,14 +157,15 @@ const AppContent: React.FC<{
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<{ page: 'home' | 'service' | 'subscription', serviceId: string | null }>({ page: 'home', serviceId: null });
+  const [view, setView] = useState<{ page: 'home' | 'service' | 'subscription' | 'knowledge-base', serviceId: string | null }>({ page: 'home', serviceId: null });
   const [isPageExiting, setIsPageExiting] = useState(false);
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
 
   const initialOptions = {
-    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test", // Replace with your real client ID
+    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
     currency: "USD",
     intent: "capture",
+    "disable-funding": "credit,card,paylater",
   };
 
   useEffect(() => {
@@ -193,7 +195,7 @@ const App: React.FC = () => {
       }
   };
 
-  const handleNavigate = (page: 'home' | 'subscription') => {
+  const handleNavigate = (page: 'home' | 'subscription' | 'knowledge-base') => {
     if (view.page === page) return;
     setIsPageExiting(true);
     setTimeout(() => {
@@ -255,6 +257,12 @@ const App: React.FC = () => {
                 <SubscriptionPage />
             </div>
         );
+      case 'knowledge-base':
+        return (
+            <div className={isPageExiting ? 'animate-slide-out-left' : 'animate-slide-in-right'}>
+               <KnowledgeBaseManager />
+           </div>
+       );
       case 'service':
         return (
              <div className={isPageExiting ? 'animate-slide-out-left' : 'animate-slide-in-right'}>

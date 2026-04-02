@@ -9,6 +9,8 @@ import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useAuth } from '@/context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import AISuggestionButton from './AISuggestionButton';
+import KnowledgeBaseSelector from './KnowledgeBaseSelector';
+import { supabase } from '@/lib/supabase';
 
 const Section: React.FC<{ number: string; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -98,6 +100,7 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
   }, [taskDescription]);
 
   const [generatedContent, setGeneratedContent] = useState<Methodology | null>(null);
+  const [selectedKBFileIds, setSelectedKBFileIds] = useState<string[]>([]);
   const { companyProfile } = useCompanyProfile();
   const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
   const reportRef = useRef<HTMLDivElement>(null);
@@ -142,7 +145,21 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
             template: profile.branding_template
         } : undefined;
 
-        const result = await generateMethodology(taskDescription, companyProfile, profile?.plan, branding);
+        // Process KB files
+        const processedFiles: { name: string; content: string }[] = [];
+        if (selectedKBFileIds.length > 0) {
+            const { data: kbFilesData, error: kbFilesError } = await supabase
+                .from('knowledge_base')
+                .select('name, content')
+                .in('id', selectedKBFileIds);
+            
+            if (kbFilesError) throw kbFilesError;
+            if (kbFilesData) {
+                processedFiles.push(...kbFilesData);
+            }
+        }
+
+        const result = await generateMethodology(taskDescription, processedFiles, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (result) {
             setGeneratedContent(result);
@@ -153,7 +170,7 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
     } finally {
         setIsLoading(false);
     }
-  }, [taskDescription, companyProfile, profile, onUpgrade, refreshProfile]);
+  }, [taskDescription, companyProfile, profile, onUpgrade, refreshProfile, selectedKBFileIds]);
   
    const handleExportPdf = async () => {
     const element = reportRef.current;
@@ -189,58 +206,73 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
   };
 
 
-  const renderInput = () => (
-     <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
-        <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
-            <div className="p-4">
-                <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="task-description" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Urban Planning Task</label>
-                    <AISuggestionButton 
-                        onClick={handleGetSuggestions} 
-                        isLoading={isSuggestionsLoading} 
-                    />
-                </div>
-                <p className="text-gray-400 text-sm mb-3">
-                    Provide a clear description of the task for which you need a methodology. Be as specific as possible.
-                </p>
-                <textarea
-                    id="task-description"
-                    value={taskDescription}
-                    onChange={(e) => setTaskDescription(e.target.value)}
-                    placeholder="e.g., 'Create a climate adaptation plan for a coastal community vulnerable to sea-level rise.'"
-                    rows={5}
-                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
-                    disabled={isLoading}
-                />
-                {suggestions.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {suggestions.map((s, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setTaskDescription(s)}
-                                className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
-                            >
-                                {s}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-        <div className="mt-6 flex justify-between items-center">
-            <div className="text-sm text-gray-400">
-                {profile?.credits || 0} credits remaining.
-            </div>
-            <button
-              onClick={handleGenerate}
-              disabled={isLoading || !taskDescription.trim()}
-              className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
-            >
-              {isLoading ? 'Generating...' : 'Generate Methodology'}
-            </button>
-        </div>
-      </div>
-  );
+  const renderInput = () => {
+    const toggleKBFile = (id: string) => {
+      setSelectedKBFileIds(prev => 
+        prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
+      );
+    };
+
+    return (
+      <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
+         <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
+             <div className="border-b border-gray-800 p-4">
+                 <div className="flex items-center justify-between mb-1">
+                     <label htmlFor="task-description" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Urban Planning Task</label>
+                     <AISuggestionButton 
+                         onClick={handleGetSuggestions} 
+                         isLoading={isSuggestionsLoading} 
+                     />
+                 </div>
+                 <p className="text-gray-400 text-sm mb-3">
+                     Provide a clear description of the task for which you need a methodology. Be as specific as possible.
+                 </p>
+                 <textarea
+                     id="task-description"
+                     value={taskDescription}
+                     onChange={(e) => setTaskDescription(e.target.value)}
+                     placeholder="e.g., 'Create a climate adaptation plan for a coastal community vulnerable to sea-level rise.'"
+                     rows={5}
+                     className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
+                     disabled={isLoading}
+                 />
+                 {suggestions.length > 0 && (
+                     <div className="mt-2 flex flex-wrap gap-2">
+                         {suggestions.map((s, i) => (
+                             <button
+                                 key={i}
+                                 onClick={() => setTaskDescription(s)}
+                                 className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                             >
+                                 {s}
+                             </button>
+                         ))}
+                     </div>
+                 )}
+             </div>
+             <div className="p-4">
+                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Knowledge Base Sources</label>
+                 <KnowledgeBaseSelector 
+                     selectedFileIds={selectedKBFileIds}
+                     onToggleFile={toggleKBFile}
+                 />
+             </div>
+         </div>
+         <div className="mt-6 flex justify-between items-center">
+             <div className="text-sm text-gray-400">
+                 {profile?.credits || 0} credits remaining.
+             </div>
+             <button
+               onClick={handleGenerate}
+               disabled={isLoading || !taskDescription.trim()}
+               className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
+             >
+               {isLoading ? 'Generating...' : 'Generate Methodology'}
+             </button>
+         </div>
+       </div>
+    );
+  };
 
   return (
     <GeneratorShell

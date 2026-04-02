@@ -366,7 +366,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
 
 export const generatePresentation = async (
     projectInfo: UrbanPlanningProjectInfo, 
-    _files: File[], 
+    files: { name: string; content: string }[], 
     _companyProfile?: string,
     plan?: string,
     branding?: BrandingInfo
@@ -460,6 +460,8 @@ export const generatePresentation = async (
     Target Users: ${projectInfo.targetUsers}
     Specific Focus: ${projectInfo.specificFocus}
     Author Role: ${projectInfo.authorRole || 'Senior Consultant'}
+    
+    ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
     
     Ensure the content is deeply relevant to ${projectInfo.location} and addresses ${projectInfo.mainChallenge} with specific, actionable strategies.
     `;
@@ -589,7 +591,7 @@ ${JSON.stringify(currentSlides)}` }];
     return slides;
 };
 
-export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
+export const generatePolicyReport = async (brief: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
@@ -645,7 +647,11 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
     const briefResult = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a structured policy brief based on: ${brief}` }];
+        const prompt = `Generate a structured policy brief based on: ${brief}
+        
+        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
+        `;
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -739,7 +745,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
 export const generateRFP = async (
     taskDescription: string, 
     _pageRange: string, 
-    _files: File[],
+    files: { name: string; content: string }[],
     companyProfile?: string,
     plan?: string,
     branding?: BrandingInfo
@@ -780,7 +786,11 @@ export const generateRFP = async (
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const rfp = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a detailed RFP for: ${taskDescription}` }];
+        const prompt = `Generate a detailed RFP for: ${taskDescription}
+        
+        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
+        `;
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -828,7 +838,7 @@ export const generateRFP = async (
     return rfp;
 };
 
-export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<CapacityBuildingProgram> => {
+export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<CapacityBuildingProgram> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
@@ -870,9 +880,13 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const program = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a capacity building program for: ${audience}. 
+        const prompt = `Generate a capacity building program for: ${audience}. 
             Skill Level: ${skillLevel}. 
-            Challenges to address: ${challenges}.` }];
+            Challenges to address: ${challenges}.
+            
+            ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
+            `;
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -918,7 +932,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     return program;
 };
 
-export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<VisionFramework> => {
+export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<VisionFramework> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
@@ -953,7 +967,11 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const vision = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"` }];
+        const prompt = `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"
+        
+        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
+        `;
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -994,7 +1012,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     return vision;
 };
 
-export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<StakeholderPlan> => {
+export const generateStakeholderPlan = async (context: string, goals: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<StakeholderPlan> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class public engagement strategist. 
@@ -1039,7 +1057,11 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const planResult = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"` }];
+        const prompt = `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"
+        
+        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
+        `;
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -1095,7 +1117,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     return planResult;
 };
 
-export const generateMethodology = async (task: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<Methodology> => {
+export const generateMethodology = async (task: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<Methodology> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a Senior Urban Project Manager. 
@@ -1140,7 +1162,11 @@ export const generateMethodology = async (task: string, companyProfile?: string,
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const methodology = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a methodology for the following task: "${task}"` }];
+        const prompt = `Generate a methodology for the following task: "${task}"
+        
+        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
+        `;
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -1197,7 +1223,7 @@ export const generateMethodology = async (task: string, companyProfile?: string,
 
 
 
-export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
+export const generateDeepUnderstanding = async (topic: string, context: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Principal Urban Strategist and Professor at Tanmyaa Global. 
@@ -1252,7 +1278,11 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
     const result = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Teach me about: "${topic}". Context: "${context}"` }];
+        const prompt = `Teach me about: "${topic}". Context: "${context}"
+        
+        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
+        `;
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 

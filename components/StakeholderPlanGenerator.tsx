@@ -9,6 +9,8 @@ import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useAuth } from '@/context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import AISuggestionButton from './AISuggestionButton';
+import KnowledgeBaseSelector from './KnowledgeBaseSelector';
+import { supabase } from '@/lib/supabase';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -201,6 +203,7 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
   }, [inputs]);
 
   const [plan, setPlan] = useState<StakeholderPlan | null>(null);
+  const [selectedKBFileIds, setSelectedKBFileIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const { companyProfile } = useCompanyProfile();
@@ -251,7 +254,21 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
             template: profile.branding_template
         } : undefined;
 
-        const generatedPlan = await generateStakeholderPlan(inputs.projectContext, inputs.projectGoals, companyProfile, profile?.plan, branding);
+        // Process KB files
+        const processedFiles: { name: string; content: string }[] = [];
+        if (selectedKBFileIds.length > 0) {
+            const { data: kbFilesData, error: kbFilesError } = await supabase
+                .from('knowledge_base')
+                .select('name, content')
+                .in('id', selectedKBFileIds);
+            
+            if (kbFilesError) throw kbFilesError;
+            if (kbFilesData) {
+                processedFiles.push(...kbFilesData);
+            }
+        }
+
+        const generatedPlan = await generateStakeholderPlan(inputs.projectContext, inputs.projectGoals, processedFiles, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (generatedPlan) {
             setPlan(generatedPlan);
@@ -262,7 +279,7 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
     } finally {
         setIsLoading(false);
     }
-  }, [inputs, companyProfile, profile, onUpgrade, refreshProfile]);
+  }, [inputs, companyProfile, profile, onUpgrade, refreshProfile, selectedKBFileIds]);
   
   const handleExportPdf = async () => {
     const element = reportRef.current;
@@ -295,67 +312,82 @@ const StakeholderPlanGenerator: React.FC<StakeholderPlanGeneratorProps> = ({ onU
     }
   };
 
-  const renderInputForm = () => (
-     <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
-        <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
-            <div className="border-b border-gray-800 p-4">
-                <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="projectContext" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Project Context</label>
-                    <AISuggestionButton 
-                        onClick={handleGetSuggestions} 
-                        isLoading={isSuggestionsLoading} 
-                    />
-                </div>
-                <textarea
-                    id="projectContext"
-                    value={inputs.projectContext}
-                    onChange={handleInputChange}
-                    placeholder="e.g., A proposed light rail transit (LRT) line through the city's western suburbs."
-                    disabled={isLoading}
-                    rows={3}
-                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
-                />
-                {suggestions.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {suggestions.map((s, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setInputs(prev => ({ ...prev, projectContext: s }))}
-                                className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
-                            >
-                                {s}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-            <div className="p-4">
-                <label htmlFor="projectGoals" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Key Project Goals</label>
-                <textarea
-                    id="projectGoals"
-                    value={inputs.projectGoals}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Improve public transit access, reduce traffic congestion, and spur economic development along the corridor."
-                    disabled={isLoading}
-                    rows={3}
-                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
-                />
-            </div>
-        </div>
-        <div className="mt-6 flex justify-between items-center">
-            <div className="text-sm text-gray-400">
-                {profile?.credits || 0} credits remaining.
-            </div>
-            <button
-                onClick={handleGenerate}
-                disabled={isLoading || !inputs.projectContext.trim() || !inputs.projectGoals.trim()}
-                className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
-            >
-                {isLoading ? 'Generating...' : 'Generate Plan'}
-            </button>
-        </div>
-      </div>
-  );
+  const renderInputForm = () => {
+    const toggleKBFile = (id: string) => {
+      setSelectedKBFileIds(prev => 
+        prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
+      );
+    };
+
+    return (
+      <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
+         <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
+             <div className="border-b border-gray-800 p-4">
+                 <div className="flex items-center justify-between mb-1">
+                     <label htmlFor="projectContext" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Project Context</label>
+                     <AISuggestionButton 
+                         onClick={handleGetSuggestions} 
+                         isLoading={isSuggestionsLoading} 
+                     />
+                 </div>
+                 <textarea
+                     id="projectContext"
+                     value={inputs.projectContext}
+                     onChange={handleInputChange}
+                     placeholder="e.g., A proposed light rail transit (LRT) line through the city's western suburbs."
+                     disabled={isLoading}
+                     rows={3}
+                     className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
+                 />
+                 {suggestions.length > 0 && (
+                     <div className="mt-2 flex flex-wrap gap-2">
+                         {suggestions.map((s, i) => (
+                             <button
+                                 key={i}
+                                 onClick={() => setInputs(prev => ({ ...prev, projectContext: s }))}
+                                 className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                             >
+                                 {s}
+                             </button>
+                         ))}
+                     </div>
+                 )}
+             </div>
+             <div className="border-b border-gray-800 p-4">
+                 <label htmlFor="projectGoals" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Key Project Goals</label>
+                 <textarea
+                     id="projectGoals"
+                     value={inputs.projectGoals}
+                     onChange={handleInputChange}
+                     placeholder="e.g., Improve public transit access, reduce traffic congestion, and spur economic development along the corridor."
+                     disabled={isLoading}
+                     rows={3}
+                     className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
+                 />
+             </div>
+             <div className="p-4">
+                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Knowledge Base Sources</label>
+                 <KnowledgeBaseSelector 
+                     selectedFileIds={selectedKBFileIds}
+                     onToggleFile={toggleKBFile}
+                 />
+             </div>
+         </div>
+         <div className="mt-6 flex justify-between items-center">
+             <div className="text-sm text-gray-400">
+                 {profile?.credits || 0} credits remaining.
+             </div>
+             <button
+                 onClick={handleGenerate}
+                 disabled={isLoading || !inputs.projectContext.trim() || !inputs.projectGoals.trim()}
+                 className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
+             >
+                 {isLoading ? 'Generating...' : 'Generate Plan'}
+             </button>
+         </div>
+       </div>
+    );
+  };
 
   return (
     <GeneratorShell

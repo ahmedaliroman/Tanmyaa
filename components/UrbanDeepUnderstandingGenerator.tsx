@@ -8,6 +8,8 @@ import GeneratorShell from './GeneratorShell';
 import { TanmyaaLogo } from './TanmyaaLogo';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
+import KnowledgeBaseSelector from './KnowledgeBaseSelector';
+import { supabase } from '@/lib/supabase';
 
 interface GeneratorProps {
     onUpgrade: () => void;
@@ -23,6 +25,7 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
     const [isRefining, setIsRefining] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+    const [selectedKBFileIds, setSelectedKBFileIds] = useState<string[]>([]);
     const boardRef = useRef<HTMLDivElement>(null);
 
     const handleGenerate = async (topic: string, context: string) => {
@@ -36,7 +39,19 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
                 template: profile.branding_template
             } : undefined;
 
-            const result = await generateDeepUnderstanding(topic, context, companyProfile, profile?.plan, branding);
+            // Fetch selected KB files
+            let kbFiles: { name: string; content: string }[] = [];
+            if (selectedKBFileIds.length > 0) {
+                const { data: filesData, error: filesError } = await supabase
+                    .from('knowledge_base')
+                    .select('name, content')
+                    .in('id', selectedKBFileIds);
+                
+                if (filesError) throw filesError;
+                kbFiles = filesData || [];
+            }
+
+            const result = await generateDeepUnderstanding(topic, context, kbFiles, companyProfile, profile?.plan, branding);
             setData(result);
             await refreshProfile();
         } catch (err: unknown) {
@@ -106,6 +121,8 @@ const UrbanDeepUnderstandingGenerator: React.FC<GeneratorProps> = ({ onUpgrade }
             credits={profile?.credits || 0}
             userEmail={user?.email || null}
             onLogin={signInWithGoogle}
+            selectedKBFileIds={selectedKBFileIds}
+            setSelectedKBFileIds={setSelectedKBFileIds}
         />
     );
 
@@ -343,9 +360,19 @@ interface InputFormProps {
     credits: number;
     userEmail: string | null;
     onLogin: () => void;
+    selectedKBFileIds: string[];
+    setSelectedKBFileIds: (ids: string[]) => void;
 }
 
-const UrbanDeepUnderstandingInputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, credits, userEmail, onLogin }) => {
+const UrbanDeepUnderstandingInputForm: React.FC<InputFormProps> = ({ 
+    onSubmit, 
+    isLoading, 
+    credits, 
+    userEmail, 
+    onLogin,
+    selectedKBFileIds,
+    setSelectedKBFileIds
+}) => {
     const [topic, setTopic] = useState('');
     const [context, setContext] = useState('');
 
@@ -354,6 +381,14 @@ const UrbanDeepUnderstandingInputForm: React.FC<InputFormProps> = ({ onSubmit, i
         if (topic.trim()) {
             onSubmit(topic, context);
         }
+    };
+
+    const toggleKBFile = (id: string) => {
+        setSelectedKBFileIds(
+            selectedKBFileIds.includes(id)
+                ? selectedKBFileIds.filter(fid => fid !== id)
+                : [...selectedKBFileIds, id]
+        );
     };
 
     return (
@@ -378,6 +413,16 @@ const UrbanDeepUnderstandingInputForm: React.FC<InputFormProps> = ({ onSubmit, i
                     rows={4}
                     className="w-full bg-gray-800/50 border border-gray-700 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition duration-300 resize-none"
                 />
+            </div>
+
+            <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Knowledge Base Sources</label>
+                <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
+                    <KnowledgeBaseSelector 
+                        selectedFileIds={selectedKBFileIds}
+                        onToggleFile={toggleKBFile}
+                    />
+                </div>
             </div>
             
             <div className="pt-4">

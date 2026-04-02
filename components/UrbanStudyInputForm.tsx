@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import type { UrbanPlanningProjectInfo } from '@/types';
 import FileUpload from './FileUpload';
+import KnowledgeBaseSelector from './KnowledgeBaseSelector';
 import { getSceneSuggestions, getLocationSuggestions, getChallengeSuggestions, getScaleSuggestions, getPolicyContextSuggestions, getSpecificFocusSuggestions, getAudienceSuggestions, getAuthorRoleSuggestions } from '@/services/geminiService';
 import AISuggestionButton from './AISuggestionButton';
+import { Database } from 'lucide-react';
 
 interface InputFormProps {
   initialProjectInfo: UrbanPlanningProjectInfo;
@@ -11,6 +13,8 @@ interface InputFormProps {
   isLoading: boolean;
   files: File[];
   setFiles: (files: File[] | ((prevFiles: File[]) => File[])) => void;
+  selectedKBFileIds: string[];
+  setSelectedKBFileIds: (ids: string[]) => void;
   credits: number;
   userEmail: string | null;
   onLogin: () => void;
@@ -56,7 +60,7 @@ type SuggestionState = {
     }
 }
 
-const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onSubmit, isLoading, files, setFiles, credits, userEmail, onLogin }) => {
+const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onSubmit, isLoading, files, setFiles, selectedKBFileIds, setSelectedKBFileIds, credits, userEmail, onLogin }) => {
   const [projectInfo, setProjectInfo] = useState<UrbanPlanningProjectInfo>(() => {
     const saved = localStorage.getItem('urban_study_form_data');
     if (saved) {
@@ -255,12 +259,35 @@ const UrbanStudyInputForm: React.FC<InputFormProps> = ({ initialProjectInfo, onS
                     );
                 })
             ) : (
-              <div className="p-4">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Provide Information Sources</label>
-                <p className="text-gray-400 text-sm mb-4">
-                  Upload documents or reports. The system will treat these as primary sources and triangulate findings with its internal knowledge base.
-                </p>
-                <FileUpload files={files} setFiles={setFiles} disabled={isLoading} />
+              <div className="p-4 space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Upload New Sources</label>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Upload documents or reports. The system will treat these as primary sources and triangulate findings with its internal knowledge base.
+                  </p>
+                  <FileUpload files={files} setFiles={setFiles} disabled={isLoading} />
+                </div>
+                
+                <div className="pt-6 border-t border-gray-800">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Database size={12} className="text-blue-400" />
+                    Select from Knowledge Base
+                  </label>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Choose existing files from your Knowledge Base to include as context for this study.
+                  </p>
+                  <KnowledgeBaseSelector 
+                    selectedFileIds={selectedKBFileIds}
+                    onToggleFile={(fileId) => {
+                      if (selectedKBFileIds.includes(fileId)) {
+                        setSelectedKBFileIds(selectedKBFileIds.filter(id => id !== fileId));
+                      } else {
+                        setSelectedKBFileIds([...selectedKBFileIds, fileId]);
+                      }
+                    }}
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             )}
         </div>

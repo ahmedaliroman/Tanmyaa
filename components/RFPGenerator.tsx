@@ -10,6 +10,8 @@ import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useAuth } from '@/context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import AISuggestionButton from './AISuggestionButton';
+import KnowledgeBaseSelector from './KnowledgeBaseSelector';
+import { supabase } from '@/lib/supabase';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 
@@ -91,6 +93,7 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
   }, [pageRange]);
 
   const [files, setFiles] = useState<File[]>([]);
+  const [selectedKBFileIds, setSelectedKBFileIds] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState<RFPContent | null>(null);
   const { logo } = useBranding();
   const { companyProfile } = useCompanyProfile();
@@ -142,7 +145,29 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
             template: profile.branding_template
         } : undefined;
 
-        const result = await generateRFP(taskDescription, pageRange, files, companyProfile, profile?.plan, branding);
+        // Process files
+        const processedFiles: { name: string; content: string }[] = [];
+        
+        // Add uploaded files
+        for (const file of files) {
+            const content = await file.text();
+            processedFiles.push({ name: file.name, content });
+        }
+
+        // Add KB files
+        if (selectedKBFileIds.length > 0) {
+            const { data: kbFilesData, error: kbFilesError } = await supabase
+                .from('knowledge_base')
+                .select('name, content')
+                .in('id', selectedKBFileIds);
+            
+            if (kbFilesError) throw kbFilesError;
+            if (kbFilesData) {
+                processedFiles.push(...kbFilesData);
+            }
+        }
+
+        const result = await generateRFP(taskDescription, pageRange, processedFiles, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (result) {
             setGeneratedContent(result);
@@ -153,7 +178,7 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
     } finally {
         setIsLoading(false);
     }
-  }, [taskDescription, pageRange, files, companyProfile, profile, refreshProfile, onUpgrade]);
+  }, [taskDescription, pageRange, files, companyProfile, profile, refreshProfile, onUpgrade, selectedKBFileIds]);
   
   const handleDownload = () => {
     if (generatedContent) {
@@ -192,7 +217,14 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
     }
   };
 
-  const renderInput = () => (
+  const renderInput = () => {
+    const toggleKBFile = (id: string) => {
+      setSelectedKBFileIds(prev => 
+        prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
+      );
+    };
+
+    return (
      <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
         <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
             <div className="border-b border-gray-800 p-4">
@@ -233,6 +265,14 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
                 <p className="text-gray-400 text-sm mb-4">Upload existing documents or examples to guide the content and tone.</p>
                 <FileUpload files={files} setFiles={setFiles} disabled={isLoading} />
             </div>
+
+            <div className="border-b border-gray-800 p-4">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Knowledge Base Sources</label>
+                <KnowledgeBaseSelector 
+                    selectedFileIds={selectedKBFileIds}
+                    onToggleFile={toggleKBFile}
+                />
+            </div>
             
             <div className="p-4">
                 <label htmlFor="page-range" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Define Page Range</label>
@@ -262,7 +302,8 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
             </button>
         </div>
       </div>
-  );
+    );
+  };
 
   return (
     <GeneratorShell

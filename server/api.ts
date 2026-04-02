@@ -18,8 +18,6 @@ const getResend = () => {
     return resend;
 };
 
-// ... (rest of the code)
-
 const sendConfirmationEmail = async (email: string, plan: string, credits: number, endDate: string) => {
     const client = getResend();
     if (!client) return;
@@ -70,6 +68,54 @@ const sendConfirmationEmail = async (email: string, plan: string, credits: numbe
         console.log(`Confirmation email sent to ${email}`);
     } catch (error) {
         console.error('Failed to send confirmation email:', error);
+    }
+};
+
+const updateCreditsAfterPayment = async (userId: string, plan: string) => {
+    const client = getSupabase();
+    
+    let creditsToAdd = 0;
+    if (plan === 'Pro') creditsToAdd = 600;
+    else if (plan === 'Business') creditsToAdd = 3000;
+    else if (plan === 'Trial') creditsToAdd = 100;
+
+    // Fetch current credits
+    const { data: profile, error: fetchError } = await client
+        .from('profiles')
+        .select('credits')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (fetchError) {
+        console.error('Failed to fetch profile during credit update:', fetchError);
+        return;
+    }
+
+    const currentCredits = Number(profile?.credits) || 0;
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1);
+
+    const { error: updateError } = await client
+        .from('profiles')
+        .update({ 
+            credits: currentCredits + creditsToAdd,
+            plan: plan,
+            subscription_status: 'active',
+            subscription_start_date: startDate.toISOString(),
+            subscription_end_date: endDate.toISOString()
+        })
+        .eq('id', userId);
+
+    if (updateError) {
+        console.error('Failed to update credits after payment:', updateError);
+        return;
+    }
+
+    // Send confirmation email
+    const { data: userData } = await client.auth.admin.getUserById(userId);
+    if (userData?.user?.email) {
+        sendConfirmationEmail(userData.user.email, plan, creditsToAdd, endDate.toISOString());
     }
 };
 
@@ -269,73 +315,18 @@ router.post('/paypal/capture-order', async (req, res) => {
         // In a real app, you would verify the order with PayPal here using their SDK or REST API
         // For this implementation, we assume the client-side capture was successful
         
-        let creditsToAdd = 0;
-        if (plan === 'Pro') creditsToAdd = 600;
-        else if (plan === 'Business') creditsToAdd = 3000;
-        else if (plan === 'Trial') creditsToAdd = 100;
+        await updateCreditsAfterPayment(userId, plan);
 
-        // Fetch current credits
-        const { data: initialProfile, error: fetchError } = await client
+        // Fetch updated credits to return to client
+        const { data: updatedProfile } = await client
             .from('profiles')
             .select('credits')
             .eq('id', userId)
             .maybeSingle();
-        
-        let profile = initialProfile;
-
-        if (fetchError) {
-            console.error('Failed to fetch profile for user during payment:', userId, fetchError);
-            return res.status(500).json({ error: 'Failed to fetch user profile.' });
-        }
-
-        // If profile doesn't exist, create it
-        if (!profile) {
-            console.log(`Profile missing for user ${userId} during payment, creating one...`);
-            const { data: newProfile, error: insertError } = await client
-                .from('profiles')
-                .insert({ id: userId, credits: 0 }) // Start with 0, will add credits below
-                .select('credits')
-                .single();
-            
-            if (insertError) {
-                console.error('Failed to create missing profile during payment:', insertError);
-                return res.status(500).json({ error: 'Failed to create user profile.' });
-            }
-            profile = newProfile;
-        }
-
-        // Update credits and plan
-        const currentCredits = Number(profile.credits) || 0;
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + 1); // 1 month subscription
-
-        const { error: updateError } = await client
-            .from('profiles')
-            .update({ 
-                credits: currentCredits + creditsToAdd,
-                plan: plan,
-                subscription_status: 'active',
-                subscription_start_date: startDate.toISOString(),
-                subscription_end_date: endDate.toISOString()
-            })
-            .eq('id', userId);
-
-        if (updateError) {
-            console.error('Failed to update credits for user after payment:', userId, updateError);
-            return res.status(500).json({ error: 'Failed to update credits after payment.' });
-        }
-
-        // Send confirmation email asynchronously
-        if (user.email) {
-            sendConfirmationEmail(user.email, plan, creditsToAdd, endDate.toISOString());
-        }
 
         res.json({ 
             success: true, 
-            newCredits: currentCredits + creditsToAdd,
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString()
+            newCredits: updatedProfile?.credits || 0
         });
     } catch (error) {
         console.error('Failed to capture PayPal order:', error);
@@ -391,21 +382,6 @@ router.get('/usage-history', async (req, res) => {
         console.error('Unexpected error fetching usage history:', error);
         res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
     }
-});
-
-router.post('/paypal/webhook', async (req, res) => {
-    const event = req.body;
-    console.log('PayPal Webhook received:', event.event_type);
-
-    // Handle different event types
-    // For now, we mainly care about successful payments if they happen asynchronously
-    if (event.event_type === 'PAYMENT.SALE.COMPLETED' || event.event_type === 'BILLING.SUBSCRIPTION.CREATED') {
-        // In a real production app, you would verify the webhook signature here
-        // and update the database based on the resource ID
-        console.log('Payment/Subscription confirmed via webhook');
-    }
-
-    res.status(200).send('OK');
 });
 
 export default router;
