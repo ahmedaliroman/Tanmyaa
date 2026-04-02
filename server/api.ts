@@ -1,7 +1,77 @@
 import { Router } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
 
 const router = Router();
+
+// Lazy initialize Resend client
+let resend: Resend | null = null;
+const getResend = () => {
+    if (!resend) {
+        const key = process.env.RESEND_API_KEY;
+        if (!key) {
+            console.warn('RESEND_API_KEY is missing. Emails will not be sent.');
+            return null;
+        }
+        resend = new Resend(key);
+    }
+    return resend;
+};
+
+// ... (rest of the code)
+
+const sendConfirmationEmail = async (email: string, plan: string, credits: number, endDate: string) => {
+    const client = getResend();
+    if (!client) return;
+
+    try {
+        const formattedDate = new Date(endDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        await client.emails.send({
+            from: 'Tanmyaa <billing@tanmyaa.com>',
+            to: email,
+            subject: `Subscription Confirmed: ${plan} Plan`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 8px;">
+                    <h1 style="color: #2563eb; margin-bottom: 24px;">Subscription Confirmed!</h1>
+                    <p style="font-size: 16px; color: #475569; line-height: 1.5;">
+                        Thank you for subscribing to the <strong>${plan}</strong> plan on Tanmyaa. Your account has been successfully upgraded.
+                    </p>
+                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 24px 0;">
+                        <h2 style="font-size: 18px; color: #1e293b; margin-top: 0;">Subscription Details</h2>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #64748b;">Plan</td>
+                                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${plan}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #64748b;">Credits Added</td>
+                                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #10b981;">+${credits}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #64748b;">Next Billing Date</td>
+                                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${formattedDate}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <p style="font-size: 14px; color: #94a3b8; margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                        If you have any questions, please reply to this email or contact our support team at support@tanmyaa.com.
+                    </p>
+                    <p style="font-size: 12px; color: #cbd5e1; text-align: center; margin-top: 24px;">
+                        &copy; ${new Date().getFullYear()} Tanmyaa. All rights reserved.
+                    </p>
+                </div>
+            `
+        });
+        console.log(`Confirmation email sent to ${email}`);
+    } catch (error) {
+        console.error('Failed to send confirmation email:', error);
+    }
+};
 
 // Lazy initialize Supabase client
 let supabase: SupabaseClient | null = null;
@@ -254,6 +324,11 @@ router.post('/paypal/capture-order', async (req, res) => {
         if (updateError) {
             console.error('Failed to update credits for user after payment:', userId, updateError);
             return res.status(500).json({ error: 'Failed to update credits after payment.' });
+        }
+
+        // Send confirmation email asynchronously
+        if (user.email) {
+            sendConfirmationEmail(user.email, plan, creditsToAdd, endDate.toISOString());
         }
 
         res.json({ 
