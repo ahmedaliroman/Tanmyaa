@@ -400,7 +400,7 @@ const SWOTCategory: React.FC<{ title: string; items: { title: string; descriptio
     </div>
 );
 
-const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, val: string) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, val: string) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const strengthsAnimation = getAnimationStyles(isActive, 350, 'fade-in-up', disableAnimations);
     const weaknessesAnimation = getAnimationStyles(isActive, 400, 'fade-in-up', disableAnimations);
@@ -408,14 +408,10 @@ const SWOTSlideLayout: React.FC<{ slide: SWOTSlide, onUpdate: (field: string, va
     const threatsAnimation = getAnimationStyles(isActive, 550, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['swot_image'] || ''} 
-                alt="SWOT background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={64} minFontSize={32} className="w-full">
                     <Editable as="h1" value={slide.title || "SWOT Analysis"} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} />
@@ -563,21 +559,17 @@ const MacroStrategySlideLayout: React.FC<{ slide: MacroStrategySlide, onUpdate: 
     );
 };
 
-const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate: (field: string, val: string | string[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const EquityAnalysisSlideLayout: React.FC<{ slide: EquityAnalysisSlide, onUpdate: (field: string, val: string | string[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const impactsAnimation = getAnimationStyles(isActive, 350, 'fade-in-up', disableAnimations);
     const strategiesAnimation = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
     const reflectionAnimation = getAnimationStyles(isActive, 650, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['equity_image'] || ''} 
-                alt="Equity background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title || "Equity Analysis"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
@@ -730,21 +722,17 @@ const NodeAssessmentSlideLayout: React.FC<{ slide: NodeAssessmentSlide, onUpdate
     );
 };
 
-const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field: string, val: string | unknown) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const sourcesAnimation = getAnimationStyles(isActive, 400, 'fade-in-up', disableAnimations);
     const sources = ensureArray(slide.sources).slice(0, 8);
     const isMany = sources.length > 4;
 
     return (
-        <SlideWrapper className="p-12 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['references_image'] || ''} 
-                alt="References background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-12 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}><Editable as="h1" value={slide.title || 'Strategic References'} className="text-4xl font-extrabold tracking-tighter mb-6 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} /></div>
             <div className="relative z-20 flex-grow pr-4 pb-6 overflow-hidden" style={sourcesAnimation}>
                 <div className={`grid ${isMany ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
@@ -772,19 +760,15 @@ const ReferencesSlideLayout: React.FC<{ slide: ReferencesSlide, onUpdate: (field
     );
 };
 
-const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, onUpdate: (field: string, val: string | {name: string, outcomes: {metric: string, value: string}[], risk: string, cost: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, onUpdate: (field: string, val: string | {name: string, outcomes: {metric: string, value: string}[], risk: string, cost: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const reflectionAnimation = getAnimationStyles(isActive, 800, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['scenario_image'] || ''} 
-                alt="Scenario background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title || "Scenario Comparison"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
@@ -821,19 +805,15 @@ const ScenarioComparisonSlideLayout: React.FC<{ slide: ScenarioComparisonSlide, 
     );
 };
 
-const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate: (field: string, val: string | {category: string, description: string, mitigation: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate: (field: string, val: string | {category: string, description: string, mitigation: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const reflectionAnimation = getAnimationStyles(isActive, 800, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['risk_image'] || ''} 
-                alt="Risk background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title || "Risk Assessment"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
@@ -864,18 +844,14 @@ const RiskAssessmentSlideLayout: React.FC<{ slide: RiskAssessmentSlide, onUpdate
     );
 };
 
-const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: string, val: string | {title: string, timeline: string, action_steps: {action: string, kpi: string}[], outcome: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const RoadmapSlideLayout: React.FC<{ slide: RoadmapSlide, onUpdate: (field: string, val: string | {title: string, timeline: string, action_steps: {action: string, kpi: string}[], outcome: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16">
-            <EditableImage 
-                src={slide.image_url || imageUrls['roadmap_image'] || ''} 
-                alt="Roadmap background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title || "Implementation Doctrine"} className="font-extrabold tracking-tighter mb-10 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} />
@@ -1164,20 +1140,16 @@ const GanttChartRoadmapSlideLayout: React.FC<{ slide: GanttChartRoadmapSlide, on
     );
 };
 
-const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpdate: (field: string, val: string | {label: string, baseline: string, projected: string, timeframe: string, assumption: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpdate: (field: string, val: string | {label: string, baseline: string, projected: string, timeframe: string, assumption: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const subtitleAnimation = getAnimationStyles(isActive, 350, 'fade-in-up', disableAnimations);
     const reflectionAnimation = getAnimationStyles(isActive, 1100, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col justify-center items-center text-center">
-            <EditableImage 
-                src={slide.image_url || imageUrls['impact_image'] || ''} 
-                alt="Impact background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16 flex flex-col justify-center items-center text-center" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title || 'Projected Impact'} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-3 text-[var(--color-accent-light)]" />
@@ -1242,19 +1214,15 @@ const ProjectedImpactSlideLayout: React.FC<{ slide: ProjectedImpactSlide, onUpda
     );
 };
 
-const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpdate: (field: string, val: string | {component: string, capex: string, opex: string, funding_source: string, recovery_mechanism: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpdate: (field: string, val: string | {component: string, capex: string, opex: string, funding_source: string, recovery_mechanism: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const reflectionAnimation = getAnimationStyles(isActive, 800, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['fiscal_image'] || ''} 
-                alt="Fiscal background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title || "Fiscal Framework"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
@@ -1294,18 +1262,14 @@ const FiscalFrameworkSlideLayout: React.FC<{ slide: FiscalFrameworkSlide, onUpda
     );
 };
 
-const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (field: string, val: string | {title: string, strategy: string, expected_impact: string, measurement_framework: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (field: string, val: string | {title: string, strategy: string, expected_impact: string, measurement_framework: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-10 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['policy_image'] || ''} 
-                alt="Policy background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-10 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title || "Required Policy Levers"} className="font-extrabold tracking-tighter mb-4 text-[var(--color-accent-light)]" onUpdate={v => onUpdate('title', v)} />
@@ -1348,7 +1312,7 @@ const PolicyLeversSlideLayout: React.FC<{ slide: PolicyLeversSlide, onUpdate: (f
     );
 };
 
-const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide, onUpdate: (field: string, val: string | unknown) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide, onUpdate: (field: string, val: string | unknown) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const leadAgencyAnimation = getAnimationStyles(isActive, 350, 'fade-in-up', disableAnimations);
     const fundingModelAnimation = getAnimationStyles(isActive, 500, 'fade-in-up', disableAnimations);
@@ -1356,14 +1320,10 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
     const stakeholderRolesAnimation = getAnimationStyles(isActive, 350, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['governance_image'] || ''} 
-                alt="Governance background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title || "Governance Framework"} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-8 text-[var(--color-accent-light)]" />
@@ -1410,19 +1370,15 @@ const GovernanceFrameworkSlideLayout: React.FC<{ slide: GovernanceFrameworkSlide
     );
 };
 
-const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: string, val: string | {step_number: number, title: string, description: string}[]) => void, imageUrls: Record<string, string>, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, imageUrls, isActive, disableAnimations }) => {
+const ProcessSlideLayout: React.FC<{ slide: ProcessSlide, onUpdate: (field: string, val: string | {step_number: number, title: string, description: string}[]) => void, isActive: boolean, disableAnimations?: boolean }> = ({ slide, onUpdate, isActive, disableAnimations }) => {
     const titleAnimation = getAnimationStyles(isActive, 200, 'fade-in-up', disableAnimations);
     const reflectionAnimation = getAnimationStyles(isActive, 900, 'fade-in-up', disableAnimations);
 
     return (
-        <SlideWrapper className="p-16 flex flex-col">
-            <EditableImage 
-                src={slide.image_url || imageUrls['process_image'] || ''} 
-                alt="Process background" 
-                className="absolute inset-0 w-full h-full z-0"
-                onUpdate={(newUrl) => onUpdate('image_url', newUrl)}
-            />
-            <div className="absolute inset-0 bg-black/80 z-10 pointer-events-none"></div>
+        <SlideWrapper className="p-16 flex flex-col" style={{ background: 'linear-gradient(135deg, #1B3C53 0%, #112635 100%)' }}>
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+            </div>
             <div className="relative z-20" style={titleAnimation}>
                 <AutoFitText maxFontSize={48} minFontSize={24} className="w-full">
                     <Editable as="h1" value={slide.title} onUpdate={v => onUpdate('title', v)} className="font-extrabold tracking-tighter mb-2 text-[var(--color-accent-light)]" />

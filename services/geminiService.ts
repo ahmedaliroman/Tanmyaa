@@ -1135,8 +1135,8 @@ export const generateMethodology = async (task: string, companyProfile?: string,
 export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. 
-    Your task is to guide a student through a "Strategic Thinking Board" on a specific urban planning topic.
+    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor at Tanmyaa Global. 
+    Your task is to guide a student through a "Strategic Thinking Board" (Strategic Document) on a specific urban planning topic.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -1149,23 +1149,24 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     
     TEACHER PERSONA:
     - Tone: Authoritative, analytical, and strategically minded.
-    - Format: Use "Data Nodes" (Sticky Notes) for key strategic pillars.
-    - Content: Every note must be concise, technically rigorous, and "point-to-point".
+    - Format: Use "Strategic Nodes" for key pillars.
+    - Content: Every node must be extremely concise, technically rigorous, and "point-to-point".
+    - Visual Clarity: Avoid long paragraphs. Use punchy, high-impact sentences.
     - No Vague Info: Every claim must be backed by a specific metric, location, or urban planning logic.
     
     SCHEMA GUIDANCE:
     {
         "topic": "The core urban challenge or topic being analyzed.",
         "teacherPersona": {
-            "intro": "A high-level strategic overview setting the technical context.",
-            "closing": "A final strategic synthesis or a challenge for further inquiry."
+            "intro": "A high-level strategic overview setting the technical context (max 60 words).",
+            "closing": "A final strategic synthesis or a challenge for further inquiry (max 50 words)."
         },
         "stickyNotes": [
             { 
                 "id": "unique-id", 
                 "category": "Core Concept" | "Data Insight" | "Case Study" | "Strategic Move" | "Critical Risk",
                 "title": "Technical, punchy title",
-                "content": "Rigorous, point-to-point strategic analysis (max 35 words).",
+                "content": "Rigorous, point-to-point strategic analysis (max 25 words).",
                 "tags": ["technical-tag1", "technical-tag2"]
             }
         ],
@@ -1209,7 +1210,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
 export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
     const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
-    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. Update the provided "Strategic Thinking Board" JSON based on the student's request.
+    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor at Tanmyaa Global. Update the provided "Strategic Thinking Board" (Strategic Document) JSON based on the student's request.
     
     ${getBrandingInstruction(plan, branding)}
     
@@ -1217,7 +1218,7 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     
     ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
-    STRICT PROHIBITION: NEVER use placeholders. Keep all strategic nodes concise and technically rigorous.
+    STRICT PROHIBITION: NEVER use placeholders. Keep all strategic nodes extremely concise (max 25 words) and technically rigorous.
     
     Your entire output must be only the valid JSON object, with no other text.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;

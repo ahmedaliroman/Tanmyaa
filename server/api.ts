@@ -52,12 +52,19 @@ router.post('/deduct-credits', async (req, res) => {
         }
         
         const { data: authData, error: authError } = await client.auth.getUser(token);
-        const user = authData?.user;
-
-        if (authError || !user) {
-            console.error('Auth error in deduct-credits:', authError);
-            return res.status(401).json({ error: 'Invalid or expired token.' });
+        
+        if (authError || !authData?.user) {
+            console.error('Supabase Auth Error in deduct-credits:', {
+                message: authError?.message,
+                status: authError?.status,
+                code: authError?.code
+            });
+            return res.status(401).json({ 
+                error: 'Invalid JWT', 
+                message: authError?.message || 'Token verification failed' 
+            });
         }
+        const user = authData.user;
 
         const { amount, description, fileUrl, type } = req.body;
         if (!amount || typeof amount !== 'number') {
@@ -155,9 +162,37 @@ router.post('/deduct-credits', async (req, res) => {
 router.post('/paypal/capture-order', async (req, res) => {
     try {
         const client = getSupabase();
-        const { orderID, plan, userId } = req.body;
         
-        if (!orderID || !plan || !userId) {
+        // Verify authentication
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Authorization header is required.' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        if (!token || token === 'undefined' || token === 'null') {
+            return res.status(401).json({ error: 'Invalid or missing authentication token.' });
+        }
+        
+        const { data: authData, error: authError } = await client.auth.getUser(token);
+        
+        if (authError || !authData?.user) {
+            console.error('Supabase Auth Error details:', {
+                message: authError?.message,
+                status: authError?.status,
+                code: authError?.code
+            });
+            return res.status(401).json({ 
+                error: 'Invalid JWT', 
+                message: authError?.message || 'Token verification failed' 
+            });
+        }
+        const user = authData.user;
+
+        const { orderID, plan } = req.body;
+        const userId = user.id;
+        
+        if (!orderID || !plan) {
             return res.status(400).json({ error: 'Missing required parameters.' });
         }
 
@@ -246,11 +281,19 @@ router.get('/usage-history', async (req, res) => {
             return res.status(401).json({ error: 'Invalid or missing authentication token.' });
         }
 
-        const { data: { user }, error: authError } = await client.auth.getUser(token);
+        const { data: authData, error: authError } = await client.auth.getUser(token);
+        const user = authData?.user;
 
         if (authError || !user) {
-            console.error('Auth error fetching usage history:', authError);
-            return res.status(401).json({ error: 'Invalid or expired token.' });
+            console.error('Supabase Auth Error fetching usage history:', {
+                message: authError?.message,
+                status: authError?.status,
+                code: authError?.code
+            });
+            return res.status(401).json({ 
+                error: 'Invalid JWT', 
+                message: authError?.message || 'Token verification failed' 
+            });
         }
 
         const { data, error } = await client

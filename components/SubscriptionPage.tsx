@@ -110,7 +110,7 @@ const SubscriptionTier: React.FC<{
     amount?: string;
     onSuccess?: (plan: string, credits: number) => void;
 }> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, amount, onSuccess }) => {
-    const { user } = useAuth();
+    const { user, session } = useAuth();
     
     const baseClasses = `relative bg-black/30 backdrop-blur-lg border rounded-2xl p-8 flex flex-col text-center transition-all duration-300`;
     
@@ -132,18 +132,25 @@ const SubscriptionTier: React.FC<{
             return;
         }
         try {
-            // Call Supabase Edge Function instead of Express server
-            const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-capture`, {
+            // Ensure we have the latest session
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            const token = currentSession?.access_token || session?.access_token;
+
+            if (!token) {
+                toast.error('Your session has expired. Please sign in again.');
+                return;
+            }
+
+            // Call local Express server instead of Supabase Edge Function
+            const response = await fetch(`/api/paypal/capture-order`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
                     orderID,
-                    plan: title,
-                    userId: user.id,
-                    email: user.email
+                    plan: title
                 }),
             });
             if (response.ok) {
@@ -158,8 +165,8 @@ const SubscriptionTier: React.FC<{
                 let errorMessage = 'Unknown error';
                 try {
                     const errorData = await response.json();
-                    errorMessage = errorData.error || errorData.message || 'Unknown error';
-                } catch (e) {
+                    errorMessage = errorData.message || errorData.error || 'Unknown error';
+                } catch {
                     // If response is not JSON (e.g. 404 or 500 crash)
                     errorMessage = `Server error (${response.status})`;
                 }
@@ -198,7 +205,7 @@ const SubscriptionTier: React.FC<{
                     <div className="mt-4">
                         <PayPalButtons 
                             style={{ layout: "vertical", color: "blue", shape: "rect", label: "pay" }}
-                            createOrder={(data, actions) => {
+                            createOrder={(_, actions) => {
                                 return actions.order.create({
                                     intent: "CAPTURE",
                                     purchase_units: [{
@@ -211,7 +218,7 @@ const SubscriptionTier: React.FC<{
                                     }]
                                 });
                             }}
-                            onApprove={async (data, actions) => {
+                            onApprove={async (data) => {
                                 if (data.orderID) {
                                     await handleCaptureOrder(data.orderID);
                                 }
