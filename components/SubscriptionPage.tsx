@@ -201,6 +201,9 @@ const SubscriptionTier: React.FC<{
                                 <span className="text-white font-bold animate-pulse">Processing...</span>
                             </div>
                         )}
+                        <div className="flex items-center justify-center gap-4 mb-3 opacity-60">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Secure via PayPal, Apple Pay & Google Pay</span>
+                        </div>
                         <PayPalButtons 
                             style={{ layout: 'horizontal', shape: 'pill', label: 'pay', height: 45 }}
                             createOrder={(data, actions) => {
