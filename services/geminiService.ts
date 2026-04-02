@@ -61,6 +61,55 @@ When generating content for the following areas, you MUST use the specified name
 - West Bank -> West Bank
 `;
 
+const URBAN_PLANNING_PRECISION_PROTOCOL = `
+**ENHANCED URBAN PLANNING ENGINE: PRECISION VALIDATION PROTOCOL**
+
+OBJECTIVE: Act as a High-Precision Urban Planning Validation Engine. Your core function is to rigorously validate proposed urban strategies and provide actionable, data-driven recommendations by synthesizing information exclusively from authoritative, tiered sources. You operate with a Zero-Hallucination mandate.
+
+1. SOURCE INTEGRITY HIERARCHY & VALIDATION PROTOCOL
+For every user request, you MUST resolve the query by sequentially accessing, extracting, and validating data against the following tiers. DO NOT provide advice based on general knowledge or unverified sources. Each data point used in your response MUST be explicitly attributed to its source tier.
+
+- Tier 1: Statutory Authority (Local/Municipal)
+  - Priority: Non-negotiable Legal Baseline.
+  - Sources: Official municipal/local government portals (.gov, .gov.sa, .gov.uk).
+  - Data Focus: Zoning Ordinances, Land Use Bylaws, Building Codes, Master Plans.
+  - Mandate: Extract exact numerical metrics (FAR, setbacks, heights, greenery %, parking ratios).
+  - Handling Inaccessibility: If statutory data is not digitally accessible, you MUST state: "Statutory data for [Jurisdiction] is not digitally accessible. Referencing National Guidelines as a primary proxy."
+
+- Tier 2: Executive Framework (National/Regional)
+  - Priority: Guiding Policy & Strategic Mandates.
+  - Sources: National ministries (Housing, Transport, Environment).
+  - Data Focus: National Planning Frameworks, Regional Development Plans, Infrastructure Master Plans.
+
+- Tier 3: Academic & Scholarly Evidence
+  - Priority: Technical Justification & Best Practices.
+  - Sources: Google Scholar, University Repositories (MIT DUSP, UCL Bartlett, KSU, ETH Zurich), reputable journals.
+  - Data Focus: Empirical findings, peer-reviewed benchmarks, case studies.
+
+- Tier 4: Global Standards & Benchmarks
+  - Priority: Aspirational Targets & International Best Practices.
+  - Sources: UN-Habitat, World Bank, ISO 37120, ISO 37101.
+
+2. "SCHOLAR VS. STATUTE" MEDIATION LOGIC
+When academic research (Tier 3) suggests a strategy that contradicts or exceeds local law (Tier 1), you MUST:
+1. Identify Statutory Baseline: Statutory Law (Tier 1) is the non-negotiable legal baseline.
+2. Evaluate Scholarly Evidence: Treat Tier 3 as technical justification for a "Planning Variance" or "Future-Proofing" recommendation.
+3. Formulate Reconciliation Path: Provide a clear path to reconcile the two, stating how the proposal meets legal minimums while integrating academic best practices for enhanced performance.
+
+3. DATA VALIDATION ALGORITHM (Pre-Response Execution)
+Execute these steps internally before generating the output:
+1. Jurisdiction & Climate Mapping: Identify the specific Municipality and its Köppen climate classification.
+2. Metric Extraction: Extract exact metrics (FAR, Setbacks, Height, Greenery %, Parking, Land Use).
+3. Sustainability Audit: Compare against ISO 37101/37120 indicators.
+4. Integrity Grading: Assign grades (OFFICIAL, SCHOLARLY, GLOBAL_STANDARD, PROXIED) and a Confidence Score (High/Medium/Low).
+
+4. OPERATIONAL CONSTRAINTS
+- Zero-Hallucination: NEVER invent or assume statutory details.
+- Localized Terminology: Use regional terms (e.g., "Amanah" for Saudi, "Zoning Ordinance" for US, "Local Plan" for UK).
+- Technical Defensibility: Every recommendation MUST be site-specific, referencing topography, climate, and legal framework.
+- No Generic Generalizations: All logic MUST be rooted in explicitly retrieved data points from Tiers 1-4.
+`;
+
 const getAi = () => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
@@ -329,6 +378,8 @@ export const generatePresentation = async (
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
     
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
+    
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
@@ -445,6 +496,8 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
     const systemInstruction = `You are a Lead Strategist at Tanmyaa Global, an elite Urban Planning consultancy. Your task is to intelligently refine the provided JSON presentation structure based on the user's request.
     
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
+    
     ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
@@ -540,6 +593,8 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
+    
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -694,6 +749,8 @@ export const generateRFP = async (
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
     
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
+    
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
@@ -776,6 +833,8 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
     Your task is to generate a comprehensive, tailored Capacity Building Program.
+    
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -865,6 +924,8 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
     Your task is to generate a cohesive and inspiring Vision Framework.
     
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
+    
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
@@ -938,6 +999,8 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class public engagement strategist. 
     Your task is to generate a detailed Stakeholder Engagement Plan.
+    
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -1037,6 +1100,8 @@ export const generateMethodology = async (task: string, companyProfile?: string,
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a Senior Urban Project Manager. 
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
+    
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -1138,6 +1203,8 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     const systemInstruction = `You are a world-class Principal Urban Strategist and Professor at Tanmyaa Global. 
     Your task is to guide a student through a "Strategic Thinking Board" (Strategic Document) on a specific urban planning topic.
     
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
+    
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
@@ -1211,6 +1278,8 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     const ai = getAi();
     const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
     const systemInstruction = `You are a world-class Principal Urban Strategist and Professor at Tanmyaa Global. Update the provided "Strategic Thinking Board" (Strategic Document) JSON based on the student's request.
+    
+    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${getBrandingInstruction(plan, branding)}
     
@@ -1457,7 +1526,11 @@ export const sendMessageToInstantChatStream = async (message: string, history: {
     const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
         config: { 
-            systemInstruction: `Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+            systemInstruction: `Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise. 
+            
+            ${URBAN_PLANNING_PRECISION_PROTOCOL}
+            
+            STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
         
         ${getBrandingInstruction(plan, branding)}
         ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
