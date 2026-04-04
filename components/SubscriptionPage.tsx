@@ -205,7 +205,7 @@ const SubscriptionTier: React.FC<{
                             <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Secure via PayPal, Apple Pay & Google Pay</span>
                         </div>
                         <PayPalButtons 
-                            style={{ layout: 'horizontal', shape: 'pill', label: 'pay', height: 45 }}
+                            style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
                             createOrder={(data, actions) => {
                                 return actions.order.create({
                                     intent: 'CAPTURE',
@@ -215,7 +215,11 @@ const SubscriptionTier: React.FC<{
                                             value: amount || '0.00'
                                         },
                                         description: `${title} Plan Subscription`
-                                    }]
+                                    }],
+                                    application_context: {
+                                        shipping_preference: 'NO_SHIPPING',
+                                        user_action: 'PAY_NOW'
+                                    }
                                 });
                             }}
                             onApprove={async (data, actions) => {
