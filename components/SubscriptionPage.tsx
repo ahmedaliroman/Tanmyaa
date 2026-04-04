@@ -201,8 +201,8 @@ const SubscriptionTier: React.FC<{
                                 <span className="text-white font-bold animate-pulse">Processing...</span>
                             </div>
                         )}
-                        <div className="flex items-center justify-center gap-4 mb-3 opacity-60">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Secure via PayPal, Apple Pay & Google Pay</span>
+                        <div className="flex items-center justify-center gap-4 mb-3 opacity-80">
+                            <span className="text-[11px] text-blue-400 uppercase tracking-widest font-black">Pay with Card or PayPal</span>
                         </div>
                         <PayPalButtons 
                             style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
@@ -218,7 +218,9 @@ const SubscriptionTier: React.FC<{
                                     }],
                                     application_context: {
                                         shipping_preference: 'NO_SHIPPING',
-                                        user_action: 'PAY_NOW'
+                                        user_action: 'PAY_NOW',
+                                        brand_name: 'Tanmyaa Urban Planning',
+                                        landing_page: 'BILLING' // This forces the Credit Card form to be the default landing page
                                     }
                                 });
                             }}

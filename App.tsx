@@ -165,8 +165,11 @@ const App: React.FC = () => {
     "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
     currency: "USD",
     intent: "capture",
-    "disable-funding": "credit,paylater",
-    components: "buttons,applepay,googlepay",
+    "disable-funding": "paylater,venmo",
+    "enable-funding": "card",
+    "data-sdk-integration-source": "react-paypal-js",
+    vault: false,
+    components: "buttons,applepay,googlepay"
   };
 
   useEffect(() => {
