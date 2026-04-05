@@ -231,8 +231,16 @@ const SubscriptionTier: React.FC<{
                                 }
                             }}
                             onError={(err) => {
-                                console.error('PayPal Error:', err);
-                                toast.error('PayPal checkout failed. Please try again.');
+                                console.error('PayPal Checkout Error:', err);
+                                // Check for common errors
+                                const errorMessage = err?.toString() || '';
+                                if (errorMessage.includes('client-id')) {
+                                    toast.error('Invalid PayPal Client ID. Please check your settings.');
+                                } else if (errorMessage.includes('funding')) {
+                                    toast.error('This payment method is not supported for your account.');
+                                } else {
+                                    toast.error('PayPal checkout failed. Please try again or use a different card.');
+                                }
                             }}
                         />
                     </div>

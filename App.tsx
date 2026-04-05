@@ -162,14 +162,14 @@ const App: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
 
   const initialOptions = {
-    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
+    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "AVlygew1dCVKZoGstyLaRUwCibuzVVQovYIyNcGYkyABvZHVjOiosUBCyjY1hQawc-Rf0-_BmeA_3hwp",
     currency: "USD",
     intent: "capture",
-    "disable-funding": "paylater,venmo",
+    "disable-funding": "credit,paylater,venmo",
     "enable-funding": "card",
     "data-sdk-integration-source": "react-paypal-js",
     vault: false,
-    components: "buttons,applepay,googlepay"
+    components: "buttons"
   };
 
   useEffect(() => {
