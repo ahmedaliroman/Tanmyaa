@@ -231,15 +231,17 @@ const SubscriptionTier: React.FC<{
                                 }
                             }}
                             onError={(err) => {
-                                console.error('PayPal Checkout Error:', err);
-                                // Check for common errors
+                                console.error('--- PAYPAL CHECKOUT ERROR ---');
+                                console.error('Error Object:', err);
+                                console.error('-----------------------------');
+                                
                                 const errorMessage = err?.toString() || '';
                                 if (errorMessage.includes('client-id')) {
-                                    toast.error('Invalid PayPal Client ID. Please check your settings.');
+                                    toast.error('Invalid PayPal Client ID. Ensure you are using a Sandbox ID for test cards.');
                                 } else if (errorMessage.includes('funding')) {
-                                    toast.error('This payment method is not supported for your account.');
+                                    toast.error('This card type is not supported. Try a different generated card.');
                                 } else {
-                                    toast.error('PayPal checkout failed. Please try again or use a different card.');
+                                    toast.error('PayPal failed. Check the browser console (F12) for the full error.');
                                 }
                             }}
                         />

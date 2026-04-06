@@ -169,7 +169,8 @@ const App: React.FC = () => {
     "enable-funding": "card",
     "data-sdk-integration-source": "react-paypal-js",
     vault: false,
-    components: "buttons"
+    components: "buttons",
+    debug: true
   };
 
   useEffect(() => {
