@@ -208,20 +208,14 @@ const SubscriptionTier: React.FC<{
                             style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
                             createOrder={(data, actions) => {
                                 return actions.order.create({
-                                    intent: 'CAPTURE',
+                                    intent: 'capture',
                                     purchase_units: [{
                                         amount: {
-                                            currency_code: 'USD',
+                                            currency_code: 'EUR',
                                             value: amount || '0.00'
                                         },
                                         description: `${title} Plan Subscription`
-                                    }],
-                                    application_context: {
-                                        shipping_preference: 'NO_SHIPPING',
-                                        user_action: 'PAY_NOW',
-                                        brand_name: 'Tanmyaa Urban Planning',
-                                        landing_page: 'BILLING' // This forces the Credit Card form to be the default landing page
-                                    }
+                                    }]
                                 });
                             }}
                             onApprove={async (data, actions) => {

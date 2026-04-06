@@ -156,24 +156,24 @@ const AppContent: React.FC<{
   );
 };
 
+const initialOptions = {
+  "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "AVlygew1dCVKZoGstyLaRUwCibuzVVQovYIyNcGYkyABvZHVjOiosUBCyjY1hQawc-Rf0-_BmeA_3hwp",
+  currency: "EUR",
+  intent: "capture",
+  "data-sdk-integration-source": "react-paypal-js",
+  components: "buttons"
+};
+
 const App: React.FC = () => {
   const [view, setView] = useState<{ page: 'home' | 'service' | 'subscription' | 'knowledge-base', serviceId: string | null }>({ page: 'home', serviceId: null });
   const [isPageExiting, setIsPageExiting] = useState(false);
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
 
-  const initialOptions = {
-    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "AVlygew1dCVKZoGstyLaRUwCibuzVVQovYIyNcGYkyABvZHVjOiosUBCyjY1hQawc-Rf0-_BmeA_3hwp",
-    currency: "USD",
-    intent: "capture",
-    "disable-funding": "credit,paylater,venmo",
-    "enable-funding": "card",
-    "data-sdk-integration-source": "react-paypal-js",
-    vault: false,
-    components: "buttons",
-    debug: true
-  };
-
   useEffect(() => {
+    // Log masked client ID for debugging
+    const clientId = initialOptions["client-id"];
+    console.log(`PayPal Initialized with ID: ${clientId.substring(0, 5)}...${clientId.substring(clientId.length - 5)}`);
+
     // Check for API key status if window.aistudio is available (typical for custom domain embeds)
     const checkApiKey = async () => {
         if (window.aistudio) {
