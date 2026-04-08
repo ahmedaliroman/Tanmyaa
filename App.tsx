@@ -157,23 +157,37 @@ const AppContent: React.FC<{
 };
 
 const initialOptions = {
-  "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "AVlygew1dCVKZoGstyLaRUwCibuzVVQovYIyNcGYkyABvZHVjOiosUBCyjY1hQawc-Rf0-_BmeA_3hwp",
+  "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID,
   currency: "EUR",
   intent: "capture",
-  "data-sdk-integration-source": "react-paypal-js",
-  components: "buttons",
-  commit: true
+  components: "buttons,applepay,googlepay",
+  "data-sdk-integration-source": "react-paypal-js"
 };
 
 const App: React.FC = () => {
   const [view, setView] = useState<{ page: 'home' | 'service' | 'subscription' | 'knowledge-base', serviceId: string | null }>({ page: 'home', serviceId: null });
   const [isPageExiting, setIsPageExiting] = useState(false);
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
+  const [clientToken, setClientToken] = useState<string | null>(null);
 
   useEffect(() => {
     // Log masked client ID for debugging
     const clientId = initialOptions["client-id"];
     console.log(`PayPal Initialized with ID: ${clientId.substring(0, 5)}...${clientId.substring(clientId.length - 5)}`);
+
+    // Fetch PayPal Client Token for v6 features
+    const fetchClientToken = async () => {
+      try {
+        const response = await fetch('/api/paypal/generate-client-token', { method: 'POST' });
+        const data = await response.json();
+        if (data.client_token) {
+          setClientToken(data.client_token);
+        }
+      } catch (error) {
+        console.error('Failed to fetch PayPal client token:', error);
+      }
+    };
+    fetchClientToken();
 
     // Check for API key status if window.aistudio is available (typical for custom domain embeds)
     const checkApiKey = async () => {
@@ -280,8 +294,22 @@ const App: React.FC = () => {
     }
   };
 
+  if (!initialOptions["client-id"]) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="bg-red-500/10 border border-red-500/50 p-6 rounded-xl max-w-md text-center">
+          <h2 className="text-xl font-bold text-white mb-2">PayPal Configuration Missing</h2>
+          <p className="text-gray-400 mb-4">Please set VITE_PAYPAL_CLIENT_ID in your environment variables to enable payments.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <PayPalScriptProvider options={initialOptions}>
+    <PayPalScriptProvider options={{
+      ...initialOptions,
+      "data-client-token": clientToken || undefined
+    }}>
       <AuthProvider>
         <Toaster position="top-center" richColors />
         {window.location.pathname.startsWith('/auth/callback') ? (

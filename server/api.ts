@@ -275,72 +275,122 @@ router.post('/deduct-credits', async (req, res) => {
     }
 });
 
+// PayPal Configuration
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
+const PAYPAL_API_BASE = process.env.NODE_ENV === 'production' 
+    ? 'https://api-m.paypal.com' 
+    : 'https://api-m.sandbox.paypal.com';
+
+const getPayPalAccessToken = async () => {
+    if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+        throw new Error('PayPal credentials (PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET) are missing in environment variables.');
+    }
+
+    const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
+    const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'grant_type=client_credentials',
+    });
+
+    const data = await response.json();
+    if (!data.access_token) {
+        throw new Error(`Failed to get PayPal access token: ${JSON.stringify(data)}`);
+    }
+    return data.access_token;
+};
+
+router.post('/paypal/generate-client-token', async (req, res) => {
+    try {
+        const access_token = await getPayPalAccessToken();
+
+        const response = await fetch(`${PAYPAL_API_BASE}/v1/identity/generate-token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+        res.json({ client_token: data.client_token });
+    } catch (error) {
+        console.error('PayPal Client Token Error:', error);
+        res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
+    }
+});
+
+router.post('/paypal/create-order', async (req, res) => {
+    try {
+        const { plan } = req.body;
+        
+        // Define prices on the server to prevent manipulation
+        let amount = "0.00";
+        if (plan === 'Pro') amount = "19.00";
+        else if (plan === 'Business') amount = "49.00";
+        else if (plan === 'Trial') amount = "1.00";
+        else return res.status(400).json({ error: 'Invalid plan selected.' });
+
+        const access_token = await getPayPalAccessToken();
+
+        const response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                intent: 'CAPTURE',
+                purchase_units: [{
+                    amount: {
+                        currency_code: 'EUR',
+                        value: amount
+                    },
+                    description: `${plan} Plan Subscription`
+                }],
+                application_context: {
+                    shipping_preference: 'NO_SHIPPING',
+                    user_action: 'PAY_NOW'
+                }
+            })
+        });
+
+        const order = await response.json();
+        res.json(order);
+    } catch (error) {
+        console.error('PayPal Create Order Error:', error);
+        res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
+    }
+});
+
 router.post('/paypal/capture-order', async (req, res) => {
     try {
+        console.log('--- PAYPAL CAPTURE REQUEST RECEIVED ---');
         const client = getSupabase();
         
         // Verify authentication
         const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            return res.status(401).json({ error: 'Authorization header is required.' });
-        }
+        if (!authHeader) return res.status(401).json({ error: 'Authorization header is required.' });
 
         const token = authHeader.split(' ')[1];
-        if (!token || token === 'undefined' || token === 'null') {
-            return res.status(401).json({ error: 'Invalid or missing authentication token.' });
-        }
-        
         const { data: authData, error: authError } = await client.auth.getUser(token);
         
         if (authError || !authData?.user) {
-            console.error('Supabase Auth Error details:', {
-                message: authError?.message,
-                status: authError?.status,
-                code: authError?.code
-            });
-            return res.status(401).json({ 
-                error: 'Invalid JWT', 
-                message: authError?.message || 'Token verification failed' 
-            });
+            return res.status(401).json({ error: 'Invalid JWT' });
         }
         const user = authData.user;
 
         const { orderID, plan } = req.body;
-        const userId = user.id;
-        
-        if (!orderID || !plan) {
-            return res.status(400).json({ error: 'Missing required parameters.' });
-        }
+        if (!orderID || !plan) return res.status(400).json({ error: 'Missing required parameters.' });
 
-        // 1. Get PayPal Access Token
-        const clientId = process.env.PAYPAL_CLIENT_ID || "AVlygew1dCVKZoGstyLaRUwCibuzVVQovYIyNcGYkyABvZHVjOiosUBCyjY1hQawc-Rf0-_BmeA_3hwp";
-        const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-        
-        if (!clientSecret) {
-            console.error('PAYPAL_CLIENT_SECRET is missing in environment variables');
-            return res.status(500).json({ error: 'Server configuration error: Missing PayPal Secret.' });
-        }
+        const access_token = await getPayPalAccessToken();
 
-        const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-        const tokenResponse = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${auth}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'grant_type=client_credentials',
-        });
-
-        const tokenData = await tokenResponse.json();
-        const access_token = tokenData.access_token;
-
-        if (!access_token) {
-            console.error('Failed to get PayPal access token:', tokenData);
-            return res.status(500).json({ error: 'Failed to authenticate with PayPal.' });
-        }
-
-        // 2. Capture the Order on the Server
-        const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
+        // 1. Capture the Order
+        const captureResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderID}/capture`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${access_token}`,
@@ -351,28 +401,34 @@ router.post('/paypal/capture-order', async (req, res) => {
         const captureData = await captureResponse.json();
 
         if (captureData.status !== 'COMPLETED') {
-            console.error('PayPal Capture Failed:', captureData);
-            return res.status(400).json({ error: 'Payment not completed.', details: captureData });
+            return res.status(400).json({ 
+                error: 'Payment not completed.', 
+                status: captureData.status,
+                details: captureData 
+            });
         }
         
-        // 3. Update Credits in Database
-        await updateCreditsAfterPayment(userId, plan);
+        // 2. Update Credits in Database
+        await updateCreditsAfterPayment(user.id, plan);
 
-        // Fetch updated credits to return to client
         const { data: updatedProfile } = await client
             .from('profiles')
             .select('credits')
-            .eq('id', userId)
+            .eq('id', user.id)
             .maybeSingle();
 
-        res.json({ 
-            success: true, 
-            newCredits: updatedProfile?.credits || 0
-        });
+        res.json({ success: true, newCredits: updatedProfile?.credits || 0 });
     } catch (error) {
-        console.error('Failed to capture PayPal order:', error);
+        console.error('PayPal Capture Error:', error);
         res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
     }
+});
+
+router.post('/paypal/webhook', async (req, res) => {
+    // Basic webhook handler to acknowledge PayPal events
+    // In production, you should verify the webhook signature
+    console.log('PayPal Webhook Received:', req.body.event_type);
+    res.status(200).send('OK');
 });
 
 router.get('/usage-history', async (req, res) => {

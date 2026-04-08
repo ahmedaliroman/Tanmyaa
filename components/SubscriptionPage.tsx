@@ -109,7 +109,7 @@ const SubscriptionTier: React.FC<{
     showPayPal?: boolean;
     amount?: string;
     onSuccess?: (plan: string, credits: number) => void;
-}> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, amount, onSuccess }) => {
+}> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, onSuccess }) => {
     const { user, session } = useAuth();
     const [isProcessing, setIsProcessing] = useState(false);
     
@@ -127,8 +127,39 @@ const SubscriptionTier: React.FC<{
 
     const buttonClasses = `w-full font-bold py-3 px-4 rounded-xl mt-auto transition-all duration-300 disabled:cursor-not-allowed ${isFeatured ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400'}`;
 
+    const [isApplePayEligible, setIsApplePayEligible] = useState(false);
+    const [isGooglePayEligible, setIsGooglePayEligible] = useState(false);
+
+    useEffect(() => {
+        const checkEligibility = async () => {
+            if (window.paypal) {
+                if (window.paypal.Applepay) {
+                    try {
+                        const eligible = await window.paypal.Applepay().isEligible();
+                        setIsApplePayEligible(eligible);
+                    } catch (e) {
+                        console.error('Apple Pay eligibility check failed:', e);
+                    }
+                }
+                if (window.paypal.Googlepay) {
+                    try {
+                        const eligible = await window.paypal.Googlepay().isEligible();
+                        setIsGooglePayEligible(eligible);
+                    } catch (e) {
+                        console.error('Google Pay eligibility check failed:', e);
+                    }
+                }
+            }
+        };
+        checkEligibility();
+    }, []);
+
     const handleCaptureOrder = async (orderID: string) => {
         if (!user) return;
+        
+        console.log('--- FRONTEND CAPTURE START ---');
+        console.log('OrderID:', orderID);
+        console.log('Plan:', title);
         
         setIsProcessing(true);
         try {
@@ -161,7 +192,9 @@ const SubscriptionTier: React.FC<{
                 }
             } else {
                 const errorData = await response.json();
-                toast.error(`Payment failed: ${errorData.error || 'Unknown error'}`);
+                const detailMsg = errorData.details?.details?.[0]?.description || errorData.error || 'Unknown error';
+                toast.error(`Payment failed: ${detailMsg}`);
+                console.error('Server-side error:', errorData);
             }
         } catch (error) {
             console.error('Capture order error:', error);
@@ -204,44 +237,101 @@ const SubscriptionTier: React.FC<{
                         <div className="flex items-center justify-center gap-4 mb-3 opacity-80">
                             <span className="text-[11px] text-blue-400 uppercase tracking-widest font-black">Pay with Card or PayPal</span>
                         </div>
-                        <PayPalButtons 
-                            style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
-                            createOrder={(data, actions) => {
-                                return actions.order.create({
-                                    intent: 'capture',
-                                    purchase_units: [{
-                                        amount: {
-                                            currency_code: 'EUR',
-                                            value: amount || '0.00'
-                                        },
-                                        description: `${title} Plan Subscription`
-                                    }],
-                                    application_context: {
-                                        shipping_preference: 'NO_SHIPPING',
-                                        user_action: 'PAY_NOW'
+                        <div className="flex flex-col gap-2">
+                            {isApplePayEligible && (
+                                <PayPalButtons 
+                                    fundingSource="applepay"
+                                    style={{ layout: 'vertical', shape: 'pill', height: 45 }}
+                                    createOrder={async () => {
+                                        try {
+                                            const response = await fetch('/api/paypal/create-order', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ plan: title })
+                                            });
+                                            const order = await response.json();
+                                            if (order.id) return order.id;
+                                            throw new Error(order.error || 'Failed to create order');
+                                        } catch (error) {
+                                            console.error('Create Order Error:', error);
+                                            toast.error('Failed to start payment. Please try again.');
+                                            throw error;
+                                        }
+                                    }}
+                                    onApprove={async (data) => {
+                                        if (data.orderID) {
+                                            handleCaptureOrder(data.orderID);
+                                        }
+                                    }}
+                                />
+                            )}
+                            {isGooglePayEligible && (
+                                <PayPalButtons 
+                                    fundingSource="googlepay"
+                                    style={{ layout: 'vertical', shape: 'pill', height: 45 }}
+                                    createOrder={async () => {
+                                        try {
+                                            const response = await fetch('/api/paypal/create-order', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ plan: title })
+                                            });
+                                            const order = await response.json();
+                                            if (order.id) return order.id;
+                                            throw new Error(order.error || 'Failed to create order');
+                                        } catch (error) {
+                                            console.error('Create Order Error:', error);
+                                            toast.error('Failed to start payment. Please try again.');
+                                            throw error;
+                                        }
+                                    }}
+                                    onApprove={async (data) => {
+                                        if (data.orderID) {
+                                            handleCaptureOrder(data.orderID);
+                                        }
+                                    }}
+                                />
+                            )}
+                            <PayPalButtons 
+                                style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
+                                createOrder={async () => {
+                                    try {
+                                        const response = await fetch('/api/paypal/create-order', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ plan: title })
+                                        });
+                                        const order = await response.json();
+                                        if (order.id) return order.id;
+                                        throw new Error(order.error || 'Failed to create order');
+                                    } catch (error) {
+                                        console.error('Create Order Error:', error);
+                                        toast.error('Failed to start payment. Please try again.');
+                                        throw error;
                                     }
-                                });
-                            }}
-                            onApprove={async (data) => {
-                                if (data.orderID) {
-                                    handleCaptureOrder(data.orderID);
-                                }
-                            }}
-                            onError={(err) => {
-                                console.error('--- PAYPAL CHECKOUT ERROR ---');
-                                console.error('Error Object:', err);
-                                console.error('-----------------------------');
-                                
-                                const errorMessage = err?.toString() || '';
-                                if (errorMessage.includes('client-id')) {
-                                    toast.error('Invalid PayPal Client ID. Ensure you are using a Sandbox ID for test cards.');
-                                } else if (errorMessage.includes('funding')) {
-                                    toast.error('This card type is not supported. Try a different generated card.');
-                                } else {
-                                    toast.error('PayPal failed. Check the browser console (F12) for the full error.');
-                                }
-                            }}
-                        />
+                                }}
+                                onApprove={async (data) => {
+                                    if (data.orderID) {
+                                        handleCaptureOrder(data.orderID);
+                                    }
+                                }}
+                                onError={(err) => {
+                                    console.error('--- PAYPAL CHECKOUT ERROR ---');
+                                    console.error('Error Object:', JSON.stringify(err, null, 2));
+                                    console.error('Error String:', err?.toString());
+                                    console.error('-----------------------------');
+                                    
+                                    const errorMessage = err?.toString() || '';
+                                    if (errorMessage.includes('client-id')) {
+                                        toast.error('Invalid PayPal Client ID. Ensure you are using a Sandbox ID for test cards.');
+                                    } else if (errorMessage.includes('funding')) {
+                                        toast.error('This card type is not supported. Try a different generated card.');
+                                    } else {
+                                        toast.error('PayPal failed. Check the browser console (F12) for the full error.');
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                 ) : (
                     <button 
