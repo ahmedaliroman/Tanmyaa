@@ -278,7 +278,8 @@ router.post('/deduct-credits', async (req, res) => {
 // PayPal Configuration
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
-const PAYPAL_API_BASE = process.env.NODE_ENV === 'production' 
+const PAYPAL_MODE = process.env.PAYPAL_MODE || (process.env.NODE_ENV === 'production' ? 'live' : 'sandbox');
+const PAYPAL_API_BASE = PAYPAL_MODE === 'live' 
     ? 'https://api-m.paypal.com' 
     : 'https://api-m.sandbox.paypal.com';
 
@@ -287,6 +288,7 @@ const getPayPalAccessToken = async () => {
         throw new Error('PayPal credentials (PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET) are missing in environment variables.');
     }
 
+    console.log(`Attempting PayPal Auth in ${PAYPAL_MODE} mode...`);
     const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
     const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
         method: 'POST',
@@ -299,7 +301,8 @@ const getPayPalAccessToken = async () => {
 
     const data = await response.json();
     if (!data.access_token) {
-        throw new Error(`Failed to get PayPal access token: ${JSON.stringify(data)}`);
+        console.error(`PayPal Auth Failed (${PAYPAL_MODE} mode):`, data);
+        throw new Error(`PayPal Authentication failed. Ensure your Client ID and Secret match the ${PAYPAL_MODE} environment.`);
     }
     return data.access_token;
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
 import { toast } from 'sonner';
