@@ -322,12 +322,12 @@ const SubscriptionTier: React.FC<{
                                     console.error('-----------------------------');
                                     
                                     const errorMessage = err?.toString() || '';
-                                    if (errorMessage.includes('client-id')) {
-                                        toast.error('Invalid PayPal Client ID. Ensure you are using a Sandbox ID for test cards.');
+                                    if (errorMessage.includes('client-id') || errorMessage.includes('invalid_client')) {
+                                        toast.error('PayPal Authentication Failed. Please check your Client ID and Secret in the app settings.');
                                     } else if (errorMessage.includes('funding')) {
                                         toast.error('This card type is not supported. Try a different generated card.');
                                     } else {
-                                        toast.error('PayPal failed. Check the browser console (F12) for the full error.');
+                                        toast.error('PayPal failed. Check the browser console (F12) for details.');
                                     }
                                 }}
                             />

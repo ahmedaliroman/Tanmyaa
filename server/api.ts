@@ -276,42 +276,106 @@ router.post('/deduct-credits', async (req, res) => {
 });
 
 // PayPal Configuration
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
-const PAYPAL_MODE = process.env.PAYPAL_MODE || (process.env.NODE_ENV === 'production' ? 'live' : 'sandbox');
-const PAYPAL_API_BASE = PAYPAL_MODE === 'live' 
-    ? 'https://api-m.paypal.com' 
-    : 'https://api-m.sandbox.paypal.com';
+const getPayPalConfig = () => {
+    const id = (process.env.PAYPAL_CLIENT_ID || '').trim().replace(/^["']|["']$/g, '');
+    const secret = (process.env.PAYPAL_CLIENT_SECRET || '').trim().replace(/^["']|["']$/g, '');
+    const mode = process.env.PAYPAL_MODE === 'live' ? 'live' : 'sandbox';
+    const base = mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    
+    return { id, secret, mode, base };
+};
+
+// Log configuration on startup (masked)
+const _initialConfig = getPayPalConfig();
+console.log(`[PayPal] System initialized in ${_initialConfig.mode.toUpperCase()} mode.`);
+console.log(`[PayPal] Configured ID Prefix: ${_initialConfig.id.substring(0, 8)}...`);
+console.log(`[PayPal] Configured Secret Prefix: ${_initialConfig.secret.substring(0, 4)}...`);
+
+router.get('/paypal/config', (req, res) => {
+    const { id, mode } = getPayPalConfig();
+    res.json({ 
+        clientId: id, 
+        mode: mode,
+        configured: id.length > 0 
+    });
+});
+
+router.get('/paypal/diag', (req, res) => {
+    const { id, secret, mode, base } = getPayPalConfig();
+    
+    res.json({
+        mode,
+        apiBase: base,
+        clientId: {
+            length: id.length,
+            prefix: id.substring(0, 8),
+            suffix: id.substring(id.length - 8),
+            isSandboxGuess: id.startsWith('A') && id.includes('sb') || id.length > 50,
+            configured: id.length > 0
+        },
+        clientSecret: {
+            length: secret.length,
+            prefix: secret.substring(0, 4),
+            suffix: secret.substring(secret.length - 4),
+            configured: secret.length > 0
+        },
+        identical: id === secret && id.length > 0 ? 'YES (Error: ID and Secret should be different!)' : 'No',
+        swappedGuess: (id.length < 50 && secret.length > 70) ? 'Possible (Secret is usually shorter than ID in Sandbox)' : 'No'
+    });
+});
 
 const getPayPalAccessToken = async () => {
-    if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-        throw new Error('PayPal credentials (PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET) are missing in environment variables.');
+    const { id, secret, mode, base } = getPayPalConfig();
+
+    if (!id || !secret) {
+        throw new Error(`PayPal credentials missing. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in your app secrets.`);
     }
 
-    console.log(`Attempting PayPal Auth in ${PAYPAL_MODE} mode...`);
-    const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
-    const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    const auth = Buffer.from(`${id}:${secret}`).toString('base64');
+    
+    // Use URLSearchParams for robust body encoding
+    const params = new URLSearchParams();
+    params.append('grant_type', 'client_credentials');
+
+    const response = await fetch(`${base}/v1/oauth2/token`, {
         method: 'POST',
         headers: {
             'Authorization': `Basic ${auth}`,
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'grant_type=client_credentials',
+        body: params.toString(),
     });
 
     const data = await response.json();
+    
     if (!data.access_token) {
-        console.error(`PayPal Auth Failed (${PAYPAL_MODE} mode):`, data);
-        throw new Error(`PayPal Authentication failed. Ensure your Client ID and Secret match the ${PAYPAL_MODE} environment.`);
+        console.error(`[PayPal] CRITICAL AUTH FAILURE (${mode} mode):`, JSON.stringify(data, null, 2));
+        
+        let detailedError = `PayPal Auth Failed: ${data.error_description || data.error || 'Invalid Credentials'}. Mode: ${mode}.`;
+        
+        if (data.error === 'invalid_client') {
+            detailedError += `\n\nTROUBLESHOOTING STEPS:
+1. You are in ${mode.toUpperCase()} mode. Ensure your keys are from the ${mode.toUpperCase()} tab in PayPal.
+2. Your Client ID starts with "${id.substring(0, 8)}" and is ${id.length} characters long.
+3. Your Secret starts with "${secret.substring(0, 4)}" and is ${secret.length} characters long.
+4. If the ID starts with "AVlygew1", that is a default ID and might be wrong.
+5. If the Secret starts with "EEvQ", that is also a default/old value.
+6. Check if you accidentally put the same value in both fields.
+7. Ensure you are using a "REST API App" from developer.paypal.com.`;
+        }
+        
+        throw new Error(detailedError);
     }
+    
     return data.access_token;
 };
 
 router.post('/paypal/generate-client-token', async (req, res) => {
     try {
+        const { base } = getPayPalConfig();
         const access_token = await getPayPalAccessToken();
 
-        const response = await fetch(`${PAYPAL_API_BASE}/v1/identity/generate-token`, {
+        const response = await fetch(`${base}/v1/identity/generate-token`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${access_token}`,
@@ -330,6 +394,7 @@ router.post('/paypal/generate-client-token', async (req, res) => {
 router.post('/paypal/create-order', async (req, res) => {
     try {
         const { plan } = req.body;
+        const { base } = getPayPalConfig();
         
         // Define prices on the server to prevent manipulation
         let amount = "0.00";
@@ -340,7 +405,7 @@ router.post('/paypal/create-order', async (req, res) => {
 
         const access_token = await getPayPalAccessToken();
 
-        const response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+        const response = await fetch(`${base}/v2/checkout/orders`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${access_token}`,
@@ -374,6 +439,7 @@ router.post('/paypal/capture-order', async (req, res) => {
     try {
         console.log('--- PAYPAL CAPTURE REQUEST RECEIVED ---');
         const client = getSupabase();
+        const { base } = getPayPalConfig();
         
         // Verify authentication
         const authHeader = req.headers.authorization;
@@ -393,7 +459,7 @@ router.post('/paypal/capture-order', async (req, res) => {
         const access_token = await getPayPalAccessToken();
 
         // 1. Capture the Order
-        const captureResponse = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderID}/capture`, {
+        const captureResponse = await fetch(`${base}/v2/checkout/orders/${orderID}/capture`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${access_token}`,
