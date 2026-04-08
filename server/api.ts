@@ -312,9 +312,50 @@ router.post('/paypal/capture-order', async (req, res) => {
             return res.status(400).json({ error: 'Missing required parameters.' });
         }
 
-        // In a real app, you would verify the order with PayPal here using their SDK or REST API
-        // For this implementation, we assume the client-side capture was successful
+        // 1. Get PayPal Access Token
+        const clientId = process.env.PAYPAL_CLIENT_ID || "AVlygew1dCVKZoGstyLaRUwCibuzVVQovYIyNcGYkyABvZHVjOiosUBCyjY1hQawc-Rf0-_BmeA_3hwp";
+        const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
         
+        if (!clientSecret) {
+            console.error('PAYPAL_CLIENT_SECRET is missing in environment variables');
+            return res.status(500).json({ error: 'Server configuration error: Missing PayPal Secret.' });
+        }
+
+        const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+        const tokenResponse = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'grant_type=client_credentials',
+        });
+
+        const tokenData = await tokenResponse.json();
+        const access_token = tokenData.access_token;
+
+        if (!access_token) {
+            console.error('Failed to get PayPal access token:', tokenData);
+            return res.status(500).json({ error: 'Failed to authenticate with PayPal.' });
+        }
+
+        // 2. Capture the Order on the Server
+        const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const captureData = await captureResponse.json();
+
+        if (captureData.status !== 'COMPLETED') {
+            console.error('PayPal Capture Failed:', captureData);
+            return res.status(400).json({ error: 'Payment not completed.', details: captureData });
+        }
+        
+        // 3. Update Credits in Database
         await updateCreditsAfterPayment(userId, plan);
 
         // Fetch updated credits to return to client
