@@ -1,10 +1,148 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { AlertCircle, CheckCircle2, Info, RefreshCw, Settings } from 'lucide-react';
 import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { PayPalButtons } from "@paypal/react-paypal-js";
+
+interface PayPalDiagnostics {
+    clientIdLength: number;
+    secretLength: number;
+    clientIdStart: string;
+    secretStart: string;
+    areIdentical: boolean;
+    mode: string;
+}
+
+const PayPalTroubleshooter: React.FC = () => {
+    const [diagnostics, setDiagnostics] = useState<PayPalDiagnostics | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
+
+    const fetchDiagnostics = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/paypal/config');
+            const data = await response.json();
+            setDiagnostics(data.diagnostics);
+        } catch (error) {
+            console.error('Failed to fetch diagnostics:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDiagnostics();
+    }, []);
+
+    if (!diagnostics) return null;
+
+    const isSecretIdentical = diagnostics.areIdentical;
+    const isSecretWrongLength = diagnostics.secretLength === 80; // Likely a Client ID
+    const isSecretEmpty = diagnostics.secretLength === 0;
+
+    return (
+        <div className="max-w-4xl mx-auto mt-12 p-6 bg-blue-500/5 border border-blue-500/20 rounded-2xl backdrop-blur-md">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                        <Settings className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-white">PayPal Diagnostic Tool</h3>
+                        <p className="text-sm text-gray-400">Verify your payment credentials</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={fetchDiagnostics}
+                    disabled={isLoading}
+                    className="p-2 hover:bg-white/5 rounded-full transition-colors disabled:opacity-50"
+                >
+                    <RefreshCw className={`w-5 h-5 text-gray-400 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Client ID Status</p>
+                    <div className="flex items-center justify-between">
+                        <span className="text-white font-mono">{diagnostics.clientIdStart}...</span>
+                        {diagnostics.clientIdLength > 0 ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        ) : (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                        )}
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">{diagnostics.clientIdLength} characters</p>
+                </div>
+
+                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Secret Status</p>
+                    <div className="flex items-center justify-between">
+                        <span className="text-white font-mono">{diagnostics.secretStart}...</span>
+                        {!isSecretEmpty && !isSecretWrongLength && !isSecretIdentical ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        ) : (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                        )}
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">{diagnostics.secretLength} characters</p>
+                </div>
+            </div>
+
+            {(isSecretIdentical || isSecretWrongLength || isSecretEmpty) && (
+                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl mb-6">
+                    <div className="flex gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+                        <div className="space-y-2">
+                            <p className="text-sm font-bold text-red-200">Action Required: Invalid Credentials</p>
+                            <ul className="text-xs text-red-300/80 list-disc ml-4 space-y-1">
+                                {isSecretIdentical && (
+                                    <li><strong>Identical Keys:</strong> Your Client ID and Secret are the same. You likely pasted the ID into both fields.</li>
+                                )}
+                                {isSecretWrongLength && (
+                                    <li><strong>Wrong Secret:</strong> Your secret is 80 characters long. Sandbox secrets are usually 40-50 characters. You likely pasted a second Client ID.</li>
+                                )}
+                                {isSecretEmpty && (
+                                    <li><strong>Missing Secret:</strong> The PAYPAL_CLIENT_SECRET is not set.</li>
+                                )}
+                                <li>Go to <strong>Settings &gt; Secrets</strong> and ensure <code>PAYPAL_CLIENT_SECRET</code> is correct.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="flex flex-col gap-4">
+                <button 
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                >
+                    <Info className="w-3 h-3" />
+                    {showDetails ? 'Hide' : 'Show'} detailed troubleshooting guide
+                </button>
+
+                {showDetails && (
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 animate-fade-in">
+                        <h4 className="text-sm font-bold text-white mb-3">How to get correct keys:</h4>
+                        <ol className="text-xs text-gray-400 space-y-2 list-decimal ml-4">
+                            <li>Log in to <a href="https://developer.paypal.com" target="_blank" rel="noreferrer" className="text-blue-400 underline">PayPal Developer</a>.</li>
+                            <li>Go to <strong>Apps &amp; Credentials</strong>.</li>
+                            <li>Ensure you are on the <strong>Sandbox</strong> tab (unless you are ready for Live).</li>
+                            <li>Click on your app (or create a &quot;REST API App&quot;).</li>
+                            <li>Copy the <strong>Client ID</strong> and paste it into <code>PAYPAL_CLIENT_ID</code> in AI Studio Secrets.</li>
+                            <li>Click &quot;Show&quot; under <strong>Secret</strong>. Copy it and paste it into <code>PAYPAL_CLIENT_SECRET</code>.</li>
+                            <li><strong>Crucial:</strong> Ensure <code>PAYPAL_MODE</code> is set to <code>sandbox</code> in your secrets.</li>
+                        </ol>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const CheckIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-blue-400" }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -502,6 +640,8 @@ const SubscriptionPage: React.FC = () => {
             </div>
 
             <PromoCodeSection />
+
+            <PayPalTroubleshooter />
 
             <FeatureComparisonTable />
 

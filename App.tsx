@@ -315,14 +315,10 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="bg-red-500/10 border border-red-500/50 p-6 rounded-xl max-w-md text-center">
           <h2 className="text-xl font-bold text-white mb-2">PayPal Configuration Error</h2>
-          <p className="text-gray-400 mb-4">
+          <p className="text-gray-400">
             The PayPal system is not configured correctly. 
             Please ensure you have set <strong>PAYPAL_CLIENT_ID</strong> and <strong>PAYPAL_CLIENT_SECRET</strong> in your app secrets.
           </p>
-          <div className="bg-black/40 p-3 rounded-lg text-xs text-left font-mono text-gray-500 mb-4 break-all">
-            Check diagnostics at: <br/>
-            <code className="text-blue-400">{window.location.origin}/api/paypal/diag</code>
-          </div>
         </div>
       </div>
     );
