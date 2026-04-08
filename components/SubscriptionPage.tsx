@@ -7,13 +7,13 @@ import { supabase } from '@/lib/supabase';
 import { PayPalButtons } from "@paypal/react-paypal-js";
 
 const CheckIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-blue-400" }) => (
-    <svg className={className} fill="none" viewBox="0 0 24" stroke="currentColor">
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
 );
 
 const MinusIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-gray-500" }) => (
-     <svg className={className} fill="none" viewBox="0 0 24" stroke="currentColor">
+     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
     </svg>
 );
@@ -192,9 +192,12 @@ const SubscriptionTier: React.FC<{
                 }
             } else {
                 const errorData = await response.json();
+                console.error('--- SERVER-SIDE CAPTURE ERROR ---');
+                console.error('Full Error Object:', JSON.stringify(errorData, null, 2));
+                console.error('---------------------------------');
+                
                 const detailMsg = errorData.details?.details?.[0]?.description || errorData.error || 'Unknown error';
                 toast.error(`Payment failed: ${detailMsg}`);
-                console.error('Server-side error:', errorData);
             }
         } catch (error) {
             console.error('Capture order error:', error);

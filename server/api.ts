@@ -454,9 +454,11 @@ router.post('/paypal/capture-order', async (req, res) => {
         const user = authData.user;
 
         const { orderID, plan } = req.body;
+        console.log(`[PayPal] Attempting capture for OrderID: ${orderID}, Plan: ${plan}, User: ${user.id}`);
         if (!orderID || !plan) return res.status(400).json({ error: 'Missing required parameters.' });
 
         const access_token = await getPayPalAccessToken();
+        console.log(`[PayPal] Access Token obtained (length: ${access_token.length})`);
 
         // 1. Capture the Order
         const captureResponse = await fetch(`${base}/v2/checkout/orders/${orderID}/capture`, {
@@ -470,9 +472,10 @@ router.post('/paypal/capture-order', async (req, res) => {
         const captureData = await captureResponse.json();
 
         if (captureData.status !== 'COMPLETED') {
+            console.error('[PayPal] Capture Failed. Full Response:', JSON.stringify(captureData, null, 2));
             return res.status(400).json({ 
                 error: 'Payment not completed.', 
-                status: captureData.status,
+                status: captureData.status || 'ERROR',
                 details: captureData 
             });
         }

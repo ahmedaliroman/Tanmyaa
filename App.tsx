@@ -187,6 +187,7 @@ const App: React.FC = () => {
         const data = await response.json();
         if (data.client_token) {
           setClientToken(data.client_token);
+          console.log('[PayPal] Client Token received (length:', data.client_token.length, ')');
         } else if (data.error) {
           console.error('[PayPal] Client Token Generation Failed:', data.error);
         }
