@@ -161,7 +161,8 @@ const initialOptions = {
   currency: "EUR",
   intent: "capture",
   "data-sdk-integration-source": "react-paypal-js",
-  components: "buttons"
+  components: "buttons",
+  commit: true
 };
 
 const App: React.FC = () => {

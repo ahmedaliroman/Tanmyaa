@@ -215,7 +215,11 @@ const SubscriptionTier: React.FC<{
                                             value: amount || '0.00'
                                         },
                                         description: `${title} Plan Subscription`
-                                    }]
+                                    }],
+                                    application_context: {
+                                        shipping_preference: 'NO_SHIPPING',
+                                        user_action: 'PAY_NOW'
+                                    }
                                 });
                             }}
                             onApprove={async (data, actions) => {
