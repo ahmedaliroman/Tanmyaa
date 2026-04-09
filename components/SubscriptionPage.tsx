@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Info, RefreshCw, Settings } from 'lucide-react';
+import React, { useState } from 'react';
 import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
 import { toast } from 'sonner';
@@ -7,151 +6,14 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { PayPalButtons } from "@paypal/react-paypal-js";
 
-interface PayPalDiagnostics {
-    clientIdLength: number;
-    secretLength: number;
-    clientIdStart: string;
-    secretStart: string;
-    areIdentical: boolean;
-    mode: string;
-}
-
-const PayPalTroubleshooter: React.FC = () => {
-    const [diagnostics, setDiagnostics] = useState<PayPalDiagnostics | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [showDetails, setShowDetails] = useState(false);
-
-    const fetchDiagnostics = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/paypal/config');
-            const data = await response.json();
-            setDiagnostics(data.diagnostics);
-        } catch (error) {
-            console.error('Failed to fetch diagnostics:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchDiagnostics();
-    }, []);
-
-    if (!diagnostics) return null;
-
-    const isSecretIdentical = diagnostics.areIdentical;
-    const isSecretWrongLength = diagnostics.secretLength === 80; // Likely a Client ID
-    const isSecretEmpty = diagnostics.secretLength === 0;
-
-    return (
-        <div className="max-w-4xl mx-auto mt-12 p-6 bg-blue-500/5 border border-blue-500/20 rounded-2xl backdrop-blur-md">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/20 rounded-lg">
-                        <Settings className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-white">PayPal Diagnostic Tool</h3>
-                        <p className="text-sm text-gray-400">Verify your payment credentials</p>
-                    </div>
-                </div>
-                <button 
-                    onClick={fetchDiagnostics}
-                    disabled={isLoading}
-                    className="p-2 hover:bg-white/5 rounded-full transition-colors disabled:opacity-50"
-                >
-                    <RefreshCw className={`w-5 h-5 text-gray-400 ${isLoading ? 'animate-spin' : ''}`} />
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Client ID Status</p>
-                    <div className="flex items-center justify-between">
-                        <span className="text-white font-mono">{diagnostics.clientIdStart}...</span>
-                        {diagnostics.clientIdLength > 0 ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        ) : (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                        )}
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-1">{diagnostics.clientIdLength} characters</p>
-                </div>
-
-                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Secret Status</p>
-                    <div className="flex items-center justify-between">
-                        <span className="text-white font-mono">{diagnostics.secretStart}...</span>
-                        {!isSecretEmpty && !isSecretWrongLength && !isSecretIdentical ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        ) : (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                        )}
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-1">{diagnostics.secretLength} characters</p>
-                </div>
-            </div>
-
-            {(isSecretIdentical || isSecretWrongLength || isSecretEmpty) && (
-                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl mb-6">
-                    <div className="flex gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
-                        <div className="space-y-2">
-                            <p className="text-sm font-bold text-red-200">Action Required: Invalid Credentials</p>
-                            <ul className="text-xs text-red-300/80 list-disc ml-4 space-y-1">
-                                {isSecretIdentical && (
-                                    <li><strong>Identical Keys:</strong> Your Client ID and Secret are the same. You likely pasted the ID into both fields.</li>
-                                )}
-                                {isSecretWrongLength && (
-                                    <li><strong>Wrong Secret:</strong> Your secret is 80 characters long. Sandbox secrets are usually 40-50 characters. You likely pasted a second Client ID.</li>
-                                )}
-                                {isSecretEmpty && (
-                                    <li><strong>Missing Secret:</strong> The PAYPAL_CLIENT_SECRET is not set.</li>
-                                )}
-                                <li>Go to <strong>Settings &gt; Secrets</strong> and ensure <code>PAYPAL_CLIENT_SECRET</code> is correct.</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="flex flex-col gap-4">
-                <button 
-                    onClick={() => setShowDetails(!showDetails)}
-                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-                >
-                    <Info className="w-3 h-3" />
-                    {showDetails ? 'Hide' : 'Show'} detailed troubleshooting guide
-                </button>
-
-                {showDetails && (
-                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 animate-fade-in">
-                        <h4 className="text-sm font-bold text-white mb-3">How to get correct keys:</h4>
-                        <ol className="text-xs text-gray-400 space-y-2 list-decimal ml-4">
-                            <li>Log in to <a href="https://developer.paypal.com" target="_blank" rel="noreferrer" className="text-blue-400 underline">PayPal Developer</a>.</li>
-                            <li>Go to <strong>Apps &amp; Credentials</strong>.</li>
-                            <li>Ensure you are on the <strong>Sandbox</strong> tab (unless you are ready for Live).</li>
-                            <li>Click on your app (or create a &quot;REST API App&quot;).</li>
-                            <li>Copy the <strong>Client ID</strong> and paste it into <code>PAYPAL_CLIENT_ID</code> in AI Studio Secrets.</li>
-                            <li>Click &quot;Show&quot; under <strong>Secret</strong>. Copy it and paste it into <code>PAYPAL_CLIENT_SECRET</code>.</li>
-                            <li><strong>Crucial:</strong> Ensure <code>PAYPAL_MODE</code> is set to <code>sandbox</code> in your secrets.</li>
-                        </ol>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
 const CheckIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-blue-400" }) => (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={className} fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
 );
 
 const MinusIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-gray-500" }) => (
-     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+     <svg className={className} fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
     </svg>
 );
@@ -247,7 +109,7 @@ const SubscriptionTier: React.FC<{
     showPayPal?: boolean;
     amount?: string;
     onSuccess?: (plan: string, credits: number) => void;
-}> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, onSuccess }) => {
+}> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, amount, onSuccess }) => {
     const { user, session } = useAuth();
     const [isProcessing, setIsProcessing] = useState(false);
     
@@ -265,39 +127,8 @@ const SubscriptionTier: React.FC<{
 
     const buttonClasses = `w-full font-bold py-3 px-4 rounded-xl mt-auto transition-all duration-300 disabled:cursor-not-allowed ${isFeatured ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400'}`;
 
-    const [isApplePayEligible, setIsApplePayEligible] = useState(false);
-    const [isGooglePayEligible, setIsGooglePayEligible] = useState(false);
-
-    useEffect(() => {
-        const checkEligibility = async () => {
-            if (window.paypal) {
-                if (window.paypal.Applepay) {
-                    try {
-                        const eligible = await window.paypal.Applepay().isEligible();
-                        setIsApplePayEligible(eligible);
-                    } catch (e) {
-                        console.error('Apple Pay eligibility check failed:', e);
-                    }
-                }
-                if (window.paypal.Googlepay) {
-                    try {
-                        const eligible = await window.paypal.Googlepay().isEligible();
-                        setIsGooglePayEligible(eligible);
-                    } catch (e) {
-                        console.error('Google Pay eligibility check failed:', e);
-                    }
-                }
-            }
-        };
-        checkEligibility();
-    }, []);
-
     const handleCaptureOrder = async (orderID: string) => {
         if (!user) return;
-        
-        console.log('--- FRONTEND CAPTURE START ---');
-        console.log('OrderID:', orderID);
-        console.log('Plan:', title);
         
         setIsProcessing(true);
         try {
@@ -330,12 +161,7 @@ const SubscriptionTier: React.FC<{
                 }
             } else {
                 const errorData = await response.json();
-                console.error('--- SERVER-SIDE CAPTURE ERROR ---');
-                console.error('Full Error Object:', JSON.stringify(errorData, null, 2));
-                console.error('---------------------------------');
-                
-                const detailMsg = errorData.details?.details?.[0]?.description || errorData.error || 'Unknown error';
-                toast.error(`Payment failed: ${detailMsg}`);
+                toast.error(`Payment failed: ${errorData.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Capture order error:', error);
@@ -375,104 +201,31 @@ const SubscriptionTier: React.FC<{
                                 <span className="text-white font-bold animate-pulse">Processing...</span>
                             </div>
                         )}
-                        <div className="flex items-center justify-center gap-4 mb-3 opacity-80">
-                            <span className="text-[11px] text-blue-400 uppercase tracking-widest font-black">Pay with Card or PayPal</span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            {isApplePayEligible && (
-                                <PayPalButtons 
-                                    fundingSource="applepay"
-                                    style={{ layout: 'vertical', shape: 'pill', height: 45 }}
-                                    createOrder={async () => {
-                                        try {
-                                            const response = await fetch('/api/paypal/create-order', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ plan: title })
-                                            });
-                                            const order = await response.json();
-                                            if (order.id) return order.id;
-                                            throw new Error(order.error || 'Failed to create order');
-                                        } catch (error) {
-                                            console.error('Create Order Error:', error);
-                                            toast.error('Failed to start payment. Please try again.');
-                                            throw error;
-                                        }
-                                    }}
-                                    onApprove={async (data) => {
-                                        if (data.orderID) {
-                                            handleCaptureOrder(data.orderID);
-                                        }
-                                    }}
-                                />
-                            )}
-                            {isGooglePayEligible && (
-                                <PayPalButtons 
-                                    fundingSource="googlepay"
-                                    style={{ layout: 'vertical', shape: 'pill', height: 45 }}
-                                    createOrder={async () => {
-                                        try {
-                                            const response = await fetch('/api/paypal/create-order', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ plan: title })
-                                            });
-                                            const order = await response.json();
-                                            if (order.id) return order.id;
-                                            throw new Error(order.error || 'Failed to create order');
-                                        } catch (error) {
-                                            console.error('Create Order Error:', error);
-                                            toast.error('Failed to start payment. Please try again.');
-                                            throw error;
-                                        }
-                                    }}
-                                    onApprove={async (data) => {
-                                        if (data.orderID) {
-                                            handleCaptureOrder(data.orderID);
-                                        }
-                                    }}
-                                />
-                            )}
-                            <PayPalButtons 
-                                style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
-                                createOrder={async () => {
-                                    try {
-                                        const response = await fetch('/api/paypal/create-order', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ plan: title })
-                                        });
-                                        const order = await response.json();
-                                        if (order.id) return order.id;
-                                        throw new Error(order.error || 'Failed to create order');
-                                    } catch (error) {
-                                        console.error('Create Order Error:', error);
-                                        toast.error('Failed to start payment. Please try again.');
-                                        throw error;
-                                    }
-                                }}
-                                onApprove={async (data) => {
-                                    if (data.orderID) {
-                                        handleCaptureOrder(data.orderID);
-                                    }
-                                }}
-                                onError={(err) => {
-                                    console.error('--- PAYPAL CHECKOUT ERROR ---');
-                                    console.error('Error Object:', JSON.stringify(err, null, 2));
-                                    console.error('Error String:', err?.toString());
-                                    console.error('-----------------------------');
-                                    
-                                    const errorMessage = err?.toString() || '';
-                                    if (errorMessage.includes('client-id') || errorMessage.includes('invalid_client')) {
-                                        toast.error('PayPal Authentication Failed. Please check your Client ID and Secret in the app settings.');
-                                    } else if (errorMessage.includes('funding')) {
-                                        toast.error('This card type is not supported. Try a different generated card.');
-                                    } else {
-                                        toast.error('PayPal failed. Check the browser console (F12) for details.');
-                                    }
-                                }}
-                            />
-                        </div>
+                        <PayPalButtons 
+                            style={{ layout: 'horizontal', shape: 'pill', label: 'pay', height: 45 }}
+                            createOrder={(data, actions) => {
+                                return actions.order.create({
+                                    intent: 'CAPTURE',
+                                    purchase_units: [{
+                                        amount: {
+                                            currency_code: 'USD',
+                                            value: amount || '0.00'
+                                        },
+                                        description: `${title} Plan Subscription`
+                                    }]
+                                });
+                            }}
+                            onApprove={async (data, actions) => {
+                                if (actions.order) {
+                                    const order = await actions.order.capture();
+                                    handleCaptureOrder(order.id);
+                                }
+                            }}
+                            onError={(err) => {
+                                console.error('PayPal Error:', err);
+                                toast.error('PayPal checkout failed. Please try again.');
+                            }}
+                        />
                     </div>
                 ) : (
                     <button 
@@ -640,8 +393,6 @@ const SubscriptionPage: React.FC = () => {
             </div>
 
             <PromoCodeSection />
-
-            <PayPalTroubleshooter />
 
             <FeatureComparisonTable />
 

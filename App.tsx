@@ -160,43 +160,15 @@ const App: React.FC = () => {
   const [view, setView] = useState<{ page: 'home' | 'service' | 'subscription' | 'knowledge-base', serviceId: string | null }>({ page: 'home', serviceId: null });
   const [isPageExiting, setIsPageExiting] = useState(false);
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
-  const [clientToken, setClientToken] = useState<string | null>(null);
-  const [paypalConfig, setPaypalConfig] = useState<{ clientId: string, mode: string, configured: boolean } | null>(null);
+
+  const initialOptions = {
+    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
+    currency: "USD",
+    intent: "capture",
+    "disable-funding": "credit,card,paylater",
+  };
 
   useEffect(() => {
-    // Fetch PayPal Config from backend (Single Source of Truth)
-    const fetchPaypalConfig = async () => {
-      try {
-        const response = await fetch('/api/paypal/config');
-        const data = await response.json();
-        setPaypalConfig(data);
-        
-        if (data.clientId) {
-          console.log(`[PayPal] Configured in ${data.mode} mode.`);
-        }
-      } catch (error) {
-        console.error('Failed to fetch PayPal config:', error);
-      }
-    };
-    fetchPaypalConfig();
-
-    // Fetch PayPal Client Token for v6 features
-    const fetchClientToken = async () => {
-      try {
-        const response = await fetch('/api/paypal/generate-client-token', { method: 'POST' });
-        const data = await response.json();
-        if (data.client_token) {
-          setClientToken(data.client_token);
-          console.log('[PayPal] Client Token received (length:', data.client_token.length, ')');
-        } else if (data.error) {
-          console.error('[PayPal] Client Token Generation Failed:', data.error);
-        }
-      } catch (error) {
-        console.error('Failed to fetch PayPal client token:', error);
-      }
-    };
-    fetchClientToken();
-
     // Check for API key status if window.aistudio is available (typical for custom domain embeds)
     const checkApiKey = async () => {
         if (window.aistudio) {
@@ -302,37 +274,8 @@ const App: React.FC = () => {
     }
   };
 
-  if (!paypalConfig) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (!paypalConfig.configured) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="bg-red-500/10 border border-red-500/50 p-6 rounded-xl max-w-md text-center">
-          <h2 className="text-xl font-bold text-white mb-2">PayPal Configuration Error</h2>
-          <p className="text-gray-400">
-            The PayPal system is not configured correctly. 
-            Please ensure you have set <strong>PAYPAL_CLIENT_ID</strong> and <strong>PAYPAL_CLIENT_SECRET</strong> in your app secrets.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <PayPalScriptProvider options={{
-      "client-id": paypalConfig.clientId,
-      currency: "EUR",
-      intent: "capture",
-      components: "buttons,applepay,googlepay",
-      "data-sdk-integration-source": "react-paypal-js",
-      "data-client-token": clientToken || undefined
-    }}>
+    <PayPalScriptProvider options={initialOptions}>
       <AuthProvider>
         <Toaster position="top-center" richColors />
         {window.location.pathname.startsWith('/auth/callback') ? (
