@@ -16,7 +16,20 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       build: {
-        chunkSizeWarningLimit: 2000,
+        chunkSizeWarningLimit: 3000,
+        rollupOptions: {
+          output: {
+            manualChunks(id) {
+              if (id.includes('node_modules')) {
+                if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
+                if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('docx') || id.includes('pptxgenjs')) return 'vendor-utils';
+                if (id.includes('leaflet')) return 'vendor-maps';
+                if (id.includes('@google/genai')) return 'vendor-ai';
+                return 'vendor';
+              }
+            }
+          }
+        }
       },
       envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
       define: {
