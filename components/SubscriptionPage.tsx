@@ -202,7 +202,7 @@ const SubscriptionTier: React.FC<{
                             </div>
                         )}
                         <PayPalButtons 
-                            style={{ layout: 'horizontal', shape: 'pill', label: 'pay', height: 45 }}
+                            style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
                             createOrder={(data, actions) => {
                                 return actions.order.create({
                                     intent: 'CAPTURE',
@@ -212,8 +212,13 @@ const SubscriptionTier: React.FC<{
                                             value: amount || '0.00'
                                         },
                                         description: `${title} Plan Subscription`
-                                    }]
-                                });
+                                    }],
+                                    application_context: {
+                                        shipping_preference: 'NO_SHIPPING',
+                                        user_action: 'PAY_NOW'
+                                    }
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                } as any);
                             }}
                             onApprove={async (data, actions) => {
                                 if (actions.order) {
