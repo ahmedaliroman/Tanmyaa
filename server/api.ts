@@ -313,20 +313,17 @@ router.post('/paypal/capture-order', async (req, res) => {
         }
 
         // 1. Get PayPal Access Token
-        const clientId = process.env.PAYPAL_CLIENT_ID || process.env.VITE_PAYPAL_CLIENT_ID;
+        const clientId = process.env.PAYPAL_CLIENT_ID;
         const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
         
         if (!clientId || !clientSecret) {
-            console.error('PayPal credentials missing. PAYPAL_CLIENT_ID:', !!clientId, 'PAYPAL_CLIENT_SECRET:', !!clientSecret);
+            console.error('PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET is not set');
             return res.status(500).json({ error: 'PayPal configuration missing on server' });
         }
 
-        const mode = process.env.PAYPAL_MODE || (clientId.startsWith('A') ? 'live' : 'sandbox');
-        const paypalApi = mode === 'live' 
+        const paypalApi = process.env.PAYPAL_MODE === 'live' 
             ? 'https://api-m.paypal.com' 
             : 'https://api-m.sandbox.paypal.com';
-
-        console.log(`PayPal Capture: Order ${orderID}, Mode: ${mode}, API: ${paypalApi}`);
 
         const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
         const tokenResponse = await fetch(`${paypalApi}/v1/oauth2/token`, {
@@ -358,11 +355,10 @@ router.post('/paypal/capture-order', async (req, res) => {
         const captureData = await captureResponse.json();
 
         if (!captureResponse.ok || captureData.status !== 'COMPLETED') {
-            console.error('PayPal Capture Error:', JSON.stringify(captureData, null, 2));
+            console.error('PayPal Capture Error:', captureData);
             return res.status(400).json({ 
                 error: 'Payment capture failed', 
-                message: captureData.message || (captureData.details && captureData.details[0]?.description) || 'Payment not completed',
-                details: captureData
+                message: captureData.message || 'Payment not completed'
             });
         }
         

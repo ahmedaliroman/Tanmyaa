@@ -162,9 +162,7 @@ const SubscriptionTier: React.FC<{
                 }
             } else {
                 const errorData = await response.json();
-                const detailedError = errorData.message || errorData.error || 'Unknown error';
-                toast.error(`Payment failed: ${detailedError}`);
-                console.error('Detailed Payment Error:', errorData);
+                toast.error(`Payment failed: ${errorData.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Capture order error:', error);
@@ -224,10 +222,7 @@ const SubscriptionTier: React.FC<{
                                 } as any);
                             }}
                             onApprove={async (data) => {
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                const orderID = data.orderID || (data as any).orderId;
-                                console.log('PayPal Approved. Order ID:', orderID);
-                                handleCaptureOrder(orderID);
+                                handleCaptureOrder(data.orderID);
                             }}
                             onError={(err) => {
                                 console.error('PayPal Error:', err);
