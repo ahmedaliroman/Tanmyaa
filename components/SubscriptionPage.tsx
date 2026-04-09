@@ -149,7 +149,8 @@ const SubscriptionTier: React.FC<{
                 },
                 body: JSON.stringify({ 
                     orderID,
-                    plan: title
+                    plan: title,
+                    userId: user.id
                 }),
             });
 
@@ -220,11 +221,8 @@ const SubscriptionTier: React.FC<{
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 } as any);
                             }}
-                            onApprove={async (data, actions) => {
-                                if (actions.order) {
-                                    const order = await actions.order.capture();
-                                    handleCaptureOrder(order.id);
-                                }
+                            onApprove={async (data) => {
+                                handleCaptureOrder(data.orderID);
                             }}
                             onError={(err) => {
                                 console.error('PayPal Error:', err);

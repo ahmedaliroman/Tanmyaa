@@ -1,29 +1,74 @@
 import { Router } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
 
 const router = Router();
 
-// Lazy initialize Supabase client
-let supabase: SupabaseClient | null = null;
-
-const getSupabase = () => {
-    if (!supabase) {
-        const url = process.env.SUPABASE_URL;
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        
-        if (!url || !key) {
-            console.error('CRITICAL: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment.');
-            throw new Error('Server configuration error: Missing database credentials.');
+// Lazy initialize Resend client
+let resend: Resend | null = null;
+const getResend = () => {
+    if (!resend) {
+        const key = process.env.RESEND_API_KEY;
+        if (!key) {
+            console.warn('RESEND_API_KEY is missing. Emails will not be sent.');
+            return null;
         }
-        
-        try {
-            supabase = createClient(url, key);
-        } catch (e) {
-            console.error('Failed to initialize Supabase client:', e);
-            throw new Error('Database connection error.');
-        }
+        resend = new Resend(key);
     }
-    return supabase;
+    return resend;
+};
+
+const sendConfirmationEmail = async (email: string, plan: string, credits: number, endDate: string) => {
+    const client = getResend();
+    if (!client) return;
+
+    try {
+        const formattedDate = new Date(endDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        await client.emails.send({
+            from: 'Tanmyaa <billing@tanmyaa.com>',
+            to: email,
+            subject: `Subscription Confirmed: ${plan} Plan`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 8px;">
+                    <h1 style="color: #2563eb; margin-bottom: 24px;">Subscription Confirmed!</h1>
+                    <p style="font-size: 16px; color: #475569; line-height: 1.5;">
+                        Thank you for subscribing to the <strong>${plan}</strong> plan on Tanmyaa. Your account has been successfully upgraded.
+                    </p>
+                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 24px 0;">
+                        <h2 style="font-size: 18px; color: #1e293b; margin-top: 0;">Subscription Details</h2>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #64748b;">Plan</td>
+                                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${plan}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #64748b;">Credits Added</td>
+                                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #10b981;">+${credits}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #64748b;">Next Billing Date</td>
+                                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${formattedDate}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <p style="font-size: 14px; color: #94a3b8; margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                        If you have any questions, please reply to this email or contact our support team at support@tanmyaa.com.
+                    </p>
+                    <p style="font-size: 12px; color: #cbd5e1; text-align: center; margin-top: 24px;">
+                        &copy; ${new Date().getFullYear()} Tanmyaa. All rights reserved.
+                    </p>
+                </div>
+            `
+        });
+        console.log(`Confirmation email sent to ${email}`);
+    } catch (error) {
+        console.error('Failed to send confirmation email:', error);
+    }
 };
 
 const updateCreditsAfterPayment = async (userId: string, plan: string) => {
@@ -66,6 +111,35 @@ const updateCreditsAfterPayment = async (userId: string, plan: string) => {
         console.error('Failed to update credits after payment:', updateError);
         return;
     }
+
+    // Send confirmation email
+    const { data: userData } = await client.auth.admin.getUserById(userId);
+    if (userData?.user?.email) {
+        sendConfirmationEmail(userData.user.email, plan, creditsToAdd, endDate.toISOString());
+    }
+};
+
+// Lazy initialize Supabase client
+let supabase: SupabaseClient | null = null;
+
+const getSupabase = () => {
+    if (!supabase) {
+        const url = process.env.SUPABASE_URL;
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        
+        if (!url || !key) {
+            console.error('CRITICAL: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment.');
+            throw new Error('Server configuration error: Missing database credentials.');
+        }
+        
+        try {
+            supabase = createClient(url, key);
+        } catch (e) {
+            console.error('Failed to initialize Supabase client:', e);
+            throw new Error('Database connection error.');
+        }
+    }
+    return supabase;
 };
 
 router.get('/health', (req, res) => {
@@ -201,237 +275,76 @@ router.post('/deduct-credits', async (req, res) => {
     }
 });
 
-// PayPal Configuration - Simplified and Robust
-const getPayPalConfig = () => {
-    // Priority: Environment Variables (Secrets)
-    // Aggressive cleaning of keys (remove quotes, spaces, and non-printable chars)
-    const cleanKey = (key: string | undefined) => {
-        if (!key) return '';
-        return key.trim()
-            .replace(/^["']|["']$/g, '') // Remove wrapping quotes
-            .replace(/[^\x20-\x7E]/g, '') // Remove all non-printable ASCII characters
-            .replace(/\s/g, ''); // Remove all spaces
-    };
-
-    console.log(`[PayPal] Raw Env Check: ID_SET=${!!process.env.PAYPAL_CLIENT_ID}, SECRET_SET=${!!process.env.PAYPAL_CLIENT_SECRET}`);
-
-    const id = cleanKey(process.env.PAYPAL_CLIENT_ID);
-    const secret = cleanKey(process.env.PAYPAL_CLIENT_SECRET);
-    const mode = process.env.PAYPAL_MODE === 'live' ? 'live' : 'sandbox';
-    const base = mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
-    
-    // Validation logic
-    const isIdValid = id.length > 0;
-    const isSecretValid = secret.length > 0;
-    
-    // Detection for common mistakes
-    const isSecretLikelyClientId = secret.length >= 70 && (secret.startsWith('A') || secret.startsWith('E'));
-    const areKeysSwapped = id.length < 60 && secret.length > 70;
-    const areKeysIdentical = id === secret && id.length > 0;
-    
-    return { 
-        id, 
-        secret, 
-        mode, 
-        base, 
-        isValid: isIdValid && isSecretValid,
-        suspicious: isSecretLikelyClientId || areKeysSwapped || areKeysIdentical,
-        errorReason: !isIdValid ? 'MISSING_ID' : 
-                     !isSecretValid ? 'MISSING_SECRET' : 
-                     areKeysIdentical ? 'KEYS_IDENTICAL' :
-                     isSecretLikelyClientId ? 'SECRET_IS_CLIENT_ID' : 
-                     areKeysSwapped ? 'KEYS_SWAPPED' : null
-    };
-};
-
-// Masked config for logging
-console.log(`[PayPal] Integration Ready.`);
-
-router.get('/paypal/config', (req, res) => {
-    const { id, mode, secret, isValid, errorReason, suspicious } = getPayPalConfig();
-    
-    // Diagnostic info (safe to expose)
-    const diagnostics = {
-        clientIdLength: id.length,
-        secretLength: secret.length,
-        clientIdStart: id.substring(0, 8),
-        clientIdEnd: id.substring(Math.max(0, id.length - 4)),
-        secretStart: secret.substring(0, 4),
-        secretEnd: secret.substring(Math.max(0, secret.length - 4)),
-        areIdentical: id === secret && id.length > 0,
-        mode: mode,
-        isValid,
-        errorReason,
-        suspicious
-    };
-
-    res.json({ 
-        clientId: id, 
-        mode: mode,
-        configured: isValid,
-        diagnostics
-    });
-});
-
-const getPayPalAccessToken = async () => {
-    const { id, secret, mode, base } = getPayPalConfig();
-
-    if (!id || !secret) {
-        throw new Error(`PayPal credentials missing. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in your app secrets.`);
-    }
-
-    if (id === secret && id.length > 0) {
-        throw new Error("CRITICAL: Your PayPal Client ID and Secret are IDENTICAL. You likely pasted the Client ID into both fields in the Secrets menu. Please go to Settings > Secrets and update PAYPAL_CLIENT_SECRET with the correct (shorter) value.");
-    }
-
-    const auth = Buffer.from(`${id}:${secret}`).toString('base64');
-    
-    const mask = (s: string) => s.length > 8 ? s.substring(0, 4) + '...' + s.substring(s.length - 4) : '****';
-    console.log(`[PayPal] Auth Request: ID=${mask(id)}, Secret=${mask(secret)}, Mode=${mode}`);
-
-    if (id.length > 70 && secret.length > 70 && id.startsWith('A') && secret.startsWith('E')) {
-        console.warn("[PayPal] SUSPICIOUS CONFIG: Both ID and Secret are long strings starting with A/E. You likely pasted two different Client IDs instead of one Client ID and one Secret.");
-    }
-
-    // Use URLSearchParams for robust body encoding
-    const params = new URLSearchParams();
-    params.append('grant_type', 'client_credentials');
-
-    const response = await fetch(`${base}/v1/oauth2/token`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Basic ${auth}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-            'Accept-Language': 'en_US',
-        },
-        body: params.toString(),
-    });
-
-    const data = await response.json();
-    
-    if (!data.access_token) {
-        console.error(`[PayPal] AUTH FAILURE (${mode} mode):`, JSON.stringify(data, null, 2));
-        
-        let troubleshooting = "";
-        if (data.error === 'invalid_client') {
-            troubleshooting = `\n\nTROUBLESHOOTING STEPS:\n1. You are in ${mode.toUpperCase()} mode. Ensure your keys are from the ${mode.toUpperCase()} tab in PayPal.\n2. Your Client ID starts with "${id.substring(0, 8)}" and is ${id.length} characters long.\n3. Your Secret starts with "${secret.substring(0, 4)}" and is ${secret.length} characters long.`;
-            
-            if (secret.length >= 70) {
-                troubleshooting += `\n4. ⚠️ WARNING: Your Secret is ${secret.length} characters long. Sandbox Secrets are usually 40-50 chars. You likely pasted a Client ID by mistake!`;
-            } else if (secret.length === 0) {
-                troubleshooting += `\n4. ⚠️ WARNING: Your Secret is EMPTY. Please set PAYPAL_CLIENT_SECRET in Settings > Secrets.`;
-            }
-            
-            if (id === secret && id.length > 0) {
-                troubleshooting += `\n5. ⚠️ WARNING: Your Client ID and Secret are IDENTICAL. This is always wrong.`;
-            }
-            
-            if (mode === 'sandbox' && id.startsWith('A') && secret.length > 70) {
-                troubleshooting += `\n6. If these are LIVE keys, you MUST set PAYPAL_MODE=live in your secrets.`;
-            }
-            
-            troubleshooting += `\n7. Ensure you are using a "REST API App" from developer.paypal.com.`;
-        }
-
-        throw new Error(`PayPal Auth Failed: ${data.error_description || data.error || 'Invalid Credentials'}. Mode: ${mode}.${troubleshooting}`);
-    }
-    
-    return data.access_token;
-};
-
-router.post('/paypal/generate-client-token', async (req, res) => {
-    try {
-        const { base } = getPayPalConfig();
-        const access_token = await getPayPalAccessToken();
-
-        const response = await fetch(`${base}/v1/identity/generate-token`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${access_token}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        const data = await response.json();
-        res.json({ client_token: data.client_token });
-    } catch (error) {
-        console.error('PayPal Client Token Error:', error);
-        res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
-    }
-});
-
-router.post('/paypal/create-order', async (req, res) => {
-    try {
-        const { plan } = req.body;
-        const { base } = getPayPalConfig();
-        
-        // Define prices on the server to prevent manipulation
-        let amount = "0.00";
-        if (plan === 'Pro') amount = "19.00";
-        else if (plan === 'Business') amount = "49.00";
-        else if (plan === 'Trial') amount = "1.00";
-        else return res.status(400).json({ error: 'Invalid plan selected.' });
-
-        const access_token = await getPayPalAccessToken();
-
-        const response = await fetch(`${base}/v2/checkout/orders`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${access_token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                intent: 'CAPTURE',
-                purchase_units: [{
-                    amount: {
-                        currency_code: 'EUR',
-                        value: amount
-                    },
-                    description: `${plan} Plan Subscription`
-                }],
-                application_context: {
-                    shipping_preference: 'NO_SHIPPING',
-                    user_action: 'PAY_NOW'
-                }
-            })
-        });
-
-        const order = await response.json();
-        res.json(order);
-    } catch (error) {
-        console.error('PayPal Create Order Error:', error);
-        res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
-    }
-});
-
 router.post('/paypal/capture-order', async (req, res) => {
     try {
-        console.log('--- PAYPAL CAPTURE REQUEST RECEIVED ---');
         const client = getSupabase();
-        const { base } = getPayPalConfig();
         
         // Verify authentication
         const authHeader = req.headers.authorization;
-        if (!authHeader) return res.status(401).json({ error: 'Authorization header is required.' });
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Authorization header is required.' });
+        }
 
         const token = authHeader.split(' ')[1];
+        if (!token || token === 'undefined' || token === 'null') {
+            return res.status(401).json({ error: 'Invalid or missing authentication token.' });
+        }
+        
         const { data: authData, error: authError } = await client.auth.getUser(token);
         
         if (authError || !authData?.user) {
-            return res.status(401).json({ error: 'Invalid JWT' });
+            console.error('Supabase Auth Error details:', {
+                message: authError?.message,
+                status: authError?.status,
+                code: authError?.code
+            });
+            return res.status(401).json({ 
+                error: 'Invalid JWT', 
+                message: authError?.message || 'Token verification failed' 
+            });
         }
         const user = authData.user;
 
-        const { orderID, plan } = req.body;
-        console.log(`[PayPal] Attempting capture for OrderID: ${orderID}, Plan: ${plan}, User: ${user.id}`);
-        if (!orderID || !plan) return res.status(400).json({ error: 'Missing required parameters.' });
+        const { orderID, plan, userId: bodyUserId } = req.body;
+        const userId = bodyUserId || user.id;
+        
+        if (!orderID || !plan || !userId) {
+            return res.status(400).json({ error: 'Missing required parameters.' });
+        }
 
-        const access_token = await getPayPalAccessToken();
-        console.log(`[PayPal] Access Token obtained (length: ${access_token.length})`);
+        // 1. Get PayPal Access Token
+        const clientId = process.env.PAYPAL_CLIENT_ID;
+        const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+        
+        if (!clientId || !clientSecret) {
+            console.error('PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET is not set');
+            return res.status(500).json({ error: 'PayPal configuration missing on server' });
+        }
 
-        // 1. Capture the Order
-        const captureResponse = await fetch(`${base}/v2/checkout/orders/${orderID}/capture`, {
+        const paypalApi = process.env.PAYPAL_MODE === 'live' 
+            ? 'https://api-m.paypal.com' 
+            : 'https://api-m.sandbox.paypal.com';
+
+        const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+        const tokenResponse = await fetch(`${paypalApi}/v1/oauth2/token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'grant_type=client_credentials',
+        });
+
+        if (!tokenResponse.ok) {
+            const tokenError = await tokenResponse.text();
+            console.error('PayPal Token Error:', tokenError);
+            return res.status(500).json({ error: 'Failed to authenticate with PayPal' });
+        }
+
+        const { access_token } = await tokenResponse.json();
+
+        // 2. Capture the Order
+        const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${orderID}/capture`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${access_token}`,
@@ -441,32 +354,29 @@ router.post('/paypal/capture-order', async (req, res) => {
 
         const captureData = await captureResponse.json();
 
-        if (captureData.status !== 'COMPLETED') {
-            console.error('[PayPal] Capture Failed. Full Response:', JSON.stringify(captureData, null, 2));
-            
-            const isComplianceViolation = captureData.details?.some((d: { issue?: string }) => d.issue === 'COMPLIANCE_VIOLATION');
-            
+        if (!captureResponse.ok || captureData.status !== 'COMPLETED') {
+            console.error('PayPal Capture Error:', captureData);
             return res.status(400).json({ 
-                error: isComplianceViolation 
-                    ? 'Compliance Violation: This transaction was flagged by PayPal. This often happens in Sandbox if your buyer account is from a restricted region or if the "generated card" is flagged. Please try creating a new Sandbox Personal account (Buyer) in the US region.' 
-                    : 'Payment not completed.', 
-                status: captureData.status || 'ERROR',
-                details: captureData 
+                error: 'Payment capture failed', 
+                message: captureData.message || 'Payment not completed'
             });
         }
         
-        // 2. Update Credits in Database
-        await updateCreditsAfterPayment(user.id, plan);
+        await updateCreditsAfterPayment(userId, plan);
 
+        // Fetch updated credits to return to client
         const { data: updatedProfile } = await client
             .from('profiles')
             .select('credits')
-            .eq('id', user.id)
+            .eq('id', userId)
             .maybeSingle();
 
-        res.json({ success: true, newCredits: updatedProfile?.credits || 0 });
+        res.json({ 
+            success: true, 
+            newCredits: updatedProfile?.credits || 0
+        });
     } catch (error) {
-        console.error('PayPal Capture Error:', error);
+        console.error('Failed to capture PayPal order:', error);
         res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error.' });
     }
 });
