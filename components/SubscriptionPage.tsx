@@ -135,14 +135,17 @@ const SubscriptionTier: React.FC<{
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             const token = currentSession?.access_token || session?.access_token;
 
-            // Use the specific Supabase Edge Function URL provided by the user
-            const EDGE_FUNCTION_URL = "https://dwuxqhdczbrlxhqxipgm.supabase.co/functions/v1/paypal-capture";
+            if (!token) {
+                toast.error('Your session has expired. Please sign in again.');
+                setIsProcessing(false);
+                return;
+            }
 
-            const response = await fetch(EDGE_FUNCTION_URL, {
+            const response = await fetch(`/api/paypal/capture-order`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
                     orderID,
@@ -151,20 +154,19 @@ const SubscriptionTier: React.FC<{
                 }),
             });
 
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                toast.success(`Success! Your balance has been updated to ${result.newCredits} credits.`);
+            if (response.ok) {
+                const data = await response.json();
+                toast.success(`Payment successful! ${data.newCredits} total credits available.`);
                 if (onSuccess) {
                     onSuccess(title, title === 'Business' ? 3000 : 600);
                 }
             } else {
-                console.error("Capture Error Details:", result);
-                toast.error(`Payment failed: ${result.message || result.error || "Please contact support."}`);
+                const errorData = await response.json();
+                toast.error(`Payment failed: ${errorData.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Capture order error:', error);
-            toast.error('A connection error occurred. Please try again.');
+            toast.error('An unexpected error occurred.');
         } finally {
             setIsProcessing(false);
         }
@@ -201,7 +203,7 @@ const SubscriptionTier: React.FC<{
                             </div>
                         )}
                         <PayPalButtons 
-                            style={{ layout: 'vertical', color: 'blue', shape: 'rect' }}
+                            style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
                             createOrder={(data, actions) => {
                                 return actions.order.create({
                                     intent: 'CAPTURE',
@@ -210,7 +212,7 @@ const SubscriptionTier: React.FC<{
                                             currency_code: 'USD',
                                             value: amount || '0.00'
                                         },
-                                        description: `${title} Plan Subscription - Tanmya`
+                                        description: `${title} Plan Subscription`
                                     }],
                                     application_context: {
                                         shipping_preference: 'NO_SHIPPING',
@@ -223,8 +225,8 @@ const SubscriptionTier: React.FC<{
                                 handleCaptureOrder(data.orderID);
                             }}
                             onError={(err) => {
-                                console.error('PayPal Script Error:', err);
-                                toast.error('The PayPal portal could not be loaded. Please check your connection.');
+                                console.error('PayPal Error:', err);
+                                toast.error('PayPal checkout failed. Please try again.');
                             }}
                         />
                     </div>
