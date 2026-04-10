@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import crypto from 'crypto';
 
 const router = Router();
 
@@ -308,12 +307,11 @@ router.post('/paypal/capture-order', async (req, res) => {
         }
         const user = authData.user;
 
-        const { orderID, orderId, plan, userId: bodyUserId } = req.body;
-        const finalOrderID = orderID || orderId;
+        const { orderID, plan, userId: bodyUserId } = req.body;
         const userId = bodyUserId || user.id;
         
-        if (!finalOrderID || !plan || !userId) {
-            return res.status(400).json({ error: 'Missing required parameters (orderID, plan, or userId).' });
+        if (!orderID || !plan || !userId) {
+            return res.status(400).json({ error: 'Missing required parameters.' });
         }
 
         // 1. Get PayPal Access Token
@@ -355,7 +353,7 @@ router.post('/paypal/capture-order', async (req, res) => {
         }
 
         // 2. Capture the Order
-        const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${finalOrderID}/capture`, {
+        const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${orderID}/capture`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${access_token}`,
@@ -375,7 +373,7 @@ router.post('/paypal/capture-order', async (req, res) => {
             });
         }
         
-        await updateCreditsAfterPayment(userId, plan, finalOrderID);
+        await updateCreditsAfterPayment(userId, plan, orderID);
 
         // Fetch updated credits to return to client
         const { data: updatedProfile } = await client

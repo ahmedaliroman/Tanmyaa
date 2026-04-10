@@ -220,14 +220,7 @@ const SubscriptionTier: React.FC<{
                                 } as any);
                             }}
                             onApprove={async (data) => {
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                const orderId = data.orderID || (data as any).orderId;
-                                if (orderId) {
-                                    handleCaptureOrder(orderId);
-                                } else {
-                                    console.error('No order ID found in PayPal data:', data);
-                                    toast.error('Could not retrieve order ID from PayPal.');
-                                }
+                                handleCaptureOrder(data.orderID);
                             }}
                             onError={(err) => {
                                 console.error('PayPal Script Error:', err);
