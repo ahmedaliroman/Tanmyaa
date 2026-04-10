@@ -12,9 +12,39 @@ serve(async (req) => {
   }
 
   try {
-    const { orderID, plan, userId } = await req.json()
+    // 0. Get User from Auth Header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'No authorization header' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      })
+    }
 
-    if (!orderID || !plan || !userId) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    
+    // Create client with user's token to verify identity
+    const token = authHeader.replace('Bearer ', '')
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    })
+    
+    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    
+    if (authError || !user) {
+      console.error('Auth Error:', authError)
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      })
+    }
+
+    const userId = user.id
+    const { orderID, plan } = await req.json()
+
+    if (!orderID || !plan) {
       return new Response(JSON.stringify({ error: 'Missing required parameters' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,

@@ -141,7 +141,7 @@ const SubscriptionTier: React.FC<{
                 return;
             }
 
-            const response = await fetch(`/api/paypal/capture-order`, {
+            const response = await fetch(`https://dwuxqhdczbrlxhqxipgm.supabase.co/functions/v1/paypal-capture`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
