@@ -110,7 +110,7 @@ const SubscriptionTier: React.FC<{
     amount?: string;
     onSuccess?: (plan: string, credits: number) => void;
 }> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, amount, onSuccess }) => {
-    const { user, session } = useAuth();
+    const { user } = useAuth();
     const [isProcessing, setIsProcessing] = useState(false);
     
     const baseClasses = `relative bg-black/30 backdrop-blur-lg border rounded-2xl p-8 flex flex-col text-center transition-all duration-300`;
@@ -132,36 +132,22 @@ const SubscriptionTier: React.FC<{
         
         setIsProcessing(true);
         try {
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-            const token = currentSession?.access_token || session?.access_token;
-
-            if (!token) {
-                toast.error('Your session has expired. Please sign in again.');
-                setIsProcessing(false);
-                return;
-            }
-
-            const response = await fetch(`https://dwuxqhdczbrlxhqxipgm.supabase.co/functions/v1/paypal-capture`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
+            const { data, error } = await supabase.functions.invoke('paypal-capture', {
+                body: { 
                     orderID,
                     plan: title
-                }),
+                },
             });
 
-            if (response.ok) {
-                const data = await response.json();
+            if (!error && data?.success) {
                 toast.success(`Payment successful! ${data.newCredits} total credits available.`);
                 if (onSuccess) {
                     onSuccess(title, title === 'Business' ? 3000 : 600);
                 }
             } else {
-                const errorData = await response.json();
-                toast.error(`Payment failed: ${errorData.error || 'Unknown error'}`);
+                const errorMessage = error?.message || data?.error || 'Unknown error';
+                toast.error(`Payment failed: ${errorMessage}`);
+                console.error('Capture error details:', error || data);
             }
         } catch (error) {
             console.error('Capture order error:', error);
