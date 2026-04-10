@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import crypto from 'crypto';
 
 const router = Router();
 
@@ -71,7 +72,7 @@ const sendConfirmationEmail = async (email: string, plan: string, credits: numbe
     }
 };
 
-const updateCreditsAfterPayment = async (userId: string, plan: string) => {
+const updateCreditsAfterPayment = async (userId: string, plan: string, orderID?: string) => {
     const client = getSupabase();
     
     let creditsToAdd = 0;
@@ -98,14 +99,16 @@ const updateCreditsAfterPayment = async (userId: string, plan: string) => {
 
     const { error: updateError } = await client
         .from('profiles')
-        .update({ 
+        .upsert({ 
+            id: userId,
             credits: currentCredits + creditsToAdd,
-            plan: plan,
+            plan: plan.trim(),
             subscription_status: 'active',
             subscription_start_date: startDate.toISOString(),
-            subscription_end_date: endDate.toISOString()
-        })
-        .eq('id', userId);
+            subscription_end_date: endDate.toISOString(),
+            paypal_subscription_id: orderID,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
 
     if (updateError) {
         console.error('Failed to update credits after payment:', updateError);
@@ -305,11 +308,12 @@ router.post('/paypal/capture-order', async (req, res) => {
         }
         const user = authData.user;
 
-        const { orderID, plan, userId: bodyUserId } = req.body;
+        const { orderID, orderId, plan, userId: bodyUserId } = req.body;
+        const finalOrderID = orderID || orderId;
         const userId = bodyUserId || user.id;
         
-        if (!orderID || !plan || !userId) {
-            return res.status(400).json({ error: 'Missing required parameters.' });
+        if (!finalOrderID || !plan || !userId) {
+            return res.status(400).json({ error: 'Missing required parameters (orderID, plan, or userId).' });
         }
 
         // 1. Get PayPal Access Token
@@ -332,7 +336,9 @@ router.post('/paypal/capture-order', async (req, res) => {
                 'Authorization': `Basic ${auth}`,
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: 'grant_type=client_credentials',
+            body: new URLSearchParams({
+                'grant_type': 'client_credentials',
+            }).toString(),
         });
 
         if (!tokenResponse.ok) {
@@ -341,28 +347,35 @@ router.post('/paypal/capture-order', async (req, res) => {
             return res.status(500).json({ error: 'Failed to authenticate with PayPal' });
         }
 
-        const { access_token } = await tokenResponse.json();
+        const tokenData = await tokenResponse.json();
+        const access_token = tokenData.access_token;
+
+        if (!access_token) {
+            throw new Error('Could not generate PayPal Access Token');
+        }
 
         // 2. Capture the Order
-        const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${orderID}/capture`, {
+        const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${finalOrderID}/capture`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${access_token}`,
                 'Content-Type': 'application/json',
+                'PayPal-Request-Id': crypto.randomUUID(), // لمنع التكرار
             },
         });
 
         const captureData = await captureResponse.json();
 
-        if (!captureResponse.ok || captureData.status !== 'COMPLETED') {
+        if (!captureResponse.ok || (captureData.status !== 'COMPLETED' && captureData.status !== 'APPROVED')) {
             console.error('PayPal Capture Error:', captureData);
             return res.status(400).json({ 
                 error: 'Payment capture failed', 
-                message: captureData.message || 'Payment not completed'
+                message: captureData.message || 'Check PayPal logs',
+                details: captureData
             });
         }
         
-        await updateCreditsAfterPayment(userId, plan);
+        await updateCreditsAfterPayment(userId, plan, finalOrderID);
 
         // Fetch updated credits to return to client
         const { data: updatedProfile } = await client

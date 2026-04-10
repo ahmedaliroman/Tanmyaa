@@ -135,17 +135,14 @@ const SubscriptionTier: React.FC<{
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             const token = currentSession?.access_token || session?.access_token;
 
-            if (!token) {
-                toast.error('Your session has expired. Please sign in again.');
-                setIsProcessing(false);
-                return;
-            }
+            // Use the specific Supabase Edge Function URL provided by the user
+            const EDGE_FUNCTION_URL = "https://dwuxqhdczbrlxhqxipgm.supabase.co/functions/v1/paypal-capture";
 
-            const response = await fetch(`/api/paypal/capture-order`, {
+            const response = await fetch(EDGE_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({ 
                     orderID,
@@ -154,19 +151,20 @@ const SubscriptionTier: React.FC<{
                 }),
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                toast.success(`Payment successful! ${data.newCredits} total credits available.`);
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                toast.success(`Success! Your balance has been updated to ${result.newCredits} credits.`);
                 if (onSuccess) {
                     onSuccess(title, title === 'Business' ? 3000 : 600);
                 }
             } else {
-                const errorData = await response.json();
-                toast.error(`Payment failed: ${errorData.error || 'Unknown error'}`);
+                console.error("Capture Error Details:", result);
+                toast.error(`Payment failed: ${result.message || result.error || "Please contact support."}`);
             }
         } catch (error) {
             console.error('Capture order error:', error);
-            toast.error('An unexpected error occurred.');
+            toast.error('A connection error occurred. Please try again.');
         } finally {
             setIsProcessing(false);
         }
@@ -203,7 +201,7 @@ const SubscriptionTier: React.FC<{
                             </div>
                         )}
                         <PayPalButtons 
-                            style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
+                            style={{ layout: 'vertical', color: 'blue', shape: 'rect' }}
                             createOrder={(data, actions) => {
                                 return actions.order.create({
                                     intent: 'CAPTURE',
@@ -212,7 +210,7 @@ const SubscriptionTier: React.FC<{
                                             currency_code: 'USD',
                                             value: amount || '0.00'
                                         },
-                                        description: `${title} Plan Subscription`
+                                        description: `${title} Plan Subscription - Tanmya`
                                     }],
                                     application_context: {
                                         shipping_preference: 'NO_SHIPPING',
@@ -222,11 +220,18 @@ const SubscriptionTier: React.FC<{
                                 } as any);
                             }}
                             onApprove={async (data) => {
-                                handleCaptureOrder(data.orderID);
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                const orderId = data.orderID || (data as any).orderId;
+                                if (orderId) {
+                                    handleCaptureOrder(orderId);
+                                } else {
+                                    console.error('No order ID found in PayPal data:', data);
+                                    toast.error('Could not retrieve order ID from PayPal.');
+                                }
                             }}
                             onError={(err) => {
-                                console.error('PayPal Error:', err);
-                                toast.error('PayPal checkout failed. Please try again.');
+                                console.error('PayPal Script Error:', err);
+                                toast.error('The PayPal portal could not be loaded. Please check your connection.');
                             }}
                         />
                     </div>
