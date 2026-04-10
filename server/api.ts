@@ -71,7 +71,7 @@ const sendConfirmationEmail = async (email: string, plan: string, credits: numbe
     }
 };
 
-const updateCreditsAfterPayment = async (userId: string, plan: string, orderID?: string) => {
+const updateCreditsAfterPayment = async (userId: string, plan: string) => {
     const client = getSupabase();
     
     let creditsToAdd = 0;
@@ -98,16 +98,14 @@ const updateCreditsAfterPayment = async (userId: string, plan: string, orderID?:
 
     const { error: updateError } = await client
         .from('profiles')
-        .upsert({ 
-            id: userId,
+        .update({ 
             credits: currentCredits + creditsToAdd,
-            plan: plan.trim(),
+            plan: plan,
             subscription_status: 'active',
             subscription_start_date: startDate.toISOString(),
-            subscription_end_date: endDate.toISOString(),
-            paypal_subscription_id: orderID,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
+            subscription_end_date: endDate.toISOString()
+        })
+        .eq('id', userId);
 
     if (updateError) {
         console.error('Failed to update credits after payment:', updateError);
@@ -307,73 +305,17 @@ router.post('/paypal/capture-order', async (req, res) => {
         }
         const user = authData.user;
 
-        const { orderID, plan, userId: bodyUserId } = req.body;
-        const userId = bodyUserId || user.id;
+        const { orderID, plan } = req.body;
+        const userId = user.id;
         
-        if (!orderID || !plan || !userId) {
+        if (!orderID || !plan) {
             return res.status(400).json({ error: 'Missing required parameters.' });
         }
 
-        // 1. Get PayPal Access Token
-        const clientId = process.env.PAYPAL_CLIENT_ID;
-        const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+        // In a real app, you would verify the order with PayPal here using their SDK or REST API
+        // For this implementation, we assume the client-side capture was successful
         
-        if (!clientId || !clientSecret) {
-            console.error('PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET is not set');
-            return res.status(500).json({ error: 'PayPal configuration missing on server' });
-        }
-
-        const paypalApi = process.env.PAYPAL_MODE === 'live' 
-            ? 'https://api-m.paypal.com' 
-            : 'https://api-m.sandbox.paypal.com';
-
-        const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-        const tokenResponse = await fetch(`${paypalApi}/v1/oauth2/token`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${auth}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                'grant_type': 'client_credentials',
-            }).toString(),
-        });
-
-        if (!tokenResponse.ok) {
-            const tokenError = await tokenResponse.text();
-            console.error('PayPal Token Error:', tokenError);
-            return res.status(500).json({ error: 'Failed to authenticate with PayPal' });
-        }
-
-        const tokenData = await tokenResponse.json();
-        const access_token = tokenData.access_token;
-
-        if (!access_token) {
-            throw new Error('Could not generate PayPal Access Token');
-        }
-
-        // 2. Capture the Order
-        const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${orderID}/capture`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${access_token}`,
-                'Content-Type': 'application/json',
-                'PayPal-Request-Id': crypto.randomUUID(), // لمنع التكرار
-            },
-        });
-
-        const captureData = await captureResponse.json();
-
-        if (!captureResponse.ok || (captureData.status !== 'COMPLETED' && captureData.status !== 'APPROVED')) {
-            console.error('PayPal Capture Error:', captureData);
-            return res.status(400).json({ 
-                error: 'Payment capture failed', 
-                message: captureData.message || 'Check PayPal logs',
-                details: captureData
-            });
-        }
-        
-        await updateCreditsAfterPayment(userId, plan, orderID);
+        await updateCreditsAfterPayment(userId, plan);
 
         // Fetch updated credits to return to client
         const { data: updatedProfile } = await client

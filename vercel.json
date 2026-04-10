@@ -1,4 +1,7 @@
 {
+  "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -9,8 +12,28 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/((?!api/|health|assets/|favicon.ico).*)",
+      "source": "/((?!api/|health|assets/|favicon.svg|favicon.ico|logo.png).*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     }
   ]
 }
