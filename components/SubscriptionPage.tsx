@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
+import { PayPalButtons } from "@paypal/react-paypal-js";
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { PayPalButtons } from "@paypal/react-paypal-js";
 
 const CheckIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-blue-400" }) => (
     <svg className={className} fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -111,7 +111,6 @@ const SubscriptionTier: React.FC<{
     onSuccess?: (plan: string, credits: number) => void;
 }> = ({ title, price, description, features, ctaText, isFeatured, priceSubtext, disabled, onMouseEnter, isDimmed, showPayPal, amount, onSuccess }) => {
     const { user } = useAuth();
-    const [isProcessing, setIsProcessing] = useState(false);
     
     const baseClasses = `relative bg-black/30 backdrop-blur-lg border rounded-2xl p-8 flex flex-col text-center transition-all duration-300`;
     
@@ -125,35 +124,43 @@ const SubscriptionTier: React.FC<{
         
     const cardClasses = `${baseClasses} ${featuredClasses} ${interactionClasses}`;
 
-    const buttonClasses = `w-full font-bold py-3 px-4 rounded-xl mt-auto transition-all duration-300 disabled:cursor-not-allowed ${isFeatured ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400'}`;
+    const buttonClasses = `w-full font-bold py-3 px-4 rounded-xl mt-auto transition-all duration-300 disabled:cursor-not-allowed ${isFeatured ? 'bg-blue-500/20 backdrop-blur-md border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 disabled:bg-blue-500/10 disabled:text-blue-500/50' : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400'}`;
 
     const handleCaptureOrder = async (orderID: string) => {
-        if (!user) return;
-        
-        setIsProcessing(true);
+        if (!user) {
+            toast.error('Please sign in to complete the purchase.');
+            return;
+        }
         try {
-            const { data, error } = await supabase.functions.invoke('paypal-capture', {
-                body: { 
-                    orderID,
-                    plan: title
+            // Call Supabase Edge Function instead of Express server
+            const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-capture`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
                 },
+                body: JSON.stringify({ 
+                    orderID,
+                    plan: title,
+                    userId: user.id,
+                    email: user.email
+                }),
             });
-
-            if (!error && data?.success) {
-                toast.success(`Payment successful! ${data.newCredits} total credits available.`);
+            if (response.ok) {
+                const data = await response.json();
                 if (onSuccess) {
-                    onSuccess(title, title === 'Business' ? 3000 : 600);
+                    onSuccess(title, data.newCredits);
+                } else {
+                    toast.success(`Payment successful! Your credits have been updated for the ${title} plan.`);
+                    window.location.reload();
                 }
             } else {
-                const errorMessage = error?.message || data?.error || 'Unknown error';
-                toast.error(`Payment failed: ${errorMessage}`);
-                console.error('Capture error details:', error || data);
+                const error = await response.json();
+                toast.error(`Payment failed: ${error.error || 'Unknown error'}`);
             }
         } catch (error) {
-            console.error('Capture order error:', error);
-            toast.error('An unexpected error occurred.');
-        } finally {
-            setIsProcessing(false);
+            console.error('Failed to capture order:', error);
+            toast.error('An unexpected error occurred during payment capture.');
         }
     };
 
@@ -180,43 +187,28 @@ const SubscriptionTier: React.FC<{
             </ul>
             
             <div className="mt-auto">
-                {showPayPal && user ? (
-                    <div className="relative z-10">
-                        {isProcessing && (
-                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-20 flex items-center justify-center rounded-xl">
-                                <span className="text-white font-bold animate-pulse">Processing...</span>
-                            </div>
-                        )}
-                        <div className="flex items-center justify-center gap-4 mb-3 opacity-60">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Secure via PayPal, Apple Pay & Google Pay</span>
-                        </div>
+                {showPayPal ? (
+                    <div className="mt-4">
                         <PayPalButtons 
-                            style={{ layout: 'vertical', shape: 'pill', label: 'pay', height: 45 }}
+                            style={{ layout: "vertical", color: "blue", shape: "rect", label: "pay" }}
                             createOrder={(data, actions) => {
                                 return actions.order.create({
-                                    intent: 'CAPTURE',
+                                    intent: "CAPTURE",
                                     purchase_units: [{
+                                        description: `${title} Plan Subscription`,
+                                        custom_id: JSON.stringify({ userId: user?.id, plan: title }),
                                         amount: {
-                                            currency_code: 'USD',
-                                            value: amount || '0.00'
-                                        },
-                                        description: `${title} Plan Subscription`
-                                    }],
-                                    application_context: {
-                                        shipping_preference: 'NO_SHIPPING',
-                                        user_action: 'PAY_NOW'
-                                    }
+                                            currency_code: "USD",
+                                            value: amount || "0.00"
+                                        }
+                                    }]
                                 });
                             }}
                             onApprove={async (data, actions) => {
                                 if (actions.order) {
                                     const order = await actions.order.capture();
-                                    handleCaptureOrder(order.id);
+                                    await handleCaptureOrder(order.id);
                                 }
-                            }}
-                            onError={(err) => {
-                                console.error('PayPal Error:', err);
-                                toast.error('PayPal checkout failed. Please try again.');
                             }}
                         />
                     </div>
@@ -338,6 +330,7 @@ const SubscriptionPage: React.FC = () => {
                     disabled
                     onMouseEnter={() => setHoveredTier('Trial')}
                     isDimmed={hoveredTier !== null && hoveredTier !== 'Trial'}
+                    onSuccess={(plan, credits) => setPaymentSuccess({ plan, credits })}
                 />
                 <SubscriptionTier
                     title="Pro"
@@ -350,7 +343,7 @@ const SubscriptionPage: React.FC = () => {
                         'PDF Export',
                         'Priority Support',
                     ]}
-                    ctaText="Subscribe Now"
+                    ctaText="Subscribe with PayPal"
                     isFeatured
                     onMouseEnter={() => setHoveredTier('Pro')}
                     isDimmed={hoveredTier !== null && hoveredTier !== 'Pro'}
@@ -372,7 +365,7 @@ const SubscriptionPage: React.FC = () => {
                         'Team Collaboration Tools',
                         'Dedicated Support & Onboarding'
                     ]}
-                    ctaText="Subscribe Now"
+                    ctaText="Subscribe with PayPal"
                     onMouseEnter={() => setHoveredTier('Business')}
                     isDimmed={hoveredTier !== null && hoveredTier !== 'Business'}
                     showPayPal

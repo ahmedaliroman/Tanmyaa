@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '@/services/geminiService';
-import { supabase } from '@/lib/supabase';
 import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo } from '@/types';
 import UrbanStudyInputForm from './UrbanStudyInputForm';
 import UrbanStudySlide from './UrbanStudySlide';
@@ -30,7 +29,6 @@ interface PresentationGeneratorProps {
 const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade }) => {
   const [projectInfo, setProjectInfo] = useState<UrbanPlanningProjectInfo | null>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const [selectedKBFileIds, setSelectedKBFileIds] = useState<string[]>([]);
   const [slides, setSlides] = useState<SlideType[] | null>(null);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [isGeneratingImages, setIsGeneratingImages] = useState<boolean>(false);
@@ -177,41 +175,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
             report_template_url: profile.branding_report_template_url || ''
         } : undefined;
 
-        // Fetch Knowledge Base files
-        let kbFiles: { name: string; content: string }[] = [];
-        if (selectedKBFileIds.length > 0) {
-            const { data, error: kbError } = await supabase
-                .from('knowledge_base')
-                .select('name, url')
-                .in('id', selectedKBFileIds);
-            
-            if (kbError) throw kbError;
-
-            if (data) {
-                const fetchPromises = data.map(async (file) => {
-                    try {
-                        const response = await fetch(file.url);
-                        const text = await response.text();
-                        return { name: file.name, content: text };
-                    } catch (e) {
-                        console.error(`Failed to fetch KB file: ${file.name}`, e);
-                        return null;
-                    }
-                });
-                const fetched = await Promise.all(fetchPromises);
-                kbFiles = fetched.filter((f): f is { name: string; content: string } => f !== null);
-            }
-        }
-
-        // Convert uploaded files to base64 or text
-        const uploadedFilesData = await Promise.all(files.map(async (file) => {
-            const text = await file.text();
-            return { name: file.name, content: text };
-        }));
-
-        const allFilesData = [...uploadedFilesData, ...kbFiles];
-
-        const generatedSlides = await generatePresentation(finalProjectInfo, allFilesData, companyProfile, profile?.plan, branding);
+        const generatedSlides = await generatePresentation(finalProjectInfo, files, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (generatedSlides && generatedSlides.length > 0) {
             setSlides(generatedSlides);
@@ -225,7 +189,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
     } finally {
         setIsLoading(false);
     }
-  }, [files, companyProfile, profile, onUpgrade, refreshProfile, selectedKBFileIds]);
+  }, [files, companyProfile, profile, onUpgrade, refreshProfile]);
   
   const handleChatSend = useCallback(async (message?: string) => {
     const messageToSend = message || chatInput;
@@ -1041,8 +1005,6 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
           isLoading={isLoading}
           files={files}
           setFiles={setFiles}
-          selectedKBFileIds={selectedKBFileIds}
-          setSelectedKBFileIds={setSelectedKBFileIds}
           credits={profile?.credits || 0}
           userEmail={user?.email || null}
           onLogin={signInWithGoogle}

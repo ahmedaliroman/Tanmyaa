@@ -10,8 +10,6 @@ import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useAuth } from '@/context/AuthContext';
 import FileUpload from './FileUpload';
 import AISuggestionButton from './AISuggestionButton';
-import KnowledgeBaseSelector from './KnowledgeBaseSelector';
-import { supabase } from '@/lib/supabase';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -158,7 +156,6 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpg
   }, [projectBrief]);
 
   const [files, setFiles] = useState<File[]>([]);
-  const [selectedKBFileIds, setSelectedKBFileIds] = useState<string[]>([]);
   const [policyBrief, setPolicyBrief] = useState<PolicyBriefType | null>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -208,29 +205,7 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpg
             report_template_url: profile.branding_report_template_url || ''
         } : undefined;
 
-        // Process files
-        const processedFiles: { name: string; content: string }[] = [];
-        
-        // Add uploaded files
-        for (const file of files) {
-            const content = await file.text();
-            processedFiles.push({ name: file.name, content });
-        }
-
-        // Add KB files
-        if (selectedKBFileIds.length > 0) {
-            const { data: kbFilesData, error: kbFilesError } = await supabase
-                .from('knowledge_base')
-                .select('name, content')
-                .in('id', selectedKBFileIds);
-            
-            if (kbFilesError) throw kbFilesError;
-            if (kbFilesData) {
-                processedFiles.push(...kbFilesData);
-            }
-        }
-
-        const generatedBrief = await generatePolicyReport(projectBrief, processedFiles, companyProfile, profile?.plan, branding);
+        const generatedBrief = await generatePolicyReport(projectBrief, files, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (generatedBrief) {
           setPolicyBrief(generatedBrief);
@@ -241,7 +216,7 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpg
     } finally {
         setIsLoading(false);
     }
-  }, [projectBrief, files, companyProfile, profile, refreshProfile, onUpgrade, selectedKBFileIds]);
+  }, [projectBrief, files, companyProfile, profile, refreshProfile, onUpgrade]);
 
   const handleExportPdf = async () => {
     const element = reportRef.current;
@@ -300,86 +275,69 @@ const PolicyStrategyGenerator: React.FC<PolicyStrategyGeneratorProps> = ({ onUpg
     }
   };
 
-  const renderInputForm = () => {
-    const toggleKBFile = (id: string) => {
-      setSelectedKBFileIds(prev => 
-        prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
-      );
-    };
-
-    return (
-      <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
-        <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
-          <div className="border-b border-gray-800 p-4">
-            <div className="flex items-center justify-between mb-1">
-              <label htmlFor="project-brief" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Project Brief
-              </label>
-              <AISuggestionButton 
-                onClick={handleGetSuggestions} 
-                isLoading={isSuggestionsLoading} 
-              />
+  const renderInputForm = () => (
+    <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
+      <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
+        <div className="border-b border-gray-800 p-4">
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="project-brief" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Project Brief
+            </label>
+            <AISuggestionButton 
+              onClick={handleGetSuggestions} 
+              isLoading={isSuggestionsLoading} 
+            />
+          </div>
+          <p className="text-gray-400 text-sm mb-3">
+              Describe the policy issue or project requiring analysis. Example: &quot;Analyze policy options for increasing affordable housing supply in the North District.&quot;
+          </p>
+          <textarea
+            id="project-brief"
+            value={projectBrief}
+            onChange={(e) => setProjectBrief(e.target.value)}
+            placeholder="Enter your project brief here..."
+            rows={5}
+            className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
+            disabled={isLoading}
+          />
+          {suggestions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => setProjectBrief(s)}
+                  className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                >
+                  {s}
+                </button>
+              ))}
             </div>
-            <p className="text-gray-400 text-sm mb-3">
-                Describe the policy issue or project requiring analysis. Example: &quot;Analyze policy options for increasing affordable housing supply in the North District.&quot;
-            </p>
-            <textarea
-              id="project-brief"
-              value={projectBrief}
-              onChange={(e) => setProjectBrief(e.target.value)}
-              placeholder="Enter your project brief here..."
-              rows={5}
-              className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
-              disabled={isLoading}
-            />
-            {suggestions.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {suggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setProjectBrief(s)}
-                    className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="p-4 border-b border-gray-800">
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Add References (Optional)
-            </label>
-             <p className="text-gray-400 text-sm mb-4">
-                Upload scholarly articles, research papers, or official reports to inform the generation.
-              </p>
-            <FileUpload files={files} setFiles={setFiles} disabled={isLoading} />
-          </div>
-          <div className="p-4">
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Knowledge Base Sources
-            </label>
-            <KnowledgeBaseSelector 
-              selectedFileIds={selectedKBFileIds}
-              onToggleFile={toggleKBFile}
-            />
-          </div>
+          )}
         </div>
-        <div className="mt-6 flex justify-between items-center">
-          <div className="text-sm text-gray-400">
-            {profile?.credits || 0} credits remaining.
-          </div>
-          <button
-            onClick={handleGenerate}
-            disabled={isLoading || !projectBrief.trim()}
-            className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
-          >
-            {isLoading ? 'Generating...' : 'Generate Policy Brief'}
-          </button>
+        <div className="p-4">
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+            Add References (Optional)
+          </label>
+           <p className="text-gray-400 text-sm mb-4">
+              Upload scholarly articles, research papers, or official reports to inform the generation.
+            </p>
+          <FileUpload files={files} setFiles={setFiles} disabled={isLoading} />
         </div>
       </div>
-    );
-  };
+      <div className="mt-6 flex justify-between items-center">
+        <div className="text-sm text-gray-400">
+          {profile?.credits || 0} credits remaining.
+        </div>
+        <button
+          onClick={handleGenerate}
+          disabled={isLoading || !projectBrief.trim()}
+          className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
+        >
+          {isLoading ? 'Generating...' : 'Generate Policy Brief'}
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <GeneratorShell

@@ -1,12 +1,5 @@
 {
-  "version": 2,
-  "cleanUrls": true,
-  "trailingSlash": false,
   "rewrites": [
-    {
-      "source": "/api/deduct-credits",
-      "destination": "/api/index.ts"
-    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
@@ -16,34 +9,8 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/((?!api/|health|assets/|favicon.svg|favicon.ico|logo.png).*)",
+      "source": "/((?!api/|health|assets/|favicon.ico).*)",
       "destination": "/index.html"
-    }
-  ],
-  "functions": {
-    "api/index.ts": {
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
     }
   ]
 }

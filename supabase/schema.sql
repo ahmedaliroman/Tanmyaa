@@ -144,30 +144,7 @@ create policy "Users can update own branding files"
   on storage.objects for update
   using ( bucket_id = 'branding' and auth.uid() = owner );
 
--- 11. Create the knowledge_base table
-create table if not exists public.knowledge_base (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users on delete cascade not null,
-  name text not null,
-  content text not null,
-  created_at timestamp with time zone default timezone('utc'::text, now())
-);
-
--- 12. Enable RLS for knowledge_base
-alter table public.knowledge_base enable row level security;
-
--- 13. Create policies for knowledge_base
--- Allow users to view their own knowledge base files
-create policy "Users can view own knowledge base" 
-  on public.knowledge_base for select 
-  using (auth.uid() = user_id);
-
--- Allow users to insert their own knowledge base files
-create policy "Users can insert own knowledge base" 
-  on public.knowledge_base for insert 
-  with check (auth.uid() = user_id);
-
--- Allow users to delete their own knowledge base files
-create policy "Users can delete own knowledge base" 
-  on public.knowledge_base for delete 
-  using (auth.uid() = user_id);
+-- Allow users to delete their own branding files
+create policy "Users can delete own branding files"
+  on storage.objects for delete
+  using ( bucket_id = 'branding' and auth.uid() = owner );

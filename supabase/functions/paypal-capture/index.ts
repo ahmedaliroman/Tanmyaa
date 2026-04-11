@@ -12,38 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    // 0. Get User from Auth Header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'No authorization header' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      })
-    }
+    const { orderID, plan, userId } = await req.json()
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    
-    // Create client with user's token to verify identity
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-    
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
-    
-    if (authError || !user) {
-      console.error('Auth Error:', authError)
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      })
-    }
-
-    const userId = user.id
-    const { orderID, plan } = await req.json()
-
-    if (!orderID || !plan) {
+    if (!orderID || !plan || !userId) {
       return new Response(JSON.stringify({ error: 'Missing required parameters' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
@@ -53,20 +24,9 @@ serve(async (req) => {
     // 1. Get PayPal Access Token
     const clientId = Deno.env.get('PAYPAL_CLIENT_ID')
     const clientSecret = Deno.env.get('PAYPAL_CLIENT_SECRET')
-    
-    if (!clientId || !clientSecret) {
-      console.error('PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET is not set in Supabase secrets')
-      return new Response(JSON.stringify({ error: 'PayPal configuration missing on server' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      })
-    }
-
     const paypalApi = Deno.env.get('PAYPAL_MODE') === 'live' 
       ? 'https://api-m.paypal.com' 
       : 'https://api-m.sandbox.paypal.com'
-
-    console.log(`Using PayPal API: ${paypalApi}`)
 
     const auth = btoa(`${clientId}:${clientSecret}`)
     const tokenResponse = await fetch(`${paypalApi}/v1/oauth2/token`, {
@@ -78,19 +38,9 @@ serve(async (req) => {
       body: 'grant_type=client_credentials',
     })
 
-    if (!tokenResponse.ok) {
-      const tokenError = await tokenResponse.text()
-      console.error('PayPal Token Error:', tokenError)
-      return new Response(JSON.stringify({ error: 'Failed to authenticate with PayPal', details: tokenError }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      })
-    }
-
     const { access_token } = await tokenResponse.json()
 
     // 2. Capture the Order
-    console.log(`Capturing order: ${orderID}`)
     const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${orderID}/capture`, {
       method: 'POST',
       headers: {
@@ -101,13 +51,8 @@ serve(async (req) => {
 
     const captureData = await captureResponse.json()
 
-    if (!captureResponse.ok || captureData.status !== 'COMPLETED') {
-      console.error('PayPal Capture Error:', captureData)
-      return new Response(JSON.stringify({ 
-        error: 'Payment capture failed', 
-        message: captureData.message || 'Payment not completed',
-        details: captureData 
-      }), {
+    if (captureData.status !== 'COMPLETED') {
+      return new Response(JSON.stringify({ error: 'Payment not completed', details: captureData }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
@@ -120,47 +65,38 @@ serve(async (req) => {
 
     // Calculate credits and dates
     let creditsToAdd = 0
-    const normalizedPlan = plan.trim()
-    if (normalizedPlan === 'Pro') creditsToAdd = 600
-    else if (normalizedPlan === 'Business') creditsToAdd = 3000
+    if (plan === 'Pro') creditsToAdd = 600
+    else if (plan === 'Business') creditsToAdd = 3000
 
     const startDate = new Date()
     const endDate = new Date()
     endDate.setMonth(endDate.getMonth() + 1)
 
-    // Get current credits (using maybeSingle to handle missing profiles)
+    // Get current credits
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
       .select('credits')
       .eq('id', userId)
-      .maybeSingle()
+      .single()
 
-    if (fetchError) {
-      console.error('Error fetching profile:', fetchError)
-      throw new Error(`Database fetch error: ${fetchError.message}`)
-    }
+    if (fetchError) throw fetchError
 
-    const currentCredits = profile?.credits || 0
-    const newCredits = currentCredits + creditsToAdd
+    const newCredits = (profile?.credits || 0) + creditsToAdd
 
-    // Upsert profile to handle cases where it might not exist yet
     const { error: updateError } = await supabase
       .from('profiles')
-      .upsert({
-        id: userId,
-        plan: normalizedPlan,
+      .update({
+        plan: plan,
         credits: newCredits,
         subscription_status: 'active',
         subscription_start_date: startDate.toISOString(),
         subscription_end_date: endDate.toISOString(),
         paypal_subscription_id: orderID,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'id' })
+      })
+      .eq('id', userId)
 
-    if (updateError) {
-      console.error('Error updating profile:', updateError)
-      throw new Error(`Database update error: ${updateError.message}`)
-    }
+    if (updateError) throw updateError
 
     // 4. Log usage history
     await supabase.from('usage_history').insert({

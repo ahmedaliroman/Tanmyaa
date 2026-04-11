@@ -9,8 +9,6 @@ import { TanmyaaLogoPPTX } from './TanmyaaLogo';
 import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useAuth } from '@/context/AuthContext';
 import AISuggestionButton from './AISuggestionButton';
-import KnowledgeBaseSelector from './KnowledgeBaseSelector';
-import { supabase } from '@/lib/supabase';
 
 const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ number, title, icon, children }) => (
   <section className="mb-10">
@@ -125,7 +123,6 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
   }, [inputs]);
 
   const [program, setProgram] = useState<CapacityBuildingProgram | null>(null);
-  const [selectedKBFileIds, setSelectedKBFileIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const { companyProfile } = useCompanyProfile();
@@ -179,21 +176,7 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
             report_template_url: profile.branding_report_template_url || ''
         } : undefined;
 
-        // Process KB files
-        const processedFiles: { name: string; content: string }[] = [];
-        if (selectedKBFileIds.length > 0) {
-            const { data: kbFilesData, error: kbFilesError } = await supabase
-                .from('knowledge_base')
-                .select('name, content')
-                .in('id', selectedKBFileIds);
-            
-            if (kbFilesError) throw kbFilesError;
-            if (kbFilesData) {
-                processedFiles.push(...kbFilesData);
-            }
-        }
-
-        const generatedProgram = await generateCapacityBuildingProgram(inputs.audience, inputs.skillLevel, inputs.challenges, processedFiles, companyProfile, profile?.plan, branding);
+        const generatedProgram = await generateCapacityBuildingProgram(inputs.audience, inputs.skillLevel, inputs.challenges, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (generatedProgram) {
             setProgram(generatedProgram);
@@ -204,7 +187,7 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
     } finally {
         setIsLoading(false);
     }
-  }, [inputs, companyProfile, profile, onUpgrade, refreshProfile, selectedKBFileIds]);
+  }, [inputs, companyProfile, profile, onUpgrade, refreshProfile]);
   
   const handleExportPdf = async () => {
     const element = reportRef.current;
@@ -240,94 +223,79 @@ const CapacityBuildingGenerator: React.FC<CapacityBuildingGeneratorProps> = ({ o
     }
   };
 
-  const renderInputForm = () => {
-    const toggleKBFile = (id: string) => {
-      setSelectedKBFileIds(prev => 
-        prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
-      );
-    };
-
-    return (
-      <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
-          <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
-              <div className="border-b border-gray-800 p-4">
-                  <div className="flex items-center justify-between mb-1">
-                      <label htmlFor="audience" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Target Audience</label>
-                      <AISuggestionButton 
-                          onClick={handleGetSuggestions} 
-                          isLoading={isSuggestionsLoading} 
-                      />
-                  </div>
-                  <textarea
-                      id="audience"
-                      value={inputs.audience}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Junior urban planners, mid-level policy advisors, GIS technicians"
-                      rows={2}
-                      className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
-                      disabled={isLoading}
-                  />
-                  {suggestions.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                          {suggestions.map((s, i) => (
-                              <button
-                                  key={i}
-                                  onClick={() => setInputs(prev => ({ ...prev, audience: s }))}
-                                  className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
-                              >
-                                  {s}
-                              </button>
-                          ))}
-                      </div>
-                  )}
-              </div>
-              <div className="border-b border-gray-800 p-4">
-                  <label htmlFor="skillLevel" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Current Skill Level</label>
-                  <textarea
-                      id="skillLevel"
-                      value={inputs.skillLevel}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Beginners with no AI experience, intermediate with strong analytical backgrounds"
-                      rows={2}
-                      className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
-                      disabled={isLoading}
-                  />
-              </div>
-              <div className="border-b border-gray-800 p-4">
-                  <label htmlFor="challenges" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Planning Challenges to Address</label>
-                  <textarea
-                      id="challenges"
-                      value={inputs.challenges}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Improving public transport accessibility, integrating climate resilience into zoning codes, enhancing community engagement with data"
-                      rows={3}
-                      className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
-                      disabled={isLoading}
-                  />
-              </div>
-              <div className="p-4">
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Knowledge Base Sources</label>
-                  <KnowledgeBaseSelector 
-                      selectedFileIds={selectedKBFileIds}
-                      onToggleFile={toggleKBFile}
-                  />
-              </div>
-          </div>
-          <div className="mt-6 flex justify-between items-center">
-              <div className="text-sm text-gray-400">
-                  {profile?.credits || 0} credits remaining.
-              </div>
-              <button
-                  onClick={handleGenerate}
-                  disabled={isLoading || !inputs.audience.trim() || !inputs.skillLevel.trim() || !inputs.challenges.trim()}
-                  className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
-              >
-                  {isLoading ? 'Generating...' : 'Generate Program'}
-              </button>
-          </div>
-      </div>
-    );
-  };
+  const renderInputForm = () => (
+    <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8">
+        <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
+            <div className="border-b border-gray-800 p-4">
+                <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="audience" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Target Audience</label>
+                    <AISuggestionButton 
+                        onClick={handleGetSuggestions} 
+                        isLoading={isSuggestionsLoading} 
+                    />
+                </div>
+                <textarea
+                    id="audience"
+                    value={inputs.audience}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Junior urban planners, mid-level policy advisors, GIS technicians"
+                    rows={2}
+                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
+                    disabled={isLoading}
+                />
+                {suggestions.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {suggestions.map((s, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setInputs(prev => ({ ...prev, audience: s }))}
+                                className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <div className="border-b border-gray-800 p-4">
+                <label htmlFor="skillLevel" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Current Skill Level</label>
+                <textarea
+                    id="skillLevel"
+                    value={inputs.skillLevel}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Beginners with no AI experience, intermediate with strong analytical backgrounds"
+                    rows={2}
+                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
+                    disabled={isLoading}
+                />
+            </div>
+            <div className="p-4">
+                <label htmlFor="challenges" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Planning Challenges to Address</label>
+                <textarea
+                    id="challenges"
+                    value={inputs.challenges}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Improving public transport accessibility, integrating climate resilience into zoning codes, enhancing community engagement with data"
+                    rows={3}
+                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
+                    disabled={isLoading}
+                />
+            </div>
+        </div>
+        <div className="mt-6 flex justify-between items-center">
+            <div className="text-sm text-gray-400">
+                {profile?.credits || 0} credits remaining.
+            </div>
+            <button
+                onClick={handleGenerate}
+                disabled={isLoading || !inputs.audience.trim() || !inputs.skillLevel.trim() || !inputs.challenges.trim()}
+                className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50"
+            >
+                {isLoading ? 'Generating...' : 'Generate Program'}
+            </button>
+        </div>
+    </div>
+  );
 
   return (
     <GeneratorShell

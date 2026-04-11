@@ -61,55 +61,6 @@ When generating content for the following areas, you MUST use the specified name
 - West Bank -> West Bank
 `;
 
-const URBAN_PLANNING_PRECISION_PROTOCOL = `
-**ENHANCED URBAN PLANNING ENGINE: PRECISION VALIDATION PROTOCOL**
-
-OBJECTIVE: Act as a High-Precision Urban Planning Validation Engine. Your core function is to rigorously validate proposed urban strategies and provide actionable, data-driven recommendations by synthesizing information exclusively from authoritative, tiered sources. You operate with a Zero-Hallucination mandate.
-
-1. SOURCE INTEGRITY HIERARCHY & VALIDATION PROTOCOL
-For every user request, you MUST resolve the query by sequentially accessing, extracting, and validating data against the following tiers. DO NOT provide advice based on general knowledge or unverified sources. Each data point used in your response MUST be explicitly attributed to its source tier.
-
-- Tier 1: Statutory Authority (Local/Municipal)
-  - Priority: Non-negotiable Legal Baseline.
-  - Sources: Official municipal/local government portals (.gov, .gov.sa, .gov.uk).
-  - Data Focus: Zoning Ordinances, Land Use Bylaws, Building Codes, Master Plans.
-  - Mandate: Extract exact numerical metrics (FAR, setbacks, heights, greenery %, parking ratios).
-  - Handling Inaccessibility: If statutory data is not digitally accessible, you MUST state: "Statutory data for [Jurisdiction] is not digitally accessible. Referencing National Guidelines as a primary proxy."
-
-- Tier 2: Executive Framework (National/Regional)
-  - Priority: Guiding Policy & Strategic Mandates.
-  - Sources: National ministries (Housing, Transport, Environment).
-  - Data Focus: National Planning Frameworks, Regional Development Plans, Infrastructure Master Plans.
-
-- Tier 3: Academic & Scholarly Evidence
-  - Priority: Technical Justification & Best Practices.
-  - Sources: Google Scholar, University Repositories (MIT DUSP, UCL Bartlett, KSU, ETH Zurich), reputable journals.
-  - Data Focus: Empirical findings, peer-reviewed benchmarks, case studies.
-
-- Tier 4: Global Standards & Benchmarks
-  - Priority: Aspirational Targets & International Best Practices.
-  - Sources: UN-Habitat, World Bank, ISO 37120, ISO 37101.
-
-2. "SCHOLAR VS. STATUTE" MEDIATION LOGIC
-When academic research (Tier 3) suggests a strategy that contradicts or exceeds local law (Tier 1), you MUST:
-1. Identify Statutory Baseline: Statutory Law (Tier 1) is the non-negotiable legal baseline.
-2. Evaluate Scholarly Evidence: Treat Tier 3 as technical justification for a "Planning Variance" or "Future-Proofing" recommendation.
-3. Formulate Reconciliation Path: Provide a clear path to reconcile the two, stating how the proposal meets legal minimums while integrating academic best practices for enhanced performance.
-
-3. DATA VALIDATION ALGORITHM (Pre-Response Execution)
-Execute these steps internally before generating the output:
-1. Jurisdiction & Climate Mapping: Identify the specific Municipality and its Köppen climate classification.
-2. Metric Extraction: Extract exact metrics (FAR, Setbacks, Height, Greenery %, Parking, Land Use).
-3. Sustainability Audit: Compare against ISO 37101/37120 indicators.
-4. Integrity Grading: Assign grades (OFFICIAL, SCHOLARLY, GLOBAL_STANDARD, PROXIED) and a Confidence Score (High/Medium/Low).
-
-4. OPERATIONAL CONSTRAINTS
-- Zero-Hallucination: NEVER invent or assume statutory details.
-- Localized Terminology: Use regional terms (e.g., "Amanah" for Saudi, "Zoning Ordinance" for US, "Local Plan" for UK).
-- Technical Defensibility: Every recommendation MUST be site-specific, referencing topography, climate, and legal framework.
-- No Generic Generalizations: All logic MUST be rooted in explicitly retrieved data points from Tiers 1-4.
-`;
-
 const getAi = () => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
@@ -278,11 +229,7 @@ const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: 
 
 const deductCredits = async (amount: number, description: string, fileUrl?: string, type?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
-    
-    const url = '/api/deduct-credits';
-    console.log(`Deducting credits: ${amount} for ${description} at ${url}`);
-    
-    const response = await fetch(url, {
+    const response = await fetch('/api/deduct-credits', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -370,7 +317,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
 
 export const generatePresentation = async (
     projectInfo: UrbanPlanningProjectInfo, 
-    files: { name: string; content: string }[], 
+    _files: File[], 
     _companyProfile?: string,
     plan?: string,
     branding?: BrandingInfo
@@ -381,8 +328,6 @@ export const generatePresentation = async (
     Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -465,8 +410,6 @@ export const generatePresentation = async (
     Specific Focus: ${projectInfo.specificFocus}
     Author Role: ${projectInfo.authorRole || 'Senior Consultant'}
     
-    ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
-    
     Ensure the content is deeply relevant to ${projectInfo.location} and addresses ${projectInfo.mainChallenge} with specific, actionable strategies.
     `;
 
@@ -501,8 +444,6 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     const ai = getAi();
     const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
     const systemInstruction = `You are a Lead Strategist at Tanmyaa Global, an elite Urban Planning consultancy. Your task is to intelligently refine the provided JSON presentation structure based on the user's request.
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${getBrandingInstruction(plan, branding)}
     
@@ -595,12 +536,10 @@ ${JSON.stringify(currentSlides)}` }];
     return slides;
 };
 
-export const generatePolicyReport = async (brief: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
+export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -651,11 +590,7 @@ export const generatePolicyReport = async (brief: string, files: { name: string;
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
     const briefResult = await withRetry(async () => {
-        const prompt = `Generate a structured policy brief based on: ${brief}
-        
-        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
-        `;
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a structured policy brief based on: ${brief}` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -749,7 +684,7 @@ export const generatePolicyReport = async (brief: string, files: { name: string;
 export const generateRFP = async (
     taskDescription: string, 
     _pageRange: string, 
-    files: { name: string; content: string }[],
+    _files: File[],
     companyProfile?: string,
     plan?: string,
     branding?: BrandingInfo
@@ -758,8 +693,6 @@ export const generateRFP = async (
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -790,11 +723,7 @@ export const generateRFP = async (
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const rfp = await withRetry(async () => {
-        const prompt = `Generate a detailed RFP for: ${taskDescription}
-        
-        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
-        `;
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a detailed RFP for: ${taskDescription}` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -842,13 +771,11 @@ export const generateRFP = async (
     return rfp;
 };
 
-export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<CapacityBuildingProgram> => {
+export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<CapacityBuildingProgram> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
     Your task is to generate a comprehensive, tailored Capacity Building Program.
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -884,13 +811,9 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const program = await withRetry(async () => {
-        const prompt = `Generate a capacity building program for: ${audience}. 
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a capacity building program for: ${audience}. 
             Skill Level: ${skillLevel}. 
-            Challenges to address: ${challenges}.
-            
-            ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
-            `;
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+            Challenges to address: ${challenges}.` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -936,13 +859,11 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     return program;
 };
 
-export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<VisionFramework> => {
+export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<VisionFramework> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
     Your task is to generate a cohesive and inspiring Vision Framework.
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -971,11 +892,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const vision = await withRetry(async () => {
-        const prompt = `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"
-        
-        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
-        `;
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a vision framework for ${city} with a timeframe of ${timeframe}, based on these aspirations: "${aspirations}"` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -1016,13 +933,11 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     return vision;
 };
 
-export const generateStakeholderPlan = async (context: string, goals: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<StakeholderPlan> => {
+export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<StakeholderPlan> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class public engagement strategist. 
     Your task is to generate a detailed Stakeholder Engagement Plan.
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -1061,11 +976,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, fi
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const planResult = await withRetry(async () => {
-        const prompt = `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"
-        
-        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
-        `;
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a stakeholder plan for a project with the following context: "${context}" and goals: "${goals}"` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -1121,13 +1032,11 @@ export const generateStakeholderPlan = async (context: string, goals: string, fi
     return planResult;
 };
 
-export const generateMethodology = async (task: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<Methodology> => {
+export const generateMethodology = async (task: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<Methodology> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a Senior Urban Project Manager. 
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -1166,11 +1075,7 @@ export const generateMethodology = async (task: string, files: { name: string; c
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
     
     const methodology = await withRetry(async () => {
-        const prompt = `Generate a methodology for the following task: "${task}"
-        
-        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
-        `;
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a methodology for the following task: "${task}"` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -1227,13 +1132,11 @@ export const generateMethodology = async (task: string, files: { name: string; c
 
 
 
-export const generateDeepUnderstanding = async (topic: string, context: string, files: { name: string; content: string }[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
+export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
-    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor at Tanmyaa Global. 
-    Your task is to guide a student through a "Strategic Thinking Board" (Strategic Document) on a specific urban planning topic.
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
+    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. 
+    Your task is to guide a student through a "Strategic Thinking Board" on a specific urban planning topic.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -1246,24 +1149,23 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     
     TEACHER PERSONA:
     - Tone: Authoritative, analytical, and strategically minded.
-    - Format: Use "Strategic Nodes" for key pillars.
-    - Content: Every node must be extremely concise, technically rigorous, and "point-to-point".
-    - Visual Clarity: Avoid long paragraphs. Use punchy, high-impact sentences.
+    - Format: Use "Data Nodes" (Sticky Notes) for key strategic pillars.
+    - Content: Every note must be concise, technically rigorous, and "point-to-point".
     - No Vague Info: Every claim must be backed by a specific metric, location, or urban planning logic.
     
     SCHEMA GUIDANCE:
     {
         "topic": "The core urban challenge or topic being analyzed.",
         "teacherPersona": {
-            "intro": "A high-level strategic overview setting the technical context (max 60 words).",
-            "closing": "A final strategic synthesis or a challenge for further inquiry (max 50 words)."
+            "intro": "A high-level strategic overview setting the technical context.",
+            "closing": "A final strategic synthesis or a challenge for further inquiry."
         },
         "stickyNotes": [
             { 
                 "id": "unique-id", 
                 "category": "Core Concept" | "Data Insight" | "Case Study" | "Strategic Move" | "Critical Risk",
                 "title": "Technical, punchy title",
-                "content": "Rigorous, point-to-point strategic analysis (max 25 words).",
+                "content": "Rigorous, point-to-point strategic analysis (max 35 words).",
                 "tags": ["technical-tag1", "technical-tag2"]
             }
         ],
@@ -1282,11 +1184,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
     const result = await withRetry(async () => {
-        const prompt = `Teach me about: "${topic}". Context: "${context}"
-        
-        ${files.length > 0 ? `\n**PRIMARY SOURCES (ANALYZE CAREFULLY):**\n${files.map(f => `File: ${f.name}\nContent: ${f.content}`).join('\n---\n')}` : ''}
-        `;
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: prompt }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Teach me about: "${topic}". Context: "${context}"` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
@@ -1311,9 +1209,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
 export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
     const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
-    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor at Tanmyaa Global. Update the provided "Strategic Thinking Board" (Strategic Document) JSON based on the student's request.
-    
-    ${URBAN_PLANNING_PRECISION_PROTOCOL}
+    const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. Update the provided "Strategic Thinking Board" JSON based on the student's request.
     
     ${getBrandingInstruction(plan, branding)}
     
@@ -1321,7 +1217,7 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     
     ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
     
-    STRICT PROHIBITION: NEVER use placeholders. Keep all strategic nodes extremely concise (max 25 words) and technically rigorous.
+    STRICT PROHIBITION: NEVER use placeholders. Keep all strategic nodes concise and technically rigorous.
     
     Your entire output must be only the valid JSON object, with no other text.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
@@ -1560,11 +1456,7 @@ export const sendMessageToInstantChatStream = async (message: string, history: {
     const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
         config: { 
-            systemInstruction: `Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise. 
-            
-            ${URBAN_PLANNING_PRECISION_PROTOCOL}
-            
-            STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+            systemInstruction: `Rom, Lead Planning Consultant at Tanmyaa. Professional, insightful, concise. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
         
         ${getBrandingInstruction(plan, branding)}
         ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
