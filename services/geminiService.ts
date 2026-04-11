@@ -279,10 +279,7 @@ const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: 
 const deductCredits = async (amount: number, description: string, fileUrl?: string, type?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     
-    // Use absolute URL if possible to avoid relative path issues in some environments
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const url = `${baseUrl}/api/deduct-credits`;
-    
+    const url = '/api/deduct-credits';
     console.log(`Deducting credits: ${amount} for ${description} at ${url}`);
     
     const response = await fetch(url, {
