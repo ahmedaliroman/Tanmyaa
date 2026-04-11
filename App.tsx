@@ -161,9 +161,10 @@ const App: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
 
   const initialOptions = {
-    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test", // Replace with your real client ID
+    "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
     currency: "USD",
     intent: "capture",
+    locale: "en_US", // Explicitly set locale to avoid 404s on localized resources
   };
 
   useEffect(() => {
