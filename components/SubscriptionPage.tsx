@@ -127,24 +127,29 @@ const SubscriptionTier: React.FC<{
     const buttonClasses = `w-full font-bold py-3 px-4 rounded-xl mt-auto transition-all duration-300 disabled:cursor-not-allowed ${isFeatured ? 'bg-blue-500/20 backdrop-blur-md border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 disabled:bg-blue-500/10 disabled:text-blue-500/50' : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400'}`;
 
     const handleCaptureOrder = async (orderID: string) => {
-        if (!user) {
-            toast.error('Please sign in to complete the purchase.');
-            return;
-        }
         try {
-            // Call Supabase Edge Function instead of Express server
+            // 1. Get the current session
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+                toast.error('Please sign in to complete the purchase.');
+                console.error("User is not authenticated");
+                return;
+            }
+
+            // 2. Call the function with the access_token
             const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-capture`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+                    'Authorization': `Bearer ${session.access_token}`,
                     'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
                 },
                 body: JSON.stringify({ 
                     orderID,
                     plan: title,
-                    userId: user.id,
-                    email: user.email
+                    userId: session.user.id,
+                    email: session.user.email
                 }),
             });
             if (response.ok) {
