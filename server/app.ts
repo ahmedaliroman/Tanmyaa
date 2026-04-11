@@ -16,7 +16,9 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api', apiRouter);
+app.use(apiRouter); // Fallback for different rewrite behaviors
 app.get('/api/credits', getRemainingCredits);
+app.get('/credits', getRemainingCredits); // Fallback
 
 // Global error handler for all routes
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
