@@ -127,6 +127,13 @@ const SubscriptionTier: React.FC<{
     const buttonClasses = `w-full font-bold py-3 px-4 rounded-xl mt-auto transition-all duration-300 disabled:cursor-not-allowed ${isFeatured ? 'bg-blue-500/20 backdrop-blur-md border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 disabled:bg-blue-500/10 disabled:text-blue-500/50' : 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400'}`;
 
     const handleCaptureOrder = async (orderID: string) => {
+        console.log('Starting order capture for ID:', orderID);
+        
+        if (import.meta.env.VITE_PAYPAL_CLIENT_ID === 'test' || !import.meta.env.VITE_PAYPAL_CLIENT_ID) {
+            console.warn('PayPal Client ID is not configured. Using "test" mode.');
+            toast.warning('PayPal is in test mode. Payments may not process correctly.');
+        }
+
         try {
             // 1. Get the current session
             const { data: { session } } = await supabase.auth.getSession();
@@ -137,6 +144,8 @@ const SubscriptionTier: React.FC<{
                 return;
             }
 
+            console.log('Session found, calling Supabase function...');
+            
             // 2. Call the function with the access_token
             const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-capture`, {
                 method: 'POST',
@@ -152,21 +161,32 @@ const SubscriptionTier: React.FC<{
                     email: session.user.email
                 }),
             });
+
+            console.log('Response received status:', response.status);
+
             if (response.ok) {
                 const data = await response.json();
+                console.log('Capture successful:', data);
                 if (onSuccess) {
                     onSuccess(title, data.newCredits);
                 } else {
                     toast.success(`Payment successful! Your credits have been updated for the ${title} plan.`);
-                    window.location.reload();
+                    setTimeout(() => window.location.reload(), 2000);
                 }
             } else {
-                const error = await response.json();
-                toast.error(`Payment failed: ${error.error || 'Unknown error'}`);
+                let errorDetail = 'Unknown error';
+                try {
+                    const errorData = await response.json();
+                    errorDetail = errorData.error || errorData.message || JSON.stringify(errorData);
+                } catch (e) {
+                    errorDetail = await response.text();
+                }
+                console.error('Payment capture failed:', errorDetail);
+                toast.error(`Payment failed: ${errorDetail}`);
             }
         } catch (error) {
-            console.error('Failed to capture order:', error);
-            toast.error('An unexpected error occurred during payment capture.');
+            console.error('Unexpected error during capture:', error);
+            toast.error(`An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
         }
     };
 
@@ -211,9 +231,13 @@ const SubscriptionTier: React.FC<{
                                 });
                             }}
                             onApprove={async (data, actions) => {
-                                if (actions.order) {
-                                    const order = await actions.order.capture();
-                                    await handleCaptureOrder(order.id);
+                                const loadingToast = toast.loading('Processing your payment...');
+                                try {
+                                    await handleCaptureOrder(data.orderID);
+                                    toast.dismiss(loadingToast);
+                                } catch (error) {
+                                    toast.dismiss(loadingToast);
+                                    console.error('PayPal onApprove error:', error);
                                 }
                             }}
                         />

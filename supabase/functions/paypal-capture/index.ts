@@ -29,9 +29,12 @@ serve(async (req) => {
     // 1. Get PayPal Access Token
     const clientId = Deno.env.get('PAYPAL_CLIENT_ID')
     const clientSecret = Deno.env.get('PAYPAL_CLIENT_SECRET')
-    const paypalApi = Deno.env.get('PAYPAL_MODE') === 'live' 
+    const mode = Deno.env.get('PAYPAL_MODE') || 'sandbox'
+    const paypalApi = mode === 'live' 
       ? 'https://api-m.paypal.com' 
       : 'https://api-m.sandbox.paypal.com'
+
+    console.log(`Using PayPal API: ${paypalApi} (Mode: ${mode})`);
 
     const auth = btoa(`${clientId}:${clientSecret}`)
     const tokenResponse = await fetch(`${paypalApi}/v1/oauth2/token`, {
@@ -43,9 +46,17 @@ serve(async (req) => {
       body: 'grant_type=client_credentials',
     })
 
+    if (!tokenResponse.ok) {
+      const tokenError = await tokenResponse.text();
+      console.error('Failed to get PayPal access token:', tokenError);
+      throw new Error(`PayPal Auth Failed: ${tokenError}`);
+    }
+
     const { access_token } = await tokenResponse.json()
+    console.log('PayPal access token obtained.');
 
     // 2. Capture the Order
+    console.log(`Capturing order: ${orderID}`);
     const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${orderID}/capture`, {
       method: 'POST',
       headers: {
@@ -55,15 +66,24 @@ serve(async (req) => {
     })
 
     const captureData = await captureResponse.json()
+    console.log('Capture response status:', captureResponse.status);
+    console.log('Capture response data:', JSON.stringify(captureData));
 
-    if (captureData.status !== 'COMPLETED') {
-      return new Response(JSON.stringify({ error: 'Payment not completed', details: captureData }), {
+    if (!captureResponse.ok || captureData.status !== 'COMPLETED') {
+      const errorMsg = captureData.message || captureData.name || `Status: ${captureData.status}`;
+      console.error('Payment capture failed or not completed:', errorMsg);
+      return new Response(JSON.stringify({ 
+        error: `Payment failed: ${errorMsg}`, 
+        details: captureData,
+        paypal_debug_id: captureResponse.headers.get('paypal-debug-id')
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: captureResponse.ok ? 400 : captureResponse.status,
       })
     }
 
     // 3. Update Supabase
+    console.log(`Updating Supabase for user: ${userId}, plan: ${plan}`);
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -78,15 +98,20 @@ serve(async (req) => {
     endDate.setMonth(endDate.getMonth() + 1)
 
     // Get current credits
+    console.log('Fetching current user profile...');
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
       .select('credits')
       .eq('id', userId)
       .single()
 
-    if (fetchError) throw fetchError
+    if (fetchError) {
+      console.error('Error fetching profile:', fetchError);
+      throw fetchError;
+    }
 
     const newCredits = (profile?.credits || 0) + creditsToAdd
+    console.log(`New credits calculated: ${newCredits}`);
 
     const { error: updateError } = await supabase
       .from('profiles')
@@ -101,14 +126,25 @@ serve(async (req) => {
       })
       .eq('id', userId)
 
-    if (updateError) throw updateError
+    if (updateError) {
+      console.error('Error updating profile:', updateError);
+      throw updateError;
+    }
+
+    console.log('Profile updated successfully.');
 
     // 4. Log usage history
-    await supabase.from('usage_history').insert({
+    console.log('Inserting usage history...');
+    const { error: historyError } = await supabase.from('usage_history').insert({
       user_id: userId,
       description: `Purchased ${plan} Plan`,
       credits_used: -creditsToAdd // Negative means credits added
     })
+
+    if (historyError) {
+      console.error('Error inserting usage history:', historyError);
+      // We don't throw here to avoid failing the whole process if just history fails
+    }
 
     return new Response(JSON.stringify({ success: true, newCredits }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
