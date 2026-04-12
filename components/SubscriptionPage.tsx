@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from "motion/react";
 import BrandingManager from './BrandingManager';
 import CompanyProfileManager from './CompanyProfileManager';
 import { PayPalButtons } from "@paypal/react-paypal-js";
@@ -178,7 +179,7 @@ const SubscriptionTier: React.FC<{
                 try {
                     const errorData = await response.json();
                     errorDetail = errorData.error || errorData.message || JSON.stringify(errorData);
-                } catch (e) {
+                } catch {
                     errorDetail = await response.text();
                 }
                 console.error('Payment capture failed:', errorDetail);
@@ -230,7 +231,7 @@ const SubscriptionTier: React.FC<{
                                     }]
                                 });
                             }}
-                            onApprove={async (data, actions) => {
+                            onApprove={async (data) => {
                                 const loadingToast = toast.loading('Processing your payment...');
                                 try {
                                     await handleCaptureOrder(data.orderID);
@@ -297,41 +298,79 @@ const SubscriptionPage: React.FC = () => {
 
     if (paymentSuccess) {
         return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 animate-fade-in">
-                <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-6">
-                    <CheckIcon className="w-12 h-12" />
-                </div>
-                <h2 className="text-4xl font-bold text-white mb-4">Payment Successful!</h2>
-                <p className="text-xl text-gray-300 max-w-md mb-8">
-                    Thank you for subscribing to the <span className="text-blue-400 font-bold">{paymentSuccess.plan}</span> plan. 
-                    Your account has been upgraded and <span className="text-green-400 font-bold">{paymentSuccess.credits}</span> credits have been added.
-                </p>
-                <div className="bg-white/5 border border-white/10 p-6 rounded-2xl mb-8 w-full max-w-md text-left">
-                    <p className="text-gray-400 text-sm mb-2 uppercase tracking-widest font-bold">Subscription Details</p>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-500">Plan</span>
-                            <span className="text-white font-medium">{paymentSuccess.plan}</span>
+            <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center">
+                <motion.div 
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", damping: 15, stiffness: 200 }}
+                    className="relative mb-10"
+                >
+                    <div className="absolute inset-0 bg-green-500 blur-3xl opacity-20 animate-pulse" />
+                    <div className="w-24 h-24 bg-green-500/20 backdrop-blur-2xl border border-green-500/30 rounded-[2.5rem] flex items-center justify-center relative z-10 shadow-2xl shadow-green-500/20">
+                        <CheckIcon className="w-12 h-12 text-green-400" />
+                    </div>
+                </motion.div>
+
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
+                        Payment Successful
+                    </h2>
+                    <p className="text-lg text-gray-400 max-w-md mx-auto mb-10 leading-relaxed">
+                        Thank you for subscribing to the <span className="text-blue-400 font-bold">{paymentSuccess.plan}</span> plan. 
+                        Your account has been upgraded and <span className="text-green-400 font-bold">{paymentSuccess.credits}</span> credits have been added.
+                    </p>
+                </motion.div>
+
+                <motion.div 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 mb-10 shadow-2xl"
+                >
+                    <div className="flex items-center justify-between mb-6">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Subscription Details</span>
+                        <div className="h-px flex-1 bg-white/10 mx-4" />
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center group">
+                            <span className="text-gray-500 font-medium">Plan</span>
+                            <span className="text-white font-bold">{paymentSuccess.plan}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500">Status</span>
-                            <span className="text-green-400 font-medium">Active</span>
+                        <div className="flex justify-between items-center group">
+                            <span className="text-gray-500 font-medium">Status</span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                <span className="text-green-400 font-bold">Active</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500">Billing Cycle</span>
-                            <span className="text-white font-medium">Monthly</span>
+                        <div className="flex justify-between items-center group">
+                            <span className="text-gray-500 font-medium">Billing Cycle</span>
+                            <span className="text-white font-bold">Monthly</span>
                         </div>
                     </div>
-                </div>
-                <button 
-                    onClick={() => window.location.reload()}
-                    className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                </motion.div>
+
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="w-full max-w-md space-y-6"
                 >
-                    Back to Dashboard
-                </button>
-                <p className="mt-6 text-gray-500 text-sm italic">
-                    A confirmation email and invoice have been sent to your email address.
-                </p>
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="w-full bg-white text-black py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95 shadow-xl"
+                    >
+                        Back to Dashboard
+                    </button>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] font-black">
+                        Confirmation email sent to your address
+                    </p>
+                </motion.div>
             </div>
         );
     }
