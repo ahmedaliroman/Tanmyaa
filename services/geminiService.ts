@@ -425,7 +425,7 @@ export const generatePresentation = async (
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW }
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
             },
         });
 
@@ -510,7 +510,7 @@ ${JSON.stringify(currentSlides)}` }];
                 systemInstruction,
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW }
+                thinkingConfig: model.includes('pro') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
             },
         });
         const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
@@ -600,8 +600,8 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW },
+                tools: [{googleSearch: {}}],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -734,7 +734,7 @@ export const generateRFP = async (
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW },
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -824,7 +824,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW },
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -903,7 +903,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW },
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -987,7 +987,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW },
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -1086,7 +1086,7 @@ export const generateMethodology = async (task: string, companyProfile?: string,
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW },
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -1194,8 +1194,8 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? undefined : { thinkingLevel: ThinkingLevel.LOW }
+                tools: [{googleSearch: {}}],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
             }
         });
         
