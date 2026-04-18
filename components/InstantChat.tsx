@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { sendMessageToInstantChatStream } from '@/services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
 import { useAuth } from '@/context/AuthContext';
@@ -157,7 +158,9 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
                                     </div>
                                 )}
                                 <div className={`px-4 py-2 rounded-xl max-w-xs md:max-w-sm ${msg.sender === 'user' ? 'bg-white/20 backdrop-blur-md text-white' : 'bg-gray-800 text-gray-200'}`}>
-                                    <p className="whitespace-pre-wrap text-sm">{msg.text}</p>
+                                    <div className="prose prose-sm prose-invert max-w-none">
+                                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                    </div>
                                 </div>
                             </div>
                         ))}

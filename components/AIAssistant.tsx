@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { streamAssistantResponse } from '@/services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
 import { useAuth } from '@/context/AuthContext';
@@ -164,7 +165,9 @@ const AIAssistant = <T extends object>({ contextData, onRefine, onUpgrade }: AIA
                                     </div>
                                 )}
                                 <div className={`px-4 py-2 rounded-xl max-w-xs ${msg.sender === 'user' ? 'bg-white/15 text-white' : 'bg-gray-800 text-gray-200'}`}>
-                                    <p className="whitespace-pre-wrap text-sm">{msg.text}</p>
+                                    <div className="prose prose-sm prose-invert max-w-none">
+                                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                    </div>
                                 </div>
                             </div>
                         ))}

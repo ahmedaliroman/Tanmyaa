@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
     sender: 'user' | 'ai';
@@ -71,7 +72,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, input, setInput, onSend
                                 </div>
                             )}
                             <div className={`px-3 py-2 rounded-xl max-w-xs ${msg.sender === 'user' ? 'bg-white/20 text-white' : 'bg-gray-800 text-gray-200'}`}>
-                                <p className="whitespace-pre-wrap text-sm">{msg.text}</p>
+                                <div className="prose prose-sm prose-invert max-w-none">
+                                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                </div>
                             </div>
                         </div>
                     ))}
