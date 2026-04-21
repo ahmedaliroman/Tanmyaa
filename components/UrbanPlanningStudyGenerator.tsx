@@ -26,6 +26,55 @@ interface PresentationGeneratorProps {
   onUpgrade: () => void;
 }
 
+const ResponsiveSlideContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (!containerRef.current) return;
+            const parent = containerRef.current.parentElement;
+            if (!parent) return;
+
+            const parentWidth = parent.clientWidth;
+            const parentHeight = parent.clientHeight;
+            
+            // Design size (16:9)
+            const designWidth = 1280;
+            const designHeight = 720;
+
+            const scaleX = parentWidth / designWidth;
+            const scaleY = parentHeight / designHeight;
+            
+            // Use the smaller scale factor to ensure it fits both ways
+            setScale(Math.min(scaleX, scaleY, 1)); // Don't scale up beyond 1:1 if space is massive
+        };
+
+        const observer = new ResizeObserver(updateScale);
+        if (containerRef.current?.parentElement) {
+            observer.observe(containerRef.current.parentElement);
+        }
+        updateScale();
+
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div 
+            ref={containerRef}
+            className="origin-center flex items-center justify-center"
+            style={{ 
+                width: '1280px', 
+                height: '720px', 
+                transform: `scale(${scale})`,
+                flexShrink: 0
+            }}
+        >
+            {children}
+        </div>
+    );
+};
+
 const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade }) => {
   const [projectInfo, setProjectInfo] = useState<UrbanPlanningProjectInfo | null>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -1071,13 +1120,15 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
                     <div className="aspect-[16/9] w-full mx-auto relative overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-gray-800">
                         <div className="flex transition-transform duration-700 cubic-bezier(0.23, 1, 0.32, 1) h-full" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
                         {slides.map((slide, index) => (
-                            <div key={index} id={`study-slide-container-${index}`} className="w-full flex-shrink-0 h-full">
-                                <UrbanStudySlide 
-                                    slide={slide} 
-                                    slideNumber={index+1} 
-                                    imageUrls={imageUrls} 
-                                    onUpdate={(fieldPath, value) => handleSlideUpdate(index, fieldPath, value)}
-                                    isActive={index === currentIndex} />
+                            <div key={index} id={`study-slide-container-${index}`} className="w-full flex-shrink-0 h-full flex items-center justify-center overflow-hidden">
+                                <ResponsiveSlideContainer>
+                                    <UrbanStudySlide 
+                                        slide={slide} 
+                                        slideNumber={index+1} 
+                                        imageUrls={imageUrls} 
+                                        onUpdate={(fieldPath, value) => handleSlideUpdate(index, fieldPath, value)}
+                                        isActive={index === currentIndex} />
+                                </ResponsiveSlideContainer>
                             </div>
                         ))}
                         </div>

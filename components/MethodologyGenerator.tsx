@@ -5,6 +5,7 @@ import type { Methodology, BrandingInfo } from '@/types';
 import GeneratorShell from './GeneratorShell';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
+import { exportMethodologyToDocx } from '@/services/docxGenerator';
 import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useAuth } from '@/context/AuthContext';
 import { TanmyaaLogoPPTX } from './TanmyaaLogo';
@@ -102,6 +103,20 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
   const { refreshProfile, profile, user, signInWithGoogle } = useAuth();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isExportingDocx, setIsExportingDocx] = useState<boolean>(false);
+
+  const handleExportDocx = async () => {
+    if (!generatedContent) return;
+    setIsExportingDocx(true);
+    try {
+      await exportMethodologyToDocx(generatedContent, profile?.branding_logo || null);
+    } catch (error) {
+      console.error('Failed to export to Word:', error);
+      setError('Could not export to Word. Please try again.');
+    } finally {
+      setIsExportingDocx(false);
+    }
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -255,14 +270,24 @@ const MethodologyGenerator: React.FC<MethodologyGeneratorProps> = ({ onUpgrade }
       onUpgrade={onUpgrade}
       renderInputForm={renderInput}
        renderExportControls={() => (
-        <button
-          onClick={handleExportPdf}
-          disabled={isExporting}
-          className="bg-gray-700/80 text-gray-200 font-semibold py-1 px-4 rounded-full text-xs hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50 flex items-center"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-          {isExporting ? 'Exporting...' : 'Export PDF'}
-        </button>
+        <div className="flex items-center space-x-2">
+            <button 
+                onClick={handleExportDocx} 
+                disabled={isExportingDocx}
+                className="bg-gray-700/80 text-gray-200 font-semibold py-1 px-4 rounded-full text-xs hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50 flex items-center"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                {isExportingDocx ? 'Exporting Word...' : 'Word'}
+            </button>
+            <button
+              onClick={handleExportPdf}
+              disabled={isExporting}
+              className="bg-gray-700/80 text-gray-200 font-semibold py-1 px-4 rounded-full text-xs hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              {isExporting ? 'Exporting PDF...' : 'PDF'}
+            </button>
+        </div>
       )}
       renderResult={(content) => (
         <div ref={reportRef}>
