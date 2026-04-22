@@ -5,6 +5,7 @@ import { sendMessageToInstantChatStream } from '@/services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
 import { useAuth } from '@/context/AuthContext';
 import { BrandingInfo } from '@/types';
+import { motion } from 'motion/react';
 
 interface Message {
     sender: 'user' | 'ai';
@@ -120,25 +121,84 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
 
     return (
         <>
-            <div className={`fixed bottom-5 right-5 z-50 transition-all duration-300 ${isOpen ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'}`}>
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="relative w-16 h-16 bg-white/5 backdrop-blur-lg text-white rounded-full shadow-lg hover:bg-white/15 transition-all duration-300 flex items-center justify-center border border-white/10"
-                    aria-label="Open Instant Chat"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                </button>
+            <div className="fixed bottom-6 right-0 w-full pointer-events-none z-50">
+                <div className="container mx-auto px-4 md:px-8 flex justify-end">
+                    <div className="flex items-center gap-4 pointer-events-auto">
+                        <motion.div 
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ 
+                                opacity: isOpen ? 0 : 1, 
+                                x: isOpen ? 10 : 0 
+                            }}
+                            transition={{ duration: 0.5 }}
+                            className="hidden lg:flex flex-col items-end select-none text-right"
+                        >
+                            <motion.div className="flex flex-col leading-tight">
+                                <div className="flex justify-end">
+                                    {"REQUEST IMMEDIATE".split("").map((char, index) => (
+                                        <motion.span
+                                            key={`row1-${index}`}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{
+                                                duration: 0.1,
+                                                delay: index * 0.05,
+                                                repeat: Infinity,
+                                                repeatDelay: 5,
+                                                repeatType: "reverse"
+                                            }}
+                                            className="text-white text-[10px] font-bold tracking-widest"
+                                        >
+                                            {char === " " ? "\u00A0" : char}
+                                        </motion.span>
+                                    ))}
+                                </div>
+                                <div className="flex justify-end">
+                                    {"URBAN CONSULTATION".split("").map((char, index) => (
+                                        <motion.span
+                                            key={`row2-${index}`}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{
+                                                duration: 0.1,
+                                                delay: (index + 17) * 0.05, // Stagger after first row
+                                                repeat: Infinity,
+                                                repeatDelay: 5,
+                                                repeatType: "reverse"
+                                            }}
+                                            className="text-white text-[10px] font-bold tracking-widest"
+                                        >
+                                            {char === " " ? "\u00A0" : char}
+                                        </motion.span>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                        
+                        <button
+                            onClick={() => setIsOpen(true)}
+                            className={`relative w-11 h-11 transition-all duration-500 flex items-center justify-center hover:scale-110 active:scale-90 ${isOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'}`}
+                            aria-label="Open Urban Consultation"
+                        >
+                            <img 
+                                src="https://dwuxqhdczbrlxhqxipgm.supabase.co/storage/v1/object/public/Tanmyaa%20Logo/Hi!s.png" 
+                                alt="Consultation Icon"
+                                className="w-full h-full object-contain filter grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                            />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div className={`fixed bottom-4 right-4 z-50 w-[90vw] max-w-md h-[70vh] flex flex-col bg-black/40 backdrop-blur-xl rounded-xl shadow-2xl border-white/20 transition-all duration-300 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
                  <div className="p-4 border-b border-white/10 flex justify-between items-center flex-shrink-0 bg-gradient-to-b from-black/50 to-transparent">
                     <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 flex items-center justify-center border border-white/20">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                            </svg>
+                        <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center border border-white/10 overflow-hidden">
+                            <img 
+                                src="https://dwuxqhdczbrlxhqxipgm.supabase.co/storage/v1/object/public/Tanmyaa%20Logo/Hi!s.png" 
+                                alt="Consultation"
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                         <h2 className="text-lg font-semibold text-white">Consult with Rom</h2>
                     </div>
@@ -151,10 +211,12 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
                         {messages.map((msg, index) => (
                             <div key={index} className={`flex items-end gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {msg.sender === 'ai' && (
-                                    <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 flex items-center justify-center border border-white/20">
-                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                                       </svg>
+                                    <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center border border-white/10 overflow-hidden">
+                                       <img 
+                                            src="https://dwuxqhdczbrlxhqxipgm.supabase.co/storage/v1/object/public/Tanmyaa%20Logo/Hi!s.png" 
+                                            alt="Rom"
+                                            className="w-full h-full object-cover"
+                                        />
                                     </div>
                                 )}
                                 <div className={`px-4 py-2 rounded-xl max-w-xs md:max-w-sm ${msg.sender === 'user' ? 'bg-white/20 backdrop-blur-md text-white' : 'bg-gray-800 text-gray-200'}`}>
@@ -166,10 +228,12 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
                         ))}
                         {isLoading && messages[messages.length-1]?.sender === 'user' && (
                              <div className="flex items-end gap-3 justify-start">
-                                 <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 flex items-center justify-center border border-white/20">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                                       </svg>
+                                 <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0 flex items-center justify-center border border-white/10 overflow-hidden">
+                                       <img 
+                                            src="https://dwuxqhdczbrlxhqxipgm.supabase.co/storage/v1/object/public/Tanmyaa%20Logo/Hi!s.png" 
+                                            alt="Rom"
+                                            className="w-full h-full object-cover"
+                                        />
                                  </div>
                                 <div className="px-4 py-2 rounded-xl bg-gray-800 text-gray-200">
                                     <div className="flex items-center space-x-2">

@@ -99,7 +99,7 @@ const AnimatedHero = () => {
     };
 
     return (
-        <div className="w-full min-h-[calc(100vh-80px)] relative flex flex-col items-center justify-center font-sans tracking-tight">
+        <div className="w-full min-h-full relative flex flex-col items-center justify-center font-sans tracking-tight">
             <div className="flex-1 flex flex-col items-center justify-center">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
@@ -146,7 +146,7 @@ const AnimatedHero = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 3, duration: 1 }}
                 onClick={scrollToServices}
-                className="mb-12 group flex flex-col items-center gap-3 cursor-pointer"
+                className="mb-8 group flex flex-col items-center gap-3 cursor-pointer mt-24"
             >
                 <span className="text-xs font-sans font-bold text-white/70 uppercase tracking-widest group-hover:text-white transition-colors">Discover Services</span>
                 <motion.div
@@ -181,22 +181,22 @@ const AnimatedHero = () => {
 
 const HomePage: React.FC<HomePageProps> = ({ onSelectService }) => {
   return (
-    <div className="w-full">
+    <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-160px)] overflow-y-auto snap-y snap-mandatory scroll-smooth hide-scrollbar -mx-4 md:-mx-8 -mt-4 md:-mt-8">
       {/* Hero Section - Full Page */}
-      <section className="animate-fade-in">
+      <section className="snap-start min-h-[calc(100vh-140px)] md:min-h-[calc(100vh-160px)] flex items-center justify-center animate-fade-in py-10 w-full px-4 md:px-8">
         <AnimatedHero />
       </section>
       
       {/* Services Section - Below the fold */}
-      <section id="services-section" className="py-32 px-4 bg-transparent">
-        <div className="max-w-7xl mx-auto">
+      <section id="services-section" className="snap-start min-h-[calc(100vh-140px)] md:min-h-[calc(100vh-160px)] py-32 px-4 md:px-8 bg-transparent flex items-center justify-center w-full">
+        <div className="max-w-7xl mx-auto w-full">
             <div className="text-center mb-20 space-y-4">
                 <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase">Our Services</h2>
                 <p className="text-gray-400 font-sans text-lg tracking-normal">Specialized Urban Solutions</p>
                 <div className="w-20 h-1 bg-blue-500 mx-auto rounded-full" />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
                 {services.map((service, index) => (
                     <div key={service.id} className="animate-card-enter flex justify-center" style={{ animationDelay: `${index * 100}ms`}}>
                         <ServiceCard

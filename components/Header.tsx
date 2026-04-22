@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TanmyaaLogo } from './TanmyaaLogo';
 import { useAuth } from '@/context/AuthContext';
 import { AuthModal } from './AuthModal';
-import { LogOut, CreditCard, Clock, Gift, Mail, MessageSquare, Info } from 'lucide-react';
+import { LogOut, CreditCard, Clock, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import UsageHistoryModal from './UsageHistoryModal';
 import ReferralModal from './ReferralModal';
@@ -25,6 +25,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [showFounder, setShowFounder] = useState(false);
   const [showWhoWeAre, setShowWhoWeAre] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -60,13 +61,13 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
   };
 
   const headerClasses = `sticky top-0 z-50 transition-all duration-500 ease-in-out ${
-      showHomeButton && isScrolled 
-      ? 'bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-lg' 
+      isScrolled 
+      ? 'bg-[#050505]/60 backdrop-blur-3xl border-b border-white/5 shadow-2xl' 
       : 'bg-transparent border-b border-transparent'
   }`;
   
   const containerClasses = `container mx-auto px-4 md:px-8 flex justify-between items-center transition-all duration-300 ease-in-out ${
-      showHomeButton && isScrolled 
+      isScrolled 
       ? 'py-3' 
       : 'py-5'
   }`;
@@ -91,48 +92,99 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
           <div className="flex items-center space-x-4">
             {!showHomeButton && (
               <div className="hidden lg:flex items-center space-x-2 mr-4">
-                {/* Who We Are Interactive Box */}
+                {/* Who We Are Interactive Box (Organization) */}
                 <div 
                   className="relative"
                   onMouseEnter={() => setShowWhoWeAre(true)}
                   onMouseLeave={() => setShowWhoWeAre(false)}
                 >
-                  <button className="text-[11px] font-black uppercase tracking-widest text-white/50 hover:text-white transition-colors flex items-center gap-2 py-2 px-4 hover:bg-white/5 rounded-full transition-all">
-                    <Info size={12} className="text-blue-400" />
+                  <button className="text-sm font-medium text-gray-300 hover:text-white transition-all flex items-center gap-2 py-2 px-2 rounded-full">
                     Who we are?
                   </button>
                   <AnimatePresence>
                     {showWhoWeAre && (
                       <motion.div
-                        initial={{ opacity: 0, y: 15, scale: 0.95, filter: 'blur(10px)' }}
-                        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95, filter: 'blur(10px)' }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute right-0 mt-3 w-80 bg-[#0A0A0C]/90 backdrop-blur-[40px] border border-white/10 rounded-[2rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden z-[100]"
+                        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="absolute right-0 mt-3 w-[360px] bg-[#0A0A0B] border border-white/10 rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden z-[100]"
                       >
-                        <div className="p-6">
-                          <div className="flex flex-col items-center text-center">
-                            <div className="w-20 h-20 rounded-full bg-white/5 mb-4 overflow-hidden shadow-2xl border border-white/10 relative">
-                              <img 
-                                src="https://dwuxqhdczbrlxhqxipgm.supabase.co/storage/v1/object/public/Tanmyaa%20Logo/Roman%20A.%20Photo%20copy.png" 
-                                alt="Ahmed Roman" 
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <h3 className="text-lg font-black text-white tracking-tight leading-none mb-1">Ahmed Roman</h3>
-                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-400 mb-4">Urban Strategic Advisor</p>
-                            
-                            <p className="text-[11px] text-white/60 leading-relaxed font-medium mb-5 px-2">
-                              Ahmed Roman is an urban planner and designer specializing in inclusive and resilient cities. With over six years of experience across the Middle East, Europe, and North Africa, he works at the intersection of spatial planning, urban policy, and community-focused design.
-                            </p>
+                        <div className="p-10 flex flex-col items-center">
+                          <div className="w-20 h-20 mb-8 flex-shrink-0">
+                            <img 
+                              src="https://dwuxqhdczbrlxhqxipgm.supabase.co/storage/v1/object/public/Tanmyaa%20Logo/Website%20Icon.png" 
+                              alt="Tanmyaa Logo" 
+                              className="w-full h-full object-contain"
+                              loading="eager"
+                            />
+                          </div>
+                          
+                          <div className="text-center space-y-1 mb-6">
+                            <h3 className="text-2xl font-bold text-white tracking-tight">Tanmyaa</h3>
+                            <p className="text-[11px] font-semibold text-white/40 tracking-normal">Founded December 2025</p>
+                          </div>
+                          
+                          <p className="text-[13px] text-white/70 leading-relaxed text-center font-normal">
+                            Tanmyaa is an organization founded in December 2025, dedicated to helping cities and communities grow in smarter, fairer, and more sustainable ways. Guided by its ethos of advancing cities together, it works across urban development, planning, and policy, rooted in a simple belief: growth should better serve people and place.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-                            <div className="w-full flex flex-col gap-2">
-                              {['Strategic Urban Planning', 'Policy Advisor', 'Placemaking'].map((tag) => (
-                                <div key={tag} className="px-3 py-1.5 bg-white/5 border border-white/5 rounded-xl text-[10px] font-bold text-white/80 tracking-wide">
-                                  {tag}
-                                </div>
-                              ))}
-                            </div>
+                {/* Founder Interactive Box */}
+                <div 
+                  className="relative"
+                  onMouseEnter={() => setShowFounder(true)}
+                  onMouseLeave={() => setShowFounder(false)}
+                >
+                  <button className="text-sm font-medium text-gray-300 hover:text-white transition-all flex items-center gap-2 py-2 px-2 rounded-full">
+                    Founder
+                  </button>
+                  <AnimatePresence>
+                    {showFounder && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="absolute right-0 mt-3 w-[360px] bg-[#0A0A0B] border border-white/10 rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden z-[100]"
+                      >
+                        <div className="p-10 flex flex-col items-center">
+                          <div className="w-28 h-28 rounded-full mb-6 overflow-hidden shadow-2xl relative flex-shrink-0 bg-white">
+                            <img 
+                              src="https://dwuxqhdczbrlxhqxipgm.supabase.co/storage/v1/object/public/Tanmyaa%20Logo/Roman%20A..jpg" 
+                              alt="Ahmed Roman" 
+                              className="w-full h-full object-cover"
+                              loading="eager"
+                              onError={(e) => {
+                                // Fallback if image fails to load
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                          
+                          <div className="text-center space-y-1 mb-6">
+                            <h3 className="text-2xl font-bold text-white tracking-tight">Ahmed Roman</h3>
+                            <p className="text-[11px] font-semibold text-white/40 tracking-normal">Urban Strategic Advisor</p>
+                          </div>
+                          
+                          <p className="text-[13px] text-white/60 leading-relaxed text-center font-normal mb-8">
+                            Ahmed Roman is an urban planner and designer specializing in inclusive and resilient cities. With over six years of experience across the Middle East, Europe, and North Africa, he works at the intersection of spatial planning, urban policy, and community-focused design.
+                          </p>
+
+                          <div className="w-full flex flex-col gap-2.5">
+                             {[
+                               'Strategic Urban Planning',
+                               'Policy Advisor',
+                               'Placemaking'
+                             ].map((label) => (
+                               <div key={label} className="px-5 py-3 bg-white/[0.03] border border-white/5 rounded-xl text-[12px] font-medium text-white/80 flex items-center justify-center">
+                                 {label}
+                               </div>
+                             ))}
                           </div>
                         </div>
                       </motion.div>
@@ -146,39 +198,31 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, showHomeButton }) => {
                   onMouseEnter={() => setShowContact(true)}
                   onMouseLeave={() => setShowContact(false)}
                 >
-                  <button className="text-[11px] font-black uppercase tracking-widest text-white/50 hover:text-white transition-colors flex items-center gap-2 py-2 px-4 hover:bg-white/5 rounded-full transition-all">
-                    <Mail size={12} className="text-blue-400" />
+                  <button className="text-sm font-medium text-gray-300 hover:text-white transition-all flex items-center gap-2 py-2 px-2 rounded-full">
                     Contact Us
                   </button>
                   <AnimatePresence>
                     {showContact && (
                       <motion.div
-                        initial={{ opacity: 0, y: 15, scale: 0.95, filter: 'blur(10px)' }}
-                        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95, filter: 'blur(10px)' }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute right-0 mt-3 w-64 bg-[#0A0A0C]/90 backdrop-blur-[40px] border border-white/10 rounded-[2rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] p-6 z-[100]"
+                        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="absolute right-0 mt-3 w-80 bg-[#0A0A0B] border border-white/10 rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,0.9)] p-8 z-[100]"
                       >
-                        <div className="space-y-4">
-                          <a href="mailto:ahmedroman@tanmyaa.com" className="group flex items-center gap-4 p-3 bg-white/5 rounded-2xl hover:bg-blue-500/10 transition-all border border-white/5">
-                            <div className="w-8 h-8 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                              <Mail size={14} className="text-blue-400" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[8px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">E-Mail</span>
-                              <span className="text-[10px] font-bold text-white/90">ahmedroman@tanmyaa.com</span>
-                            </div>
-                          </a>
-                          <a href="https://wa.me/201018960176" target="_blank" rel="noopener noreferrer" className="group flex items-center gap-4 p-3 bg-white/5 rounded-2xl hover:bg-green-500/10 transition-all border border-white/5">
-                            <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
-                              <MessageSquare size={14} className="text-green-400" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[8px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">WhatsApp</span>
-                              <span className="text-[10px] font-bold text-white/90">+201018960176</span>
-                            </div>
-                          </a>
-                        </div>
+                         <div className="space-y-4">
+                            <h4 className="text-sm font-semibold text-white/50 px-2 tracking-normal">General Inquiries</h4>
+                            
+                            <a href="mailto:ahmedroman@tanmyaa.com" className="flex flex-col gap-1 p-4 bg-white/[0.03] rounded-2xl hover:bg-white/[0.06] transition-all border border-white/5">
+                               <span className="text-[10px] font-bold text-white/30 tracking-normal">Email</span>
+                               <span className="text-[13px] font-medium text-white">ahmedroman@tanmyaa.com</span>
+                            </a>
+                            
+                            <a href="https://wa.me/201018960176" target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 p-4 bg-white/[0.03] rounded-2xl hover:bg-white/[0.06] transition-all border border-white/5">
+                               <span className="text-[10px] font-bold text-white/30 tracking-normal">WhatsApp</span>
+                               <span className="text-[13px] font-medium text-white">+201018960176</span>
+                            </a>
+                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
