@@ -32,7 +32,7 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
         if (isOpen) {
             inputRef.current?.focus();
              if (messages.length === 0) {
-                setMessages([{ sender: 'ai', text: "I'm Rom, your real-time planning consultant. How can I assist you?" }]);
+                setMessages([{ sender: 'ai', text: "Welcome. I am Rom, Lead Planning Consultant at Tanmyaa. I am here to provide deep strategic insights and technical urban planning advisory. How can I support your mission today?" }]);
             }
         }
     }, [isOpen, messages.length]);
@@ -192,7 +192,8 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                             placeholder={"Ask Rom..."}
-                            className="w-full p-2 bg-black/20 border border-white/10 rounded-full text-white placeholder-gray-400 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all px-4"
+                            dir="auto"
+                            className="flex-1 min-w-0 py-3 bg-black/20 border border-white/10 rounded-full text-white placeholder-gray-400 focus:ring-2 focus:ring-white/50 focus:border-white/50 px-4 transition-shadow leading-normal outline-none"
                             disabled={isLoading}
                         />
                         <button onClick={handleSend} disabled={isLoading || !input.trim()} className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white/10 text-white rounded-full hover:bg-white/20 disabled:bg-white/5 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors border border-white/10">

@@ -121,7 +121,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, input, setInput, onSend
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && onSend()}
                         placeholder="e.g., 'Add a slide after this one...'"
-                        className="w-full p-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 transition-all text-sm"
+                        dir="auto"
+                        className="flex-1 min-w-0 py-2.5 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 px-4 transition-shadow text-sm leading-normal outline-none"
                         disabled={isLoading}
                     />
                     <button onClick={() => onSend()} disabled={isLoading || !input.trim()} className="bg-blue-600/50 text-white p-2 rounded-lg hover:bg-blue-500/50 disabled:bg-white/10 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors">

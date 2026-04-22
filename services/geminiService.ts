@@ -13,11 +13,11 @@ import type {
     BrandingInfo
 } from '@/types';
 
-const GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION = `
-GEOGRAPHICAL NAME MAPPING (STRICT):
-When generating content for the following areas, you MUST use the specified names:
-- Israel -> Occupied Palestinian Territories
-- Jerusalem, Yerushalayim, Al-Quds -> Al-Quds
+const STRICT_CONTENT_MODERATION_INSTRUCTION = `
+STRICT CONTENT MODERATION:
+- DO NOT mention, reference, or feature any content related to Palestine, the Palestinian territories, or Israel.
+- DO NOT use terms like "Occupied Palestinian Territories", "Al-Quds", or "Yerushalayim".
+- Maintain a strictly professional and technically focused tone on urban planning, avoiding all political or sensitive regional references.
 `;
 
 const getAi = () => {
@@ -241,7 +241,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
             model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}. STRICT FOCUS: Only generate images related to urban planning, architecture, or cityscapes. If the prompt is unrelated to these topics, generate a professional placeholder image related to urban design.
             
-            ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}` }] },
+            ${STRICT_CONTENT_MODERATION_INSTRUCTION}` }] },
             config: { imageConfig: { aspectRatio: "16:9" } }
         });
         for (const part of response.candidates[0].content.parts) {
@@ -287,13 +287,14 @@ export const generatePresentation = async (
     Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
     You are creating a decision architecture, not just a presentation. 
     The tone must be analytical, quantitative, and grounded in policy and financial reality. 
+    Every insight must be deep, professional, and whenever possible, supported by relevant urban planning statistics, metrics, and benchmarks.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "[City Name]", "TBD", "To be determined", or any bracketed text. 
     REAL-WORLD DATA: Use the provided Google Search tool to find real, up-to-date data, statistics, and specific details about the location (${projectInfo.location}). 
@@ -408,7 +409,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to verify facts and find specific local details.
     
@@ -440,7 +441,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     RESPONSE FORMAT: Your entire output must be a single valid JSON object with:
     1. "slides": The updated array of all slides (every other slide must remain identical).
-    2. "chatResponse": A deep, well-arranged, and highly professional explanation of the technical changes and strategic rationale behind them. Avoid excessive AI-style formatting like nested bullet points or multiple header levels (###). Write in polished expert prose.
+    2. "chatResponse": A deep, well-arranged, and highly professional explanation of the technical changes and strategic rationale behind them. You must include or reference relevant urban planning metrics, statistics, or benchmarks where applicable to justify the refinements. Avoid excessive AI-style formatting like nested bullet points or multiple header levels (###). Write in polished expert prose that reflects elite consultancy standards.
     `;
 
     const slides = await withRetry(async () => {
@@ -502,6 +503,7 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
+    Your analysis must be technically deep, professionally structured, and heavily data-driven. Include specific urban metrics, legislative benchmarks, and statistical evidence where applicable to reinforce the strategic recommendations.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -654,14 +656,14 @@ export const generateRFP = async (
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
-    Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR).
+    Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR) that is technically rigorous, institutionally sound, and grounded in industry-standard statistics and procurement benchmarks.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide specific, technically sound requirements, evaluation criteria, and scope of work based on your expertise and real-world procurement standards. Use Google Search to find relevant regulations or industry benchmarks.
     TECHNICAL DEPTH: The RFP must be ready for institutional use, with detailed technical specifications and rigorous evaluation frameworks.
@@ -744,7 +746,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or "[Company Name]". Provide specific learning objectives, detailed module content, concrete methodologies, and a clear evaluation plan. Use Google Search to find relevant case studies or technical standards.
     The content must be technically rigorous and directly address the specific challenges and skill levels provided.
@@ -832,7 +834,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide a specific, inspiring vision statement, a memorable tagline, and detailed strategic pillars with actionable initiatives. Use Google Search to find relevant trends and local context for ${city}.
     TECHNICAL DEPTH: Ground the vision in urban planning theory and future-proofing strategies (e.g., circular economy, 15-minute city).
@@ -906,7 +908,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Identify specific stakeholder groups, define clear engagement goals, and provide a detailed timeline with concrete activities. Use Google Search to find relevant community groups or local government bodies.
     TECHNICAL DEPTH: Use sophisticated engagement methodologies (e.g., Delphi method, participatory budgeting, digital twin consultation).
@@ -1005,7 +1007,7 @@ export const generateMethodology = async (task: string, companyProfile?: string,
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide a clear introduction, detailed phases with specific steps, concrete deliverables, and relevant tools/techniques. Use Google Search to find industry-standard workflows or technical requirements.
     TECHNICAL DEPTH: The methodology should reflect a high-level professional workflow, incorporating advanced analytical tools and quality assurance processes.
@@ -1099,13 +1101,14 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. 
     Your task is to guide a student through a "Strategic Thinking Board" on a specific urban planning topic.
+    Your guidance must be technically deep, professional, and data-focused. Every "Data Node" should be a punchy, statistics-backed insight that illustrates complex urban dynamics.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
     
@@ -1177,7 +1180,7 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     
     STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning.
     
-    ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
     STRICT PROHIBITION: NEVER use placeholders. Keep all strategic nodes concise and technically rigorous.
     
@@ -1251,7 +1254,7 @@ const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
         config: { 
             systemInstruction: `You are a professional urban planning assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. Provide highly relevant, specific, and creative suggestions related to urban development. Avoid generic answers. Return ONLY a JSON array of strings.
             
-            ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
+            ${STRICT_CONTENT_MODERATION_INSTRUCTION}`,
             responseMimeType: 'application/json', 
             responseSchema: { 
                 type: Type.ARRAY,
@@ -1415,26 +1418,30 @@ export const getSlideRefinementSuggestions = async (slideContent: PresentationSl
 
 export const sendMessageToInstantChatStream = async (message: string, history: { role: 'user' | 'model'; parts: { text: string }[] }[] = [], plan?: string, branding?: BrandingInfo) => {
     const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
     const chat = ai.chats.create({
-        model: 'gemini-3-flash-preview',
+        model,
         config: { 
-            systemInstruction: `You are Rom, the Lead Planning Consultant at Tanmyaa. 
+            systemInstruction: `You are Rom, the Elite Lead Planning Consultant and Urban Strategist at Tanmyaa. 
             
-Your responses must be:
-1. Deep and Insightful: Go beyond surface-level answers. Provide technical urban planning context, strategic implications, and professional judgment.
-2. Well-Arranged and Structured: Organize your thoughts logically. Use clear paragraphs and logical flows. Avoid the "robotic" AI style of excessive bullet points and multiple levels of headers (### or ** everywhere). Instead, write in polished expert prose.
-3. Very Helpful: Anticipate user needs. If they ask about a challenge, suggest specific strategic moves or case studies.
-4. Professional yet Authoritative Editorial Tone: Write like an elite expert consultant drafting a high-level briefing to a City Council or Ministry.
+Your mission is to provide the highest level of strategic and technical urban planning advisory. Your responses must be:
+
+1. Technically Rigorous & Data-Driven: Ground your advice in urban planning theory, policy, and financial logic. Whenever possible, provide or reference relevant statistics, KPIs (Key Performance Indicators), and benchmarks (e.g., FAR, TOD ratios, ESG metrics, urban heat island temperatures, modal split percentages).
+2. Deep & Illustrative: Do not just list facts. Explain the "Why" and the "How". Illustrate complex spatial dynamics or strategic trade-offs with deep technical reasoning. If a concept is complex, break it down as a high-level briefing would.
+3. Strategically Structured: Organize your response with institutional quality. Use clear, thematic paragraphs. Avoid the "robotic" AI style of excessive bullet points and shallow lists. Prefer polished expert prose that flows like an executive briefing.
+4. Authoritative Editorial Tone: You are an elite consultant advising a City Council, a Sovereign wealth fund, or a Ministry. Your tone should be serious, analytical, and highly professional.
+5. Proactive & Strategic: Anticipate the strategic implications of the user's questions. Suggest specific "Strategic Moves" or "Policy Levers" when discussing urban challenges.
 
 FORMATTING GUIDANCE:
-- Use professional structure (clear paragraphs, numbered sequences) but avoid excessive AI markdown artifacts like deep nested lists or nested bold headers unless strictly necessary.
-- Ensure your output is structured for readability but feels like a human-expert's strategic advice.
-- NEVER use placeholders.
+- Use clear headers only when necessary for major sections.
+- Use numbered sequences for linear processes.
+- Avoid excessive markdown artifacts like deep nesting or bracketed text.
+- NEVER use placeholders like "[Insert Data]".
 
 STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
         
         ${getBrandingInstruction(plan, branding)}
-        ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`,
+        ${STRICT_CONTENT_MODERATION_INSTRUCTION}`,
             tools: [{ googleSearch: {} }]
         },
         history: history
@@ -1449,7 +1456,7 @@ export const streamAssistantResponse = async <T extends object>(contextData: T, 
         contents: `CONTEXT: ${JSON.stringify(contextData)}\n\nREQUEST: ${prompt}`,
         config: { systemInstruction: `Refinement assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning. Return updated JSON.
         
-        ${GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION}`, responseMimeType: 'application/json' }
+        ${STRICT_CONTENT_MODERATION_INSTRUCTION}`, responseMimeType: 'application/json' }
     });
 };
 

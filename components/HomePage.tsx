@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React from 'react';
 
 // --- ICONS TO MATCH USER'S DESIGN ---
 const IconPresentation: React.FC<{ className?: string }> = ({ className }) => (
@@ -83,98 +83,131 @@ const ServiceCard: React.FC<{ service: Service; onClick: () => void }> = ({ serv
   );
 };
 
-const InteractiveHeader = () => {
-  const line1 = "Advancing Cities";
-  const line2 = "Worldwide";
-  const containerRef = useRef<HTMLHeadingElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLHeadingElement>) => {
-    if (!containerRef.current) return;
-    const { clientX, clientY } = e;
-
-    const spans = containerRef.current.querySelectorAll('span');
-    for (const span of Array.from(spans)) {
-      const htmlSpan = span as HTMLElement;
-      const { left, top, width, height } = htmlSpan.getBoundingClientRect();
-      const centerX = left + width / 2;
-      const centerY = top + height / 2;
-      const deltaX = clientX - centerX;
-      const deltaY = clientY - centerY;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      const maxDistance = 150;
-      const effect = Math.max(0, 1 - distance / maxDistance);
-      const translateY = -10 * effect;
-      const blur = 20 * effect;
-      htmlSpan.style.transform = `translateY(${translateY}px)`;
-      htmlSpan.style.textShadow = `0px ${blur/2}px ${blur}px rgba(255, 255, 255, 0.4)`;
-      htmlSpan.style.color = `rgba(255, 255, 255, ${1 - effect * 0.2})`;
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (!containerRef.current) return;
-    const spans = containerRef.current.querySelectorAll('span');
-    for (const span of Array.from(spans)) {
-      const htmlSpan = span as HTMLElement;
-      htmlSpan.style.transform = 'translateY(0px)';
-      htmlSpan.style.textShadow = 'none';
-      htmlSpan.style.color = 'white';
-    }
-  };
-
-  const renderLine = (line: string) => (
-    <div className="flex justify-center">
-      {line.split('').map((char, index) => (
-        <span
-          key={index}
-          className="inline-block transition-all duration-200 ease-out"
-          style={{ transitionProperty: 'transform, color, text-shadow' }}
-        >
-          {char === ' ' ? '\u00A0' : char}
-        </span>
-      ))}
-    </div>
-  );
-
-  return (
-    <h1
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.9] md:leading-[0.85]"
-      aria-label={`${line1} ${line2}`}
-    >
-      {renderLine(line1)}
-      {renderLine(line2)}
-    </h1>
-  );
-};
-
 
 interface HomePageProps {
   onSelectService: (serviceId: string) => void;
 }
 
+import { motion } from 'motion/react';
+
+const AnimatedHero = () => {
+    const slogan = "Advancing cities together!";
+    const words = slogan.split(' ');
+
+    const scrollToServices = () => {
+        document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    return (
+        <div className="w-full min-h-[calc(100vh-80px)] relative flex flex-col items-center justify-center font-sans tracking-tight">
+            <div className="flex-1 flex flex-col items-center justify-center">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                    transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-center relative z-10"
+                >
+                    {/* Logo Animation */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 1 }}
+                    >
+                        <h2 className="text-7xl md:text-9xl font-black text-white mb-6 drop-shadow-2xl tracking-tighter">
+                            Tanmyaa<span className="text-blue-400">.</span>
+                        </h2>
+                    </motion.div>
+
+                    {/* Word-by-word Bottom-to-Top Slogan Animation */}
+                    <div className="flex flex-wrap justify-center gap-x-3 overflow-hidden py-2">
+                        {words.map((word, i) => (
+                            <div key={i} className="overflow-hidden">
+                                <motion.span
+                                    initial={{ y: 50, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{
+                                        delay: 1.2 + (i * 0.2),
+                                        duration: 0.8,
+                                        ease: [0.16, 1, 0.3, 1]
+                                    }}
+                                    className="block text-xl md:text-3xl text-white/80 font-medium tracking-wide"
+                                >
+                                    {word}
+                                </motion.span>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* Scroll Down Arrow */}
+            <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 3, duration: 1 }}
+                onClick={scrollToServices}
+                className="mb-12 group flex flex-col items-center gap-3 cursor-pointer"
+            >
+                <span className="text-xs font-sans font-bold text-white/70 uppercase tracking-widest group-hover:text-white transition-colors">Discover Services</span>
+                <motion.div
+                    animate={{ y: [0, 8, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-10 h-10 flex items-center justify-center rounded-full border border-white/20 group-hover:border-white/50 transition-colors"
+                >
+                    <svg className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                </motion.div>
+            </motion.button>
+
+            {/* Background subtle atmospheric glows */}
+            <motion.div 
+                animate={{ 
+                    y: [0, -20, 0],
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] -z-10"
+            />
+            <motion.div 
+                animate={{ 
+                    y: [0, 20, 0],
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] -z-10"
+            />
+        </div>
+    );
+};
+
 const HomePage: React.FC<HomePageProps> = ({ onSelectService }) => {
   return (
-    <div className="w-full min-h-[calc(100vh-120px)] flex flex-col items-center justify-center py-20">
-      <div className="text-center mb-16 animate-fade-in" style={{ animationDelay: '100ms' }}>
-        <InteractiveHeader />
-        <p className="mt-6 max-w-2xl mx-auto text-lg text-gray-400 font-normal">
-          Your partner in urban innovation.
-        </p>
-      </div>
+    <div className="w-full">
+      {/* Hero Section - Full Page */}
+      <section className="animate-fade-in">
+        <AnimatedHero />
+      </section>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-        {services.map((service, index) => (
-            <div key={service.id} className="animate-card-enter flex justify-center" style={{ animationDelay: `${250 + index * 75}ms`}}>
-                <ServiceCard
-                    service={service}
-                    onClick={() => onSelectService(service.id)}
-                />
+      {/* Services Section - Below the fold */}
+      <section id="services-section" className="py-32 px-4 bg-transparent">
+        <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-20 space-y-4">
+                <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase">Our Services</h2>
+                <p className="text-gray-400 font-sans text-lg tracking-normal">Specialized Urban Solutions</p>
+                <div className="w-20 h-1 bg-blue-500 mx-auto rounded-full" />
             </div>
-        ))}
-      </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {services.map((service, index) => (
+                    <div key={service.id} className="animate-card-enter flex justify-center" style={{ animationDelay: `${index * 100}ms`}}>
+                        <ServiceCard
+                            service={service}
+                            onClick={() => onSelectService(service.id)}
+                        />
+                    </div>
+                ))}
+            </div>
+        </div>
+      </section>
     </div>
   );
 };
