@@ -399,7 +399,7 @@ export const generatePresentation = async (
     return slides;
 };
 
-export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PresentationSlide[]> => {
+export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<{ slides: PresentationSlide[], chatResponse: string }> => {
     const ai = getAi();
     const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
     const systemInstruction = `You are a Lead Strategist at Tanmyaa Global, an elite Urban Planning consultancy. Your task is to intelligently refine the provided JSON presentation structure based on the user's request.
@@ -438,7 +438,10 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}
     
-    IMPORTANT: Your entire output must be only the valid JSON array of slides, with no other text or explanation.`;
+    RESPONSE FORMAT: Your entire output must be a single valid JSON object with:
+    1. "slides": The updated array of all slides (every other slide must remain identical).
+    2. "chatResponse": A deep, well-arranged, and highly professional explanation of the technical changes and strategic rationale behind them. Avoid excessive AI-style formatting like nested bullet points or multiple header levels (###). Write in polished expert prose.
+    `;
 
     const slides = await withRetry(async () => {
         const activeSlide = currentSlides[activeSlideIndex];
@@ -1419,12 +1422,12 @@ export const sendMessageToInstantChatStream = async (message: string, history: {
             
 Your responses must be:
 1. Deep and Insightful: Go beyond surface-level answers. Provide technical urban planning context, strategic implications, and professional judgment.
-2. Well-Arranged and Structured: Organize your thoughts logically. Use clear paragraphs and logical flows. Avoid the "robotic" AI style of excessive bullet points if a deep narrative explanation is more appropriate.
+2. Well-Arranged and Structured: Organize your thoughts logically. Use clear paragraphs and logical flows. Avoid the "robotic" AI style of excessive bullet points and multiple levels of headers (### or ** everywhere). Instead, write in polished expert prose.
 3. Very Helpful: Anticipate user needs. If they ask about a challenge, suggest specific strategic moves or case studies.
-4. Professional yet Authoritative Editorial Tone: Write like an expert consultant drafting a high-level briefing.
+4. Professional yet Authoritative Editorial Tone: Write like an elite expert consultant drafting a high-level briefing to a City Council or Ministry.
 
 FORMATTING GUIDANCE:
-- Use professional headings and bold text selectively to guide the reader.
+- Use professional structure (clear paragraphs, numbered sequences) but avoid excessive AI markdown artifacts like deep nested lists or nested bold headers unless strictly necessary.
 - Ensure your output is structured for readability but feels like a human-expert's strategic advice.
 - NEVER use placeholders.
 
