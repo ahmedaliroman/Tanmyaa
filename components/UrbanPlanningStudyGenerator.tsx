@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { generatePresentation, generateImage, refinePresentation, getSlideRefinementSuggestions } from '@/services/geminiService';
 import type { PresentationSlide as SlideType, UrbanPlanningProjectInfo, CaseStudyDeepDiveSlide, VisionSlide, MacroStrategySlide, NodeAssessmentSlide, BrandingInfo } from '@/types';
 import UrbanStudyInputForm from './UrbanStudyInputForm';
