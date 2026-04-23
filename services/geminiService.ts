@@ -1516,26 +1516,31 @@ export const generateMasterplan = async (
     Generate a JSON structure describing the core logic (structure, nodes, land use, density, green system, movement, services, built form).
     
     STEP 2 — SYSTEM LOCK:
-    All subsequent design slides must strictly adhere to the DNA. No random or decorative elements allowed.
+    All subsequent slides must strictly adhere to the DNA.
     
     STEP 3 — FULL DESIGN SET:
-    Generate a set of 9 professional design set prompts:
-    1. Masterplan (Full Layout)
-    2. Land Use Plan (Color-coded zoning based on program percentages)
-    3. Density Diagram (Heatmap-style, aligned with main axis nodes)
-    4. Accessibility Diagram (Walkable radii, 400m/800m service access)
-    5. Movement Diagram (Road hierarchy and connectivity)
-    6. Open Space System (Green network logic)
+    Generate 9 professional slides. Each slide MUST include:
+    - name: The functional title.
+    - prompt: A highly technical Stable Diffusion prompt including geometry, materials, and urban lighting.
+    - analysis: A professional urban planning narrative (2-3 paragraphs) explaining the logic, benchmarks, and functional success factors of this specific component. Use expert terminology (e.g., 'transversal connectivity', 'biophilic permeability', 'FAR optimization').
+
+    REQUIRED SLIDES:
+    1. Masterplan (Full Layout Overview)
+    2. Land Use Plan (Zoning logic)
+    3. Density Diagram (Massing strategy)
+    4. Accessibility Diagram (Catchment areas and service logic)
+    5. Movement Diagram (Hierarchy of flows)
+    6. Open Space System (Landscape strategy)
     7. Urban Form (Building heights and block typologies)
-    8. 3D Aerial View (Photorealistic aerial massing of the layout)
-    9. Strategic Perspectives (Specific views from Key Nodes, Parks, or Commercial Spines)
+    8. 3D Aerial View (Photorealistic massing)
+    9. Strategic Perspectives (Ground-level human-centric nodes)
 
     STEP 4 — ARCHITECTURAL INTEGRATION:
     If architectural data is provided, integrate it into the block sizes and unit typologies.
     
     ${getBrandingInstruction(plan, branding)}
     
-    STRICT FOCUS: Urban planning only. Politely refuse non-relevant requests.
+    STRICT FOCUS: Urban planning only.
     ${STRICT_CONTENT_MODERATION_INSTRUCTION}
 
     OUTPUT SCHEMA:
@@ -1543,8 +1548,8 @@ export const generateMasterplan = async (
     {
       "dna": { ...MasterplanDNA properties... },
       "slides": [
-        { "name": "Masterplan", "prompt": "..." },
-        ... other slide prompts ...
+        { "name": "...", "prompt": "...", "analysis": "..." },
+        ...
       ]
     }
     

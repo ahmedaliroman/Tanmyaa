@@ -565,6 +565,7 @@ export interface MasterplanDesignSet {
     slides: {
         name: string;
         prompt: string;
+        analysis: string;
         image_url?: string;
     }[];
 }

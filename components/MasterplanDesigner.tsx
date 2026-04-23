@@ -23,6 +23,8 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
   const [designSet, setDesignSet] = useState<MasterplanDesignSet | null>(null);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   const [generatingImages, setGeneratingImages] = useState<Record<string, boolean>>({});
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<'folio' | 'dna'>('folio');
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
   const [formData, setFormData] = useState({
@@ -45,7 +47,14 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
       const result = await generateMasterplan(formData, attachedFiles, userData?.plan);
       setDesignSet(result);
       setStep(3);
-      toast.success("Masterplan DNA calculated. Design set ready for generation.");
+      setActiveSlideIndex(0);
+      setViewMode('folio');
+      toast.success("Masterplan DNA calculated. Design portfolio ready.");
+      
+      // Auto-trigger first image
+      if (result.slides.length > 0) {
+        handleGenerateImage(result.slides[0].name, result.slides[0].prompt);
+      }
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "Failed to generate masterplan logic.");
@@ -298,102 +307,185 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
         {step === 3 && designSet && (
           <motion.div 
             key="step3"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-12"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-8"
           >
-            {/* Masterplan DNA Breakdown */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                 <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3">
-                   <div className="w-2 h-8 bg-blue-500" /> System DNA: Spatial Logic
-                 </h2>
-                 <div className="px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-400 rounded-full text-xs font-black flex items-center gap-2">
-                   <CheckCircle2 className="w-4 h-4" /> Logic Locked & Validated
-                 </div>
+            {/* Portfolio Navigation Header */}
+            <div className="flex items-center justify-between border-b border-white/5 pb-6">
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => setViewMode('folio')}
+                  className={`text-xs font-black uppercase tracking-[0.2em] transition-all px-6 py-2 rounded-full border ${viewMode === 'folio' ? 'bg-white text-black border-white' : 'text-gray-500 border-transparent hover:text-white'}`}
+                >
+                  Design Folio
+                </button>
+                <button 
+                  onClick={() => setViewMode('dna')}
+                  className={`text-xs font-black uppercase tracking-[0.2em] transition-all px-6 py-2 rounded-full border ${viewMode === 'dna' ? 'bg-white text-black border-white' : 'text-gray-500 border-transparent hover:text-white'}`}
+                >
+                  Spatial DNA
+                </button>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {renderDNACard("Urban Structure", designSet.dna.structure, <Layers className="w-4 h-4" />)}
-                {renderDNACard("Main Spine", designSet.dna.mainAxis, <ArrowRight className="w-4 h-4" />)}
-                {renderDNACard("Intensity Nodes", designSet.dna.nodes, <Zap className="w-4 h-4" />)}
-                {renderDNACard("Land Use Logic", designSet.dna.landUse, <Map className="w-4 h-4" />)}
-                {renderDNACard("Density Pattern", designSet.dna.density, <Layout className="w-4 h-4" />)}
-                {renderDNACard("Eco-System", designSet.dna.greenSpaces, <Users className="w-4 h-4" />)}
-                {renderDNACard("Smart Mobility", designSet.dna.movement, <Send className="w-4 h-4" />)}
-                {renderDNACard("Civic Services", designSet.dna.services, <Building2 className="w-4 h-4" />)}
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setStep(1)}
+                  className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+                >
+                  New Project
+                </button>
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-900/20">
+                  Export Full Package
+                </button>
               </div>
             </div>
 
-            {/* Design Set Slides */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3">
-                <div className="w-2 h-8 bg-purple-500" /> Strategic Design Set
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {designSet.slides.map((slide, idx) => (
-                  <div key={idx} className="bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden flex flex-col group hover:border-white/30 transition-all hover:bg-white/[0.07]">
-                    <div className="aspect-video bg-black/40 relative group">
-                      {generatedImages[slide.name] ? (
-                        <img src={generatedImages[slide.name]} alt={slide.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                           <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-4 border border-white/5 group-hover:scale-110 transition-transform">
-                              {generatingImages[slide.name] ? <Loader2 className="w-6 h-6 animate-spin text-blue-400" /> : <Eye className="w-6 h-6 text-gray-600 group-hover:text-gray-400" />}
-                           </div>
-                           <p className="text-xs text-gray-500 uppercase tracking-widest font-black mb-1">{slide.name}</p>
-                           <p className="text-[10px] text-gray-700 italic px-4 line-clamp-3 group-hover:text-gray-500 transition-colors">
-                              {slide.prompt}
-                           </p>
-                        </div>
-                      )}
-                      
-                      {!generatedImages[slide.name] && (
-                        <button 
-                          disabled={generatingImages[slide.name]}
-                          onClick={() => handleGenerateImage(slide.name, slide.prompt)}
-                          className="absolute inset-0 z-10 opacity-0 group-hover:opacity-100 bg-black/80 backdrop-blur-sm transition-all flex items-center justify-center"
-                        >
-                          <div className="bg-white text-black px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                            {generatingImages[slide.name] ? 'Synthesizing...' : 'Generate Visualization'}
+            {viewMode === 'dna' ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+              >
+                {renderDNACard("Urban Structure", designSet.dna.structure, <Layers className="w-4 h-4" />)}
+                {renderDNACard("Main Spine", JSON.stringify(designSet.dna.main_axis), <ArrowRight className="w-4 h-4" />)}
+                {renderDNACard("Intensity Nodes", `${designSet.dna.nodes.length} Key Strategic Points Identified`, <Zap className="w-4 h-4" />)}
+                {renderDNACard("Land Use Distribution", Object.entries(designSet.dna.land_use_distribution).map(([k,v]) => `${k}: ${v}`).join(', '), <Map className="w-4 h-4" />)}
+                {renderDNACard("Density Pattern", designSet.dna.density_strategy, <Layout className="w-4 h-4" />)}
+                {renderDNACard("Eco-System", designSet.dna.green_system.spine, <Users className="w-4 h-4" />)}
+                {renderDNACard("Smart Mobility", designSet.dna.movement_hierarchy.roads, <Send className="w-4 h-4" />)}
+                {renderDNACard("Service Strategy", designSet.dna.service_distribution.logic, <Building2 className="w-4 h-4" />)}
+              </motion.div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Left: Thumbnail Sidebar */}
+                <div className="lg:col-span-3 space-y-3 h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                  {designSet.slides.map((slide, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setActiveSlideIndex(idx);
+                        if (!generatedImages[slide.name] && !generatingImages[slide.name]) {
+                          handleGenerateImage(slide.name, slide.prompt);
+                        }
+                      }}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                        activeSlideIndex === idx 
+                          ? 'bg-blue-600/10 border-blue-500/50 text-blue-400' 
+                          : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300'
+                      }`}
+                    >
+                      <div className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-50">Slide 0{idx + 1}</div>
+                      <div className="text-xs font-bold uppercase tracking-tight line-clamp-1">{slide.name}</div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Right: Main Viewer */}
+                <div className="lg:col-span-9 bg-black/40 border border-white/5 rounded-[3rem] overflow-hidden flex flex-col min-h-[600px]">
+                  <div className="relative aspect-video bg-gray-900 overflow-hidden">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeSlideIndex}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="absolute inset-0"
+                      >
+                        {generatedImages[designSet.slides[activeSlideIndex].name] ? (
+                          <img 
+                            src={generatedImages[designSet.slides[activeSlideIndex].name]} 
+                            alt={designSet.slides[activeSlideIndex].name} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center bg-gray-900/50 relative">
+                             <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent opacity-60" />
+                             <div className="w-16 h-16 bg-blue-600/20 rounded-3xl flex items-center justify-center mb-6 border border-blue-500/20 shadow-2xl shadow-blue-900/20">
+                               {generatingImages[designSet.slides[activeSlideIndex].name] ? (
+                                 <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+                               ) : (
+                                 <ImageIcon className="w-8 h-8 text-gray-500" />
+                               )}
+                             </div>
+                             <h3 className="text-sm font-black uppercase tracking-[0.3em] text-white/40 mb-3">Initializing Visual Cortex</h3>
+                             <p className="text-xs text-gray-600 max-w-sm line-clamp-2 leading-relaxed font-mono italic">
+                               {designSet.slides[activeSlideIndex].prompt}
+                             </p>
+                             
+                             {!generatingImages[designSet.slides[activeSlideIndex].name] && (
+                               <button 
+                                 onClick={() => handleGenerateImage(designSet.slides[activeSlideIndex].name, designSet.slides[activeSlideIndex].prompt)}
+                                 className="mt-8 px-8 py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-full hover:scale-105 transition-transform"
+                               >
+                                 Ignite Visualization
+                               </button>
+                             )}
                           </div>
-                        </button>
-                      )}
-                    </div>
-                    <div className="p-6 flex-1 flex flex-col">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-[10px] font-black text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded uppercase tracking-tighter">Slide {idx + 1}</span>
-                        <h3 className="font-black text-sm uppercase tracking-widest text-white/90">{slide.name}</h3>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+                    
+                    {/* Floating Slide Header */}
+                    <div className="absolute top-8 left-8 z-10 pointer-events-none">
+                      <div className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10 inline-flex items-center gap-2 mb-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Masterplan Design System</span>
                       </div>
-                      <p className="text-gray-500 text-xs leading-relaxed mb-6 flex-1">
-                        Professional spatial analysis visualization. Adheres to DNA constraints regarding nodes, spines, and land-use distribution.
-                      </p>
-                      <button className="w-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white py-3 rounded-xl border border-white/5 font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2">
-                        <Download className="w-3 h-3" /> Export Component
-                      </button>
+                      <h2 className="text-3xl font-black uppercase tracking-tighter text-white drop-shadow-2xl">
+                        {designSet.slides[activeSlideIndex].name}
+                      </h2>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Bottom Controls */}
-            <div className="flex items-center justify-between p-8 bg-blue-500/5 rounded-[2.5rem] border border-blue-500/10">
-               <div>
-                  <h3 className="text-lg font-black uppercase tracking-widest mb-1 text-white">Full Blueprint Ready</h3>
-                  <p className="text-gray-400 text-sm">Download the complete technical package including DNA JSON and 8K visual assets.</p>
-               </div>
-               <div className="flex gap-4">
-                  <button onClick={() => setStep(1)} className="px-8 py-4 bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl font-black text-xs uppercase tracking-widest transition-all">Restart</button>
-                  <button className="px-10 py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:-translate-y-1 shadow-xl">Download All Assets</button>
-               </div>
-            </div>
+                  {/* Analysis Content */}
+                  <div className="p-10 flex-1 flex flex-col bg-gradient-to-b from-transparent to-gray-950/30">
+                    <div className="flex items-center justify-between mb-8">
+                       <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400/80">Analytical Framework & Logic</h3>
+                       <div className="flex items-center gap-1">
+                          {[...Array(9)].map((_, i) => (
+                            <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === activeSlideIndex ? 'bg-blue-500 w-4' : 'bg-white/10'}`} />
+                          ))}
+                       </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+                      <div className="md:col-span-8 prose prose-invert">
+                        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                          {designSet.slides[activeSlideIndex].analysis}
+                        </p>
+                      </div>
+                      <div className="md:col-span-4 border-l border-white/5 pl-10 space-y-6">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Active Benchmarks</label>
+                          <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                            <div className="text-[10px] text-gray-400 leading-tight">Spatial logic synced with {formData.location}'s urban morphology.</div>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            const next = (activeSlideIndex + 1) % designSet.slides.length;
+                            setActiveSlideIndex(next);
+                            if (!generatedImages[designSet.slides[next].name] && !generatingImages[designSet.slides[next].name]) {
+                              handleGenerateImage(designSet.slides[next].name, designSet.slides[next].prompt);
+                            }
+                          }}
+                          className="w-full group bg-white/5 hover:bg-white/10 border border-white/5 p-4 rounded-2xl transition-all flex items-center justify-between"
+                        >
+                          <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Next Strategic Slide</span>
+                          <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
-      </>
-      )}
+    </>
+    )}
     </div>
   );
 };
