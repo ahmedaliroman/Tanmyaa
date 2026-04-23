@@ -524,6 +524,51 @@ export interface Methodology {
     conclusion: string;
 }
 
+export interface MasterplanDNA {
+    structure: string;
+    main_axis: {
+        type: string;
+        role: string;
+        orientation: string;
+    };
+    nodes: {
+        type: string;
+        function: string;
+        spatial_logic: string;
+    }[];
+    land_use_distribution: Record<string, string>;
+    density_strategy: string;
+    green_system: {
+        parks: string;
+        spine: string;
+        connections: string;
+    };
+    movement_hierarchy: {
+        roads: string;
+        walkability: string;
+    };
+    service_distribution: {
+        schools: string;
+        mosque: string;
+        healthcare: string;
+        logic: string;
+    };
+    built_form_strategy: {
+        blocks: string;
+        heights: string;
+        typologies: string;
+    };
+}
+
+export interface MasterplanDesignSet {
+    dna: MasterplanDNA;
+    slides: {
+        name: string;
+        prompt: string;
+        image_url?: string;
+    }[];
+}
+
 export interface UrbanDeepUnderstanding {
     topic: string;
     teacherPersona: {

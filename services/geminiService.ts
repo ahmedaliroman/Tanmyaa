@@ -1480,3 +1480,96 @@ export const streamAssistantResponse = async <T extends object>(contextData: T, 
     });
 };
 
+export const generateMasterplan = async (
+    params: {
+        location: string;
+        projectType: string;
+        density: string;
+        goal: string;
+        program?: string;
+        archInputs?: string;
+    },
+    plan?: string,
+    branding?: BrandingInfo
+): Promise<MasterplanDesignSet> => {
+    const ai = getAi();
+    const model = getModelForPlan(plan, 'complex');
+    
+    const systemInstruction = `You are a Principal Urban Strategist and elite Masterplan Designer. 
+    Your mission is to generate a COMPLETE, CONSISTENT, and PROFESSIONAL masterplan design system.
+    
+    IDENTITY:
+    - You are Tanmyaa's proprietary Masterplan AI.
+    - You synthesize geographic context, financial feasibility, and architectural rigor.
+
+    WORKFLOW:
+    STEP 1 — MASTERPLAN DNA:
+    Generate a JSON structure describing the core logic (structure, nodes, land use, density, green system, movement, services, built form).
+    
+    STEP 2 — SYSTEM LOCK:
+    All subsequent design slides must strictly adhere to the DNA. No random or decorative elements allowed.
+    
+    STEP 3 — FULL DESIGN SET:
+    Generate a set of 9 professional design set prompts:
+    1. Masterplan (Full Layout)
+    2. Land Use Plan (Color-coded zoning based on program percentages)
+    3. Density Diagram (Heatmap-style, aligned with main axis nodes)
+    4. Accessibility Diagram (Walkable radii, 400m/800m service access)
+    5. Movement Diagram (Road hierarchy and connectivity)
+    6. Open Space System (Green network logic)
+    7. Urban Form (Building heights and block typologies)
+    8. 3D Aerial View (Photorealistic aerial massing of the layout)
+    9. Strategic Perspectives (Specific views from Key Nodes, Parks, or Commercial Spines)
+
+    STEP 4 — ARCHITECTURAL INTEGRATION:
+    If architectural data is provided, integrate it into the block sizes and unit typologies.
+    
+    ${getBrandingInstruction(plan, branding)}
+    
+    STRICT FOCUS: Urban planning only. Politely refuse non-relevant requests.
+    ${STRICT_CONTENT_MODERATION_INSTRUCTION}
+
+    OUTPUT SCHEMA:
+    Return a single JSON object:
+    {
+      "dna": { ...MasterplanDNA properties... },
+      "slides": [
+        { "name": "Masterplan", "prompt": "..." },
+        ... other slide prompts ...
+      ]
+    }
+    
+    The image prompts must be detailed, technically descriptive, including lighting, texture, and architectural style.`;
+
+    const inputPrompt = `
+    Location: ${params.location}
+    Project Type: ${params.projectType}
+    Density: ${params.density}
+    Goal: ${params.goal}
+    Program Requirements: ${params.program || 'Generate a balanced, realistic urban program based on location.'}
+    Architectural Inputs: ${params.archInputs || 'Assume realistic Middle Eastern typologies.'}
+    
+    Produce a professional Masterplan Design System.
+    `;
+
+    const result = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: inputPrompt }];
+        
+        const response = await ai.models.generateContent({
+            model,
+            contents: { parts },
+            config: { 
+                systemInstruction, 
+                responseMimeType: 'application/json',
+                tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
+            },
+        });
+
+        return parseJsonResponse<MasterplanDesignSet>(response, 'Masterplan Designer');
+    });
+
+    await deductCredits(25, `Generated Masterplan Design System for ${params.location}`, undefined, 'MASTERPLAN');
+    return result;
+};
+

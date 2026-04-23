@@ -9,6 +9,7 @@ import PresentationGenerator from './components/UrbanPlanningStudyGenerator';
 import RFPGenerator from './components/RFPGenerator';
 import VisionFrameworkGenerator from './components/VisionFrameworkGenerator';
 import StakeholderPlanGenerator from './components/StakeholderPlanGenerator';
+import MasterplanDesigner from './components/MasterplanDesigner';
 import SubscriptionPage from './components/SubscriptionPage';
 import MethodologyGenerator from './components/MethodologyGenerator';
 import UrbanDeepUnderstandingGenerator from './components/UrbanDeepUnderstandingGenerator';
@@ -218,6 +219,8 @@ const App: React.FC = () => {
     switch (view.serviceId) {
       case 'urban-planning-study':
         return <PresentationGenerator {...props} />;
+      case 'masterplan-designer':
+        return <MasterplanDesigner {...props} />;
       case 'urban-deep-understanding':
         return <UrbanDeepUnderstandingGenerator {...props} />;
       case 'policy-strategy':
