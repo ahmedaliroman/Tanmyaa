@@ -54,7 +54,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, input, setInput, onSend
                            <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
                         </svg>
                     </div>
-                    <h2 className="text-lg font-semibold text-white">AI Co-Pilot</h2>
+                    <h2 className="text-lg font-semibold text-white">Tanmyaa AI Co-Pilot</h2>
                 </div>
                 <button onClick={handleClose} className="text-gray-400 hover:text-white" aria-label="Close chat">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>

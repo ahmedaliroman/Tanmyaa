@@ -26,7 +26,7 @@ const AIAssistant = <T extends object>({ contextData, onRefine, onUpgrade }: AIA
     const { refreshProfile, deductCredits, profile } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
-        { sender: 'ai', text: "How can I refine this document for you?" }
+        { sender: 'ai', text: "I am Tanmyaa Bot. How can I refine this document for you?" }
     ]);
     const [input, setInput] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -147,7 +147,7 @@ const AIAssistant = <T extends object>({ contextData, onRefine, onUpgrade }: AIA
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex-shrink-0 flex items-center justify-center border border-blue-400/50">
                             <GenerateIcon className="w-5 h-5 text-white" />
                         </div>
-                        <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+                        <h2 className="text-lg font-semibold text-white">Tanmyaa AI Assistant</h2>
                     </div>
                     <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors text-gray-400 hover:text-white" aria-label="Close chat">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>

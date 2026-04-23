@@ -33,7 +33,7 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
         if (isOpen) {
             inputRef.current?.focus();
              if (messages.length === 0) {
-                setMessages([{ sender: 'ai', text: "Welcome. I am Rom, Lead Planning Consultant at Tanmyaa. I am here to provide deep strategic insights and technical urban planning advisory. How can I support your mission today?" }]);
+                setMessages([{ sender: 'ai', text: "Welcome. I am Tanmyaa Bot, the advanced AI Urban Planning Consultant. Developed in 2025 by Ahmed Roman, I triangulate technical data from multiple global resources to provide high-quality strategic advisory. How can I support your mission today?" }]);
             }
         }
     }, [isOpen, messages.length]);
@@ -200,7 +200,7 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <h2 className="text-lg font-semibold text-white">Consult with Rom</h2>
+                        <h2 className="text-lg font-semibold text-white">Consult with Tanmyaa Bot</h2>
                     </div>
                     <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors text-gray-400 hover:text-white" aria-label="Close chat">
                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -255,7 +255,7 @@ const InstantChat: React.FC<InstantChatProps> = ({ onUpgrade }) => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder={"Ask Rom..."}
+                            placeholder={"Ask Tanmyaa Bot..."}
                             dir="auto"
                             className="flex-1 min-w-0 py-3 bg-black/20 border border-white/10 rounded-full text-white placeholder-gray-400 focus:ring-2 focus:ring-white/50 focus:border-white/50 px-4 transition-shadow leading-normal outline-none"
                             disabled={isLoading}
