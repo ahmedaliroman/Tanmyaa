@@ -17,12 +17,13 @@ interface MasterplanDesignerProps {
 }
 
 const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) => {
-  const { userData } = useAuth();
+  const { userData, user, signInWithGoogle } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [designSet, setDesignSet] = useState<MasterplanDesignSet | null>(null);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   const [generatingImages, setGeneratingImages] = useState<Record<string, boolean>>({});
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
   const [formData, setFormData] = useState({
     location: '',
@@ -41,7 +42,7 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
 
     setLoading(true);
     try {
-      const result = await generateMasterplan(formData, userData?.plan);
+      const result = await generateMasterplan(formData, attachedFiles, userData?.plan);
       setDesignSet(result);
       setStep(3);
       toast.success("Masterplan DNA calculated. Design set ready for generation.");
@@ -50,6 +51,13 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
       toast.error(error.message || "Failed to generate masterplan logic.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAttachedFiles(Array.from(e.target.files));
+      toast.success("Site boundaries attached for analysis.");
     }
   };
 
@@ -78,23 +86,50 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
   );
 
   return (
-    <div className="min-h-[calc(100vh-200px)] text-white font-sans max-w-6xl mx-auto py-12 px-4 shadow-2xl rounded-3xl backdrop-blur-xl border border-white/5 bg-black/40">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between mb-12">
+    <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8 text-white font-sans max-w-6xl mx-auto my-12">
+      {!user ? (
+        <div className="text-center py-12">
+          <div className="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center mb-6 mx-auto border border-blue-500/20">
+            <Users className="w-10 h-10 text-blue-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-tight">Identity Required</h2>
+          <p className="text-gray-400 mb-8 max-w-md mx-auto">
+            To initialize the Masterplan DNA and track your generation credits, please sign in with your professional account.
+          </p>
+          <button
+            onClick={signInWithGoogle}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-10 rounded-full transition-all duration-300 shadow-xl shadow-blue-900/40 flex items-center space-x-3 mx-auto uppercase tracking-widest text-xs"
+          >
+            <span>Sign in with Google</span>
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="px-2 py-0.5 bg-blue-500 rounded text-[10px] font-black uppercase tracking-tighter text-white">Elite Service</div>
-            <h1 className="text-3xl font-black tracking-tighter uppercase">Master Plan Designer</h1>
+            <div className="px-2 py-0.5 bg-blue-600 rounded text-[10px] font-bold uppercase tracking-wider text-white">Elite Service</div>
+            <h1 className="text-2xl font-bold tracking-tight text-white uppercase">Master Plan Designer</h1>
           </div>
-          <p className="text-gray-400 text-lg">Autonomous Spatial Logic & Architectural Integration</p>
+          <p className="text-gray-400">Autonomous Spatial Logic & Architectural Integration</p>
         </div>
-        <div className="hidden md:flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-md">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= 1 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/10 text-gray-500'}`}>1</div>
-            <div className="w-8 h-[1px] bg-white/10" />
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= 2 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/10 text-gray-500'}`}>2</div>
-            <div className="w-8 h-[1px] bg-white/10" />
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= 3 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/10 text-gray-500'}`}>3</div>
+        
+        <div className="flex items-center justify-center space-x-2 sm:space-x-4">
+          {[1, 2, 3].map((s) => (
+            <button
+              key={s}
+              onClick={() => step > s && step !== 3 && setStep(s)}
+              disabled={step === 3 || loading}
+              className={`text-center py-2 px-4 text-sm font-medium transition-colors duration-300 disabled:opacity-50 ${
+                s === step
+                  ? 'bg-gray-700/80 text-white rounded-lg border border-gray-600/50 shadow-lg'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {s === 1 ? 'Context' : s === 2 ? 'Program' : 'System DNA'}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -102,85 +137,93 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
         {step === 1 && (
           <motion.div 
             key="step1"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-12"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-6"
           >
-            <div className="space-y-6">
-               <div className="space-y-4">
-                  <label className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 block ml-1">Spatial Context</label>
-                  <div className="relative group">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-blue-400 transition-colors" />
+            <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
+               <div className="border-b border-gray-800 p-4">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Spatial Context</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-0 top-1 w-4 h-4 text-gray-500" />
                     <input 
                       type="text"
                       placeholder="e.g., Cairo New Capital, Damietta Port, London Greenwich..."
                       value={formData.location}
                       onChange={(e) => setFormData({...formData, location: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 rounded-3xl focus:border-blue-500 outline-none transition-all text-lg font-medium placeholder:text-gray-600 focus:bg-white/10"
+                      className="w-full bg-transparent text-white placeholder-gray-500 pl-6 transition duration-200 focus:outline-none focus:ring-0 font-medium"
                     />
                   </div>
                </div>
 
-               <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Project Typology</label>
+               <div className="grid grid-cols-1 md:grid-cols-2">
+                  <div className="border-b md:border-b-0 md:border-r border-gray-800 p-4">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Project Typology</label>
                     <select 
                       value={formData.projectType}
                       onChange={(e) => setFormData({...formData, projectType: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm font-bold appearance-none cursor-pointer"
+                      className="w-full bg-transparent text-white outline-none cursor-pointer appearance-none"
                     >
-                      <option value="mixed-use" className="bg-[#050508]">Mixed-Use</option>
-                      <option value="residential" className="bg-[#050508]">Residential Case</option>
-                      <option value="landscape" className="bg-[#050508]">Landscape/Park</option>
-                      <option value="compound" className="bg-[#050508]">Luxury Compound</option>
-                      <option value="industrial" className="bg-[#050508]">Industrial Hub</option>
+                      <option value="mixed-use" className="bg-gray-900">Mixed-Use</option>
+                      <option value="residential" className="bg-gray-900">Residential Case</option>
+                      <option value="landscape" className="bg-gray-900">Landscape/Park</option>
+                      <option value="compound" className="bg-gray-900">Luxury Compound</option>
+                      <option value="industrial" className="bg-gray-900">Industrial Hub</option>
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Urban Density</label>
+                  <div className="p-4 border-t md:border-t-0 border-gray-800">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Urban Density</label>
                     <select 
                       value={formData.density}
                       onChange={(e) => setFormData({...formData, density: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 text-sm font-bold appearance-none cursor-pointer"
+                      className="w-full bg-transparent text-white outline-none cursor-pointer appearance-none"
                     >
-                      <option value="low" className="bg-[#050508]">Low Density</option>
-                      <option value="medium" className="bg-[#050508]">Medium Density</option>
-                      <option value="high" className="bg-[#050508]">High Density</option>
-                      <option value="ultra-compact" className="bg-[#050508]">Ultra Compact</option>
+                      <option value="low" className="bg-gray-900">Low Density</option>
+                      <option value="medium" className="bg-gray-900">Medium Density</option>
+                      <option value="high" className="bg-gray-900">High Density</option>
+                      <option value="ultra-compact" className="bg-gray-900">Ultra Compact</option>
                     </select>
                   </div>
                </div>
 
-               <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Strategic Goal</label>
+               <div className="border-t border-gray-800 p-4">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Strategic Goal</label>
                   <textarea 
                     rows={2}
                     placeholder="e.g., 15-minute city logic, connected green spines..."
                     value={formData.goal}
                     onChange={(e) => setFormData({...formData, goal: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl resize-none outline-none focus:border-blue-500 text-sm placeholder:text-gray-600 focus:bg-white/10"
+                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0"
                   />
                </div>
 
-               <button 
-                onClick={() => setStep(2)}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-5 rounded-3xl font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-3"
-               >
-                 Advance to DNA Configuration <ArrowRight className="w-5 h-5" />
-               </button>
+               <div className="p-4 bg-gray-800/20">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Site Boundary (Included)</label>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-gray-500 transition-colors cursor-pointer relative group bg-black/20">
+                        <ImageIcon className={`w-6 h-6 mx-auto mb-2 transition-colors ${attachedFiles.length > 0 ? 'text-green-400' : 'text-gray-500 group-hover:text-blue-400'}`} />
+                        <span className={`text-xs font-bold transition-colors ${attachedFiles.length > 0 ? 'text-green-400' : 'text-gray-500 group-hover:text-gray-300'}`}>
+                          {attachedFiles.length > 0 ? `${attachedFiles[0].name} Locked` : 'Upload Site Boundaries (Aerial Photo)'}
+                        </span>
+                        <input 
+                          type="file" 
+                          onChange={handleFileChange}
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                        />
+                    </div>
+                  </div>
+               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center group hover:bg-white/[0.07] transition-all cursor-pointer relative overflow-hidden">
-                <div className="absolute inset-0 bg-blue-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mb-6 border border-white/10 group-hover:scale-110 transition-transform">
-                  <ImageIcon className="w-10 h-10 text-gray-400 group-hover:text-blue-400" />
-                </div>
-                <h3 className="text-xl font-black uppercase tracking-tighter mb-2">Upload Site Boundary</h3>
-                <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
-                  Attach an aerial photo or site plan. I will analyze the geometry and red boundaries (Real-time computer vision coming soon).
-                </p>
-                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" />
+            <div className="flex justify-end">
+              <button 
+                onClick={() => setStep(2)}
+                disabled={!formData.location}
+                className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-8 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50 flex items-center gap-2"
+              >
+                Next <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </motion.div>
         )}
@@ -188,67 +231,66 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
         {step === 2 && (
           <motion.div 
             key="step2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-6"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <label className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 block ml-1 flex items-center gap-2">
-                  <Database className="w-4 h-4" /> Functional Program Components
-                </label>
+            <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="border-b border-gray-800 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Functional Program Components</label>
+                  <Database className="w-4 h-4 text-gray-600" />
+                </div>
                 <textarea 
-                  rows={6}
+                  rows={5}
                   placeholder="e.g., 50% Villas, 30% Townhouses, 10% Retail Mall, 5% School, 5% Mosque..."
                   value={formData.program}
                   onChange={(e) => setFormData({...formData, program: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 p-5 rounded-3xl resize-none outline-none focus:border-blue-500 text-sm placeholder:text-gray-600 focus:bg-white/10 font-mono"
+                  className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0 font-mono text-sm"
                 />
-                <p className="text-[10px] text-gray-500 italic p-2 bg-white/5 rounded-xl border border-white/5">
-                  Pro tip: Define percentages to ensure spatial logic matches financial benchmarks.
-                </p>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-xs font-black uppercase tracking-[0.2em] text-purple-400 block ml-1 flex items-center gap-2">
-                  <Box className="w-4 h-4" /> Architectural Parameters (Optional)
-                </label>
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Architectural Parameters</label>
+                  <Box className="w-4 h-4 text-gray-600" />
+                </div>
                 <textarea 
-                  rows={6}
+                  rows={5}
                   placeholder="e.g., Max build height 12m, Modern Islamic aesthetic, Rooftop gardening integration..."
                   value={formData.archInputs}
                   onChange={(e) => setFormData({...formData, archInputs: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 p-5 rounded-3xl resize-none outline-none focus:border-purple-500 text-sm placeholder:text-gray-600 focus:bg-white/10 font-mono"
+                  className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0 font-mono text-sm"
                 />
-                <p className="text-[10px] text-gray-500 italic p-2 bg-white/5 rounded-xl border border-white/5">
-                  These inputs will govern the generated unit typologies and block distributions.
-                </p>
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex justify-between items-center mt-6">
               <button 
                 onClick={() => setStep(1)}
-                className="flex-[1] bg-white/5 border border-white/10 hover:bg-white/10 text-white py-5 rounded-3xl font-black uppercase tracking-widest transition-all"
+                className="text-gray-400 hover:text-white font-medium py-2 px-4 rounded-full transition duration-300"
               >
                 Back
               </button>
-              <button 
-                disabled={loading}
-                onClick={handleGenerate}
-                className="flex-[3] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-5 rounded-3xl font-black uppercase tracking-widest transition-all relative overflow-hidden group shadow-2xl"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-3">
-                    <Loader2 className="w-6 h-6 animate-spin" /> Synthesizing Masterplan DNA...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-3 group-hover:scale-105 transition-transform">
-                    Initialize System Design <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                  </span>
-                )}
-              </button>
+              <div className="flex items-center gap-4">
+                 <div className="text-sm text-gray-400">{userData?.credits || 0} credits remaining.</div>
+                 <button 
+                  disabled={loading}
+                  onClick={handleGenerate}
+                  className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-8 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50 flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Synthesizing...
+                    </>
+                  ) : (
+                    <>
+                      Initialize Design <Send className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -350,13 +392,8 @@ const MasterplanDesigner: React.FC<MasterplanDesignerProps> = ({ onUpgrade }) =>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Credits Footer */}
-      <div className="mt-12 text-center border-t border-white/5 pt-8">
-        <p className="text-gray-600 text-[10px] uppercase tracking-[0.5em] font-black">
-          Powered by Tanmyaa Urban Intelligence System &bull; 2025
-        </p>
-      </div>
+      </>
+      )}
     </div>
   );
 };

@@ -188,6 +188,11 @@ const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: 
 
 const deductCredits = async (amount: number, description: string, fileUrl?: string, type?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session || !session.access_token) {
+        throw new Error("You must be signed in to perform this action. Your session may have expired.");
+    }
+
     const response = await fetch('/api/deduct-credits', {
         method: 'POST',
         headers: {
@@ -1489,6 +1494,7 @@ export const generateMasterplan = async (
         program?: string;
         archInputs?: string;
     },
+    files?: File[],
     plan?: string,
     branding?: BrandingInfo
 ): Promise<MasterplanDesignSet> => {
@@ -1497,6 +1503,9 @@ export const generateMasterplan = async (
     
     const systemInstruction = `You are a Principal Urban Strategist and elite Masterplan Designer. 
     Your mission is to generate a COMPLETE, CONSISTENT, and PROFESSIONAL masterplan design system.
+    
+    VISUAL ANALYSIS: 
+    If a site plan or aerial photo is provided, you MUST analyze the geometry, boundaries, and existing constraints visible in the image. Integrate these spatial realities into the Masterplan DNA.
     
     IDENTITY:
     - You are Tanmyaa's proprietary Masterplan AI.
@@ -1555,6 +1564,24 @@ export const generateMasterplan = async (
     const result = await withRetry(async () => {
         const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: inputPrompt }];
         
+        if (files && files.length > 0) {
+            try {
+                const fileData = await new Promise<{ data: string; mimeType: string }>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64 = (reader.result as string).split(',')[1];
+                        resolve({ data: base64, mimeType: files[0].type });
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(files[0]);
+                });
+                parts.push({ inlineData: fileData });
+                parts.push({ text: "The attached image is the site plan/aerial photo. Analyze its boundaries and context strictly." });
+            } catch (e) {
+                console.error("Failed to process site image:", e);
+            }
+        }
+
         const response = await ai.models.generateContent({
             model,
             contents: { parts },
