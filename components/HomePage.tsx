@@ -40,6 +40,12 @@ const IconMethodology: React.FC<{ className?: string }> = ({ className }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-1.717-.968-3.235-2.435-3.996a4.501 4.501 0 00-5.11 1.423c-1.127.99-1.828 2.378-1.828 3.91V16.5a2.25 2.25 0 002.25 2.25h4.5a2.25 2.25 0 002.25-2.25v-2.09c0-.813.386-1.583.99-2.08l.01-.01c.09-.07.18-.14.27-.2v-.22c0-.813.386-1.583.99-2.08l.01-.01c.09-.07.18-.14.27-.2v-.22Z" />
     </svg>
 );
+const IconMasterplan: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M3 10h18M3 16h18M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1zM7 4v16M12 4v16M17 4v16" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 7l2 2 4-4" />
+    </svg>
+);
 const IconDeepUnderstanding: React.FC<{ className?: string }> = ({ className }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -48,6 +54,7 @@ const IconDeepUnderstanding: React.FC<{ className?: string }> = ({ className }) 
 
 
 const services = [
+  { id: 'masterplan-designer', title: 'Masterplan Designer', description: 'Design high-end residential communities with intelligent urban frameworks and lot subdivision.', icon: <IconMasterplan /> },
   { id: 'urban-planning-study', title: 'Presentation', description: 'Generate a comprehensive, structured presentation from problem to implementation.', icon: <IconPresentation /> },
   { id: 'urban-deep-understanding', title: 'Deep Understanding', description: 'Illustrate urban topics with interactive charts, projections, and examples in a Policy Brief style.', icon: <IconDeepUnderstanding /> },
   { id: 'policy-strategy', title: 'Policy Brief', description: 'Transform complex project briefs into clear, actionable policy reports.', icon: <IconPolicyBrief /> },

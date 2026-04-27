@@ -12,6 +12,7 @@ import StakeholderPlanGenerator from './components/StakeholderPlanGenerator';
 import SubscriptionPage from './components/SubscriptionPage';
 import MethodologyGenerator from './components/MethodologyGenerator';
 import UrbanDeepUnderstandingGenerator from './components/UrbanDeepUnderstandingGenerator';
+import MasterplanDesignerGenerator from './components/MasterplanDesignerGenerator';
 import AuthCallback from './components/AuthCallback';
 import ResetPasswordPage from './components/ResetPasswordPage';
 import { Toaster } from 'sonner';
@@ -220,6 +221,8 @@ const App: React.FC = () => {
         return <PresentationGenerator {...props} />;
       case 'urban-deep-understanding':
         return <UrbanDeepUnderstandingGenerator {...props} />;
+      case 'masterplan-designer':
+        return <MasterplanDesignerGenerator {...props} />;
       case 'policy-strategy':
         return <PolicyStrategyGenerator {...props} />;
       case 'rfp-generator':

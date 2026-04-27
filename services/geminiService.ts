@@ -31,13 +31,13 @@ const getAi = () => {
 
 const getModelForPlan = (plan?: string, taskType: 'basic' | 'complex' = 'complex') => {
     if (plan === 'Business') {
-        return 'gemini-3.1-pro-preview'; // Custom & Fine-Tuned (using Pro for highest quality)
+        return 'gemini-1.5-pro'; // Custom & Fine-Tuned (using Pro for highest quality)
     }
     if (plan === 'Pro') {
-        return 'gemini-3.1-pro-preview'; // Enhanced
+        return 'gemini-1.5-pro'; // Enhanced
     }
     // Trial / Free / Default
-    return taskType === 'complex' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview'; 
+    return taskType === 'complex' ? 'gemini-1.5-pro' : 'gemini-1.5-flash'; 
 };
 
 const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
@@ -74,6 +74,18 @@ const fetchFileAsBase64 = async (url: string): Promise<{ data: string; mimeType:
         };
         reader.onerror = reject;
         reader.readAsDataURL(blob);
+    });
+};
+
+const fileToBase64 = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            const base64String = (reader.result as string).split(',')[1];
+            resolve(base64String);
+        };
+        reader.onerror = error => reject(error);
     });
 };
 
@@ -188,6 +200,13 @@ const parseJsonResponse = <T>(response: GenerateContentResponse, generatorName: 
 
 const deductCredits = async (amount: number, description: string, fileUrl?: string, type?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
+    
+    // For internal development: skip deduction if no session is present
+    if (!session) {
+        console.warn('Skipping credit deduction: No active session.');
+        return;
+    }
+
     const response = await fetch('/api/deduct-credits', {
         method: 'POST',
         headers: {
@@ -234,14 +253,28 @@ const withRetry = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Pr
     throw lastError;
 };
 
-export const generateImage = async (prompt: string): Promise<string> => {
+export const generateImage = async (prompt: string, referenceImage?: string, skipDeduction: boolean = false): Promise<string> => {
     const ai = getAi();
     const result = await withRetry(async () => {
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}. STRICT FOCUS: Only generate images related to urban planning, architecture, or cityscapes. If the prompt is unrelated to these topics, generate a professional placeholder image related to urban design.
+            
+            ${STRICT_CONTENT_MODERATION_INSTRUCTION}` }];
+
+        if (referenceImage) {
+            const base64Data = referenceImage.startsWith('data:') ? referenceImage.split(',')[1] : referenceImage;
+            const mimeType = referenceImage.startsWith('data:') ? referenceImage.split(';')[0].split(':')[1] : 'image/png';
+            parts.unshift({
+                inlineData: {
+                    data: base64Data,
+                    mimeType: mimeType
+                }
+            });
+            parts.push({ text: "CRITICAL MANDATE: Use the attached image as the ABSOLUTE base. DO NOT change the perspective, background, or any elements outside the site boundary. The new design must be SEAMLESSLY integrated into this specific site context. Maintain the EXACT scale and orientation." });
+        }
+
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: `Cinematic, photorealistic, 8k, professional urban planning visualization, architecturally accurate, dramatic lighting, sharp focus: ${prompt}. STRICT FOCUS: Only generate images related to urban planning, architecture, or cityscapes. If the prompt is unrelated to these topics, generate a professional placeholder image related to urban design.
-            
-            ${STRICT_CONTENT_MODERATION_INSTRUCTION}` }] },
+            contents: { parts },
             config: { imageConfig: { aspectRatio: "16:9" } }
         });
         for (const part of response.candidates[0].content.parts) {
@@ -263,7 +296,9 @@ export const generateImage = async (prompt: string): Promise<string> => {
                 const fileUrl = await uploadFileToStorage(blob, fileName);
                 
                 // Deduct credits with file URL
-                await deductCredits(5, `Generated AI Image: ${prompt.substring(0, 50)}...`, fileUrl || undefined, 'IMAGE');
+                if (!skipDeduction) {
+                    await deductCredits(5, `Generated AI Image: ${prompt.substring(0, 50)}...`, fileUrl || undefined, 'IMAGE');
+                }
                 
                 return `data:${mimeType};base64,${base64Data}`;
             }
@@ -499,7 +534,7 @@ ${JSON.stringify(currentSlides)}` }];
     return slides;
 };
 
-export const generatePolicyReport = async (brief: string, _files: File[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
+export const generatePolicyReport = async (brief: string, files: File[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
     const ai = getAi();
     const model = getModelForPlan(plan, 'complex');
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
@@ -514,6 +549,9 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide real data, specific examples, and actionable recommendations. Use the Google Search tool to find real-world evidence and statistics.
     TECHNICAL DEPTH: Ensure the analysis is rigorous, using professional terminology and providing concrete, quantified evidence where possible.
+    
+    DATA SOURCE INTEGRATION:
+    If any files are provided, analyze their content (PDF or images) to extract relevant data points and incorporate them into the findings.
     
     SCHEMA GUIDANCE:
     {
@@ -554,8 +592,25 @@ export const generatePolicyReport = async (brief: string, _files: File[], compan
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
 
     const briefResult = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a structured policy brief based on: ${brief}` }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [];
         
+        // Add user brief
+        parts.push({ text: `Analyze the following policy context and generate a complete structured brief: ${brief}` });
+        
+        // Handle files if present
+        if (files && files.length > 0) {
+            for (const file of files) {
+                const base64 = await fileToBase64(file);
+                parts.push({
+                    inlineData: {
+                        data: base64,
+                        mimeType: file.type || 'application/pdf'
+                    }
+                });
+                parts.push({ text: `Reference file: ${file.name}` });
+            }
+        }
+
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
         const response = await ai.models.generateContent({
@@ -1302,6 +1357,178 @@ export const getSpecificFocusSuggestions = async (location: string, challenge: s
 export const getAudienceSuggestions = async (location: string, challenge: string): Promise<string[]> => {
     const prompt = `For an urban planning project in '${location}' about '${challenge}', suggest 3 distinct audiences. Return a JSON array of strings.`;
     return generateInputSuggestions(prompt);
+};
+
+export const getMasterplanLocationSuggestions = async (): Promise<string[]> => {
+    const prompt = `Suggest 3 diverse global cities known for luxury urban developments or large scale masterplans (e.g., Dubai, UAE; Riyadh, Saudi Arabia; Singapore). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getMasterplanScaleSuggestions = async (location: string): Promise<string[]> => {
+    const prompt = `For a masterplan in '${location}', suggest 3 relevant development scales (e.g., District / 100+ Hectares, Neighborhood Block, Mixed-Use Quarter). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getMasterplanTypeSuggestions = async (location: string): Promise<string[]> => {
+    const prompt = `For a masterplan in '${location}', suggest 3 premium development types (e.g., Luxury Residential Enclave, Sustainable Innovation District, Waterfront Mixed-Use). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getBuildingCoverageSuggestions = async (type: string): Promise<string[]> => {
+    const prompt = `For a '${type}' urban development, suggest 3 typical building coverage percentages (e.g., 25% (Low Density Luxury), 40% (Medium Density Cluster), 60% (High Density Urban)). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getGreenSpaceSuggestions = async (type: string): Promise<string[]> => {
+    const prompt = `For a '${type}' urban development, suggest 3 ambitious green space ratio targets (e.g., 30% (Forest City), 15% (Pocket Park Network), 50% (Eco-Sanctuary)). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getMaxHeightSuggestions = async (type: string): Promise<string[]> => {
+    const prompt = `For a '${type}' urban development, suggest 3 building height constraints (e.g., G+1 (Villa Style), G+5 (Mid-rise Apartments), Mixed Heights (G+1 to G+12)). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getTargetDensitySuggestions = async (type: string, scale: string): Promise<string[]> => {
+    const prompt = `For a '${type}' at a '${scale}' scale, suggest 3 target density benchmarks (e.g., 20 units/hectare (Exclusive), 80 units/hectare (Urban Intensive), 150 residents/hectare). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const getLandUseBalanceSuggestions = async (type: string): Promise<string[]> => {
+    const prompt = `For a '${type}', suggest 3 land use distribution mixes (e.g., 70% Resi / 20% Green / 10% Services, 50% Resi / 30% Open Space / 20% Commercial). Return a JSON array of strings.`;
+    return generateInputSuggestions(prompt);
+};
+
+export const generateMasterplan = async (
+    info: MasterplanProjectInfo,
+    companyProfile?: string,
+    plan?: string,
+    branding?: BrandingInfo
+): Promise<MasterplanSlide[]> => {
+    try {
+        const landUseText = (info.landUseBreakdown || []).length > 0 
+            ? `STRICT GEOMETRIC LAND USE REQUIREMENTS: 
+            The design MUST visually demonstrate the following area distributions WITHIN the red boundary:
+            ${info.landUseBreakdown?.map(i => `- ${i.label}: EXACTLY ${i.percentage}% of the total area inside the red lines.`).join('\n')}
+            If 'Green Area' is ${info.landUseBreakdown?.find(i => i.label === 'Green Area')?.percentage || 0}%, the footprint of all vegetation must cover exactly that much of the internal site area.` 
+            : `Land Use Balance: Default to 70% Residential and 30% Infrastructure/Green.`;
+
+        const brandingContext = getBrandingInstruction(plan, branding);
+
+        const metricsContext = `
+        CRITICAL SPATIAL COMPLIANCE (ZERO TOLERANCE):
+        - YOU ARE CONFINED: The design surface is ONLY the area INSIDE the red boundary polygon. 
+        - LEAVE THE OUTSIDE ALONE: Do not add any new elements (trees, buildings, colors) beyond the red line.
+        - PROMPT ENGINEERING: When generating the image prompt, emphasize "site-contained design", "no spillover", and "perfect fit within site borders".
+        
+        LAND USE AUDIT:
+        - The user REQUIRES the following balance: ${landUseText}
+        - Your design and image prompt MUST reflect these proportions exactly.
+        
+        ${brandingContext}
+        `;
+
+        // Slide 1: Residential Masterplan (The Organic Design)
+        const prompt1 = `
+        You are an elite urban architect. Your task is to generate a masterplan overlay for ${info.city}, ${info.country} that is SEAMLESSLY integrated into the site.
+        
+        ABSOLUTE BOUNDARY RULE:
+        1. THE RED LINE IS A HARD WALL: Any pixel of your design found outside the red-bordered polygon is a FATAL ERROR.
+        2. CONTEXT PRESERVATION: Every pixel outside the red border MUST be identical to the original satellite image. 
+        3. DESIGN WITHIN THE LINES: All new infrastructure, green corridors, and buildings must be strictly arranged to follow the internal contours of the site.
+        
+        LAND USE PERCENTAGES (MANDATORY):
+        ${info.landUseBreakdown?.map(i => `- ${i.label}: ${i.percentage}%`).join(', ')}
+        
+        ${metricsContext}
+        
+        DESIGN ELEMENTS:
+        1. STRATEGY: Arrange buildings and spaces to maximize efficiency within the polygonal site.
+        2. CONNECTIVITY: Branch out from internal patterns to intercept existing external roads exactly at the boundary line.
+        
+        VISUALIZATION STYLE:
+        - Ultra-realistic aerial photo overlay.
+        - High-end architectural rendering.
+        - Clear containment: "The new development is perfectly bounded by the site limits".
+      `;
+
+        // Slide 2: Urban Framework (Specific Graphic Language)
+        const prompt2 = `
+        Generate a professional URBAN DEVELOPMENT FRAMEWORK (Functional Diagram) for the site.
+        
+        GRAPHIC RULES:
+        1. CONTEXT: The area outside the red boundary MUST be the original satellite image, but faded by 50%.
+        2. DESIGN AREA: The area inside the boundary must be GHOST-WHITE or high transparency.
+        
+        COLOR-CODED ZONES (MANDATORY AREA %):
+        - RESIDENTIAL ZONES: Solid YELLOW. (Target: ${info.landUseBreakdown?.find(i => i.label === 'Residential')?.percentage || 70}%)
+        - GREEN AREAS: Solid GREEN. (Target: ${info.landUseBreakdown?.find(i => i.label === 'Green Area')?.percentage || 15}%)
+        - MIXED-USE: Solid ORANGE.
+        - INDUSTRIAL: Solid PURPLE.
+        - PUBLIC FACILITIES: LIGHT BLUE.
+        
+        MOVEMENT:
+        - Main Arterial: Thick solid BLACK lines.
+        - Internal Streets: Thin solid BLACK lines.
+        - Pedestrian Spine: Thick DASHED GREEN line.
+        
+        ANNOTATIONS:
+        - "نوع التطوير: Urban Development Framework"
+        - Minimalist Legend and North Arrow.
+      `;
+
+        // Slide 3: Plot Classification
+        const prompt3 = `
+        Generate a realistic residential subdivision based on Slide 1.
+        Do NOT change the road network or green corridors.
+        
+        TASK:
+        - Divide blocks into buildable plots facing streets.
+        - Plots must have regular proportions; adapt edge plots to boundary shape.
+        - Show plot numbers and clear boundaries.
+        - Keep green areas (Green Spine, parks) untouched.
+        
+        STYLE: Clean technical layout, light colors, precise boundaries.
+        TITLE: "Plot classification"
+      `;
+
+        // Generate images sequentially to use Slide 1 as reference for 2 and 3
+        const img1 = await generateImage(prompt1, info.satelliteImage, true);
+        const img2 = await generateImage(prompt2, img1, true);
+        const img3 = await generateImage(prompt3, img1, true);
+
+        await deductCredits(20, `Generated Masterplan for ${info.city}, ${info.country}`, undefined, 'MASTERPLAN');
+
+        return [
+            {
+                layout: 'Masterplan',
+                title: 'Masterplan Study',
+                description: 'Organic community design featuring a central green spine, pedestrian permeability, and site-responsive urban masses.',
+                image_prompt: prompt1,
+                image_url: img1,
+                slide_number: 1
+            },
+            {
+                layout: 'Masterplan',
+                title: 'Urban Development Framework',
+                description: 'Structural diagram illustrating zoning hierarchy, dashed pedestrian movement, and social nodes on a faded context.',
+                image_prompt: prompt2,
+                image_url: img2,
+                slide_number: 2
+            },
+            {
+                layout: 'Masterplan',
+                title: 'Plot Classification',
+                description: 'Detailed technical subdivision showing implementation-ready buildable plots and street-front access.',
+                image_prompt: prompt3,
+                image_url: img3,
+                slide_number: 3
+            }
+        ];
+    } catch (error) {
+        console.error("Masterplan generation failed:", error);
+        throw error;
+    }
 };
 
 export const getAuthorRoleSuggestions = async (): Promise<string[]> => {

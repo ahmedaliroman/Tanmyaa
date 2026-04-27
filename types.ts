@@ -385,6 +385,34 @@ export interface ProcessSlide {
     image_url?: string;
 }
 
+export interface LandUseItem {
+    label: string;
+    percentage: number;
+}
+
+export interface MasterplanProjectInfo {
+    location: string;
+    city: string;
+    country: string;
+    scale: string;
+    type: string;
+    buildingCoverage?: string;
+    greenSpaceRatio?: string;
+    maxHeight?: string;
+    landUseBalance?: string; // Kept for backward compatibility or simple input
+    landUseBreakdown?: LandUseItem[]; 
+    satelliteImage?: string; // Data URL
+}
+
+export interface MasterplanSlide {
+    layout: 'Masterplan';
+    title: string;
+    description: string;
+    image_prompt: string;
+    image_url?: string;
+    slide_number: number;
+}
+
 // Union type for all possible slides in the new structure
 export type PresentationSlide = 
     | CoverSlide 
@@ -411,7 +439,8 @@ export type PresentationSlide =
     | NextStepsSlide
     | ConclusionSlide
     | ReferencesSlide
-    | ClosingSlide;
+    | ClosingSlide
+    | MasterplanSlide;
 
 
 // The following types are kept for other generators but are no longer used for the main presentation
