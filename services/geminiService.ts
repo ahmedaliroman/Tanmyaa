@@ -1,4 +1,4 @@
-import { GoogleGenAI, GenerateContentResponse, Type, ThinkingLevel } from '@google/genai';
+import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
 import { supabase } from '@/lib/supabase';
 import type { 
     PresentationSlide,
@@ -20,6 +20,12 @@ STRICT CONTENT MODERATION:
 - Maintain a strictly professional and technically focused tone on urban planning, avoiding all political or sensitive regional references.
 `;
 
+const GEOGRAPHICAL_NAME_MAPPING_INSTRUCTION = `
+GEOGRAPHICAL DATA ACCURACY:
+- Use standardized, internationally recognized geographical names for all locations.
+- Ensure all technical data is correctly localized to the specific city or region identified in the request.
+`;
+
 const getAi = () => {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
@@ -29,15 +35,12 @@ const getAi = () => {
     return new GoogleGenAI({ apiKey });
 };
 
-const getModelForPlan = (plan?: string, taskType: 'basic' | 'complex' = 'complex') => {
+const getModelForPlan = (plan?: string) => {
+    // Priority is given to gemini-3-flash-preview as it is the current environment standard
     if (plan === 'Business') {
-        return 'gemini-3.1-pro-preview'; // Custom & Fine-Tuned (using Pro for highest quality)
+        return 'gemini-3-flash-preview'; // Use confirmed available model
     }
-    if (plan === 'Pro') {
-        return 'gemini-3.1-pro-preview'; // Enhanced
-    }
-    // Trial / Free / Default
-    return taskType === 'complex' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview'; 
+    return 'gemini-3-flash-preview';
 };
 
 const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
@@ -273,7 +276,7 @@ export const generateImage = async (prompt: string, referenceImage?: string, ski
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { parts },
             config: { imageConfig: { aspectRatio: "16:9" } }
         });
@@ -317,7 +320,7 @@ export const generatePresentation = async (
     branding?: BrandingInfo
 ): Promise<PresentationSlide[]> => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const systemInstruction = `You are a world-class Principal Urban Strategist at a top-tier global consultancy (like McKinsey, Arup, or Foster + Partners). 
     Your output is a complete, technically defensible, and institutionally aware strategic doctrine. 
     You are creating a decision architecture, not just a presentation. 
@@ -436,7 +439,7 @@ export const generatePresentation = async (
 
 export const refinePresentation = async (currentSlides: PresentationSlide[], userRequest: string, activeSlideIndex: number, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<{ slides: PresentationSlide[], chatResponse: string }> => {
     const ai = getAi();
-    const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
+    const model = 'gemini-3-flash-preview';
     const systemInstruction = `You are a Lead Strategist at Tanmyaa Global, an elite Urban Planning consultancy. Your task is to intelligently refine the provided JSON presentation structure based on the user's request.
     
     ${getBrandingInstruction(plan, branding)}
@@ -506,8 +509,7 @@ ${JSON.stringify(currentSlides)}` }];
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: model.includes('pro') ? { thinkingLevel: ThinkingLevel.HIGH } : undefined
+                tools: [{ googleSearch: {} }]
             },
         });
         const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
@@ -535,7 +537,7 @@ ${JSON.stringify(currentSlides)}` }];
 
 export const generatePolicyReport = async (brief: string, files: File[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const systemInstruction = `You are a world-class Lead Policy Analyst at a global think tank. Your task is to generate a comprehensive, evidence-based, and actionable Policy Brief.
     Your analysis must be technically deep, professionally structured, and heavily data-driven. Include specific urban metrics, legislative benchmarks, and statistical evidence where applicable to reinforce the strategic recommendations.
     
@@ -707,7 +709,7 @@ export const generateRFP = async (
     branding?: BrandingInfo
 ): Promise<RFPContent> => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR) that is technically rigorous, institutionally sound, and grounded in industry-standard statistics and procurement benchmarks.
     
@@ -751,7 +753,6 @@ export const generateRFP = async (
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -790,7 +791,7 @@ export const generateRFP = async (
 
 export const generateCapacityBuildingProgram = async (audience: string, skillLevel: string, challenges: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<CapacityBuildingProgram> => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const systemInstruction = `You are a world-class Urban Planning Educator and Capacity Building Consultant. 
     Your task is to generate a comprehensive, tailored Capacity Building Program.
     
@@ -841,7 +842,6 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -878,7 +878,7 @@ export const generateCapacityBuildingProgram = async (audience: string, skillLev
 
 export const generateVisionFramework = async (city: string, aspirations: string, timeframe: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<VisionFramework> => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const systemInstruction = `You are a world-class Urban Futurist and Strategist. 
     Your task is to generate a cohesive and inspiring Vision Framework.
     
@@ -920,7 +920,6 @@ export const generateVisionFramework = async (city: string, aspirations: string,
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -952,7 +951,7 @@ export const generateVisionFramework = async (city: string, aspirations: string,
 
 export const generateStakeholderPlan = async (context: string, goals: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<StakeholderPlan> => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const systemInstruction = `You are a world-class public engagement strategist. 
     Your task is to generate a detailed Stakeholder Engagement Plan.
     
@@ -1004,7 +1003,6 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -1051,7 +1049,7 @@ export const generateStakeholderPlan = async (context: string, goals: string, co
 
 export const generateMethodology = async (task: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<Methodology> => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const systemInstruction = `You are a Senior Urban Project Manager. 
     Your task is to generate a detailed, step-by-step Methodology for a complex urban planning task.
     
@@ -1103,7 +1101,6 @@ export const generateMethodology = async (task: string, companyProfile?: string,
                 systemInstruction, 
                 responseMimeType: 'application/json',
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -1151,7 +1148,7 @@ export const generateMethodology = async (task: string, companyProfile?: string,
 
 export const generateDeepUnderstanding = async (topic: string, context: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. 
     Your task is to guide a student through a "Strategic Thinking Board" on a specific urban planning topic.
     Your guidance must be technically deep, professional, and data-focused. Every "Data Node" should be a punchy, statistics-backed insight that illustrates complex urban dynamics.
@@ -1212,8 +1209,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
-                tools: [{googleSearch: {}}],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
+                tools: [{googleSearch: {} }]
             }
         });
         
@@ -1226,7 +1222,7 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
 
 export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstanding, userRequest: string, companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<UrbanDeepUnderstanding> => {
     const ai = getAi();
-    const model = plan === 'Free' || !plan ? 'gemini-3.1-flash-lite-preview' : 'gemini-3.1-pro-preview';
+    const model = 'gemini-3-flash-preview';
     const systemInstruction = `You are a world-class Principal Urban Strategist and Professor. Update the provided "Strategic Thinking Board" JSON based on the student's request.
     
     ${getBrandingInstruction(plan, branding)}
@@ -1302,7 +1298,7 @@ export const fetchUsageHistory = async (): Promise<UsageHistory[]> => {
 const generateInputSuggestions = async (prompt: string): Promise<string[]> => {
     const ai = getAi();
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: { 
             systemInstruction: `You are a professional urban planning assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. Provide highly relevant, specific, and creative suggestions related to urban development. Avoid generic answers. Return ONLY a JSON array of strings.
@@ -1599,7 +1595,7 @@ export const getMethodologyRefinementSuggestions = async (task: string): Promise
 export const getRefinementSuggestions = async (prompt: string): Promise<string[]> => {
     const ai = getAi();
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: { responseMimeType: 'application/json', responseSchema: { type: Type.ARRAY, items: { type: Type.STRING }} }
     });
@@ -1623,7 +1619,7 @@ export const getSlideRefinementSuggestions = async (slideContent: PresentationSl
     Focus on urban planning concepts (e.g., "Add specific FAR calculations", "Include a heat island mitigation strategy", "Elaborate on the TOD benefits").
     Return ONLY a JSON array of strings.`;
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: { 
             responseMimeType: 'application/json', 
@@ -1643,7 +1639,7 @@ export const getSlideRefinementSuggestions = async (slideContent: PresentationSl
 
 export const sendMessageToInstantChatStream = async (message: string, history: { role: 'user' | 'model'; parts: { text: string }[] }[] = [], plan?: string, branding?: BrandingInfo) => {
     const ai = getAi();
-    const model = getModelForPlan(plan, 'complex');
+    const model = getModelForPlan(plan);
     const chat = ai.chats.create({
         model,
         config: { 
@@ -1697,7 +1693,7 @@ STRICT FOCUS: You deal ONLY with Urban Planning and related fields (Architecture
 export const streamAssistantResponse = async <T extends object>(contextData: T, prompt: string) => {
     const ai = getAi();
     return ai.models.generateContentStream({
-        model: 'gemini-3.1-flash-lite-preview',
+        model: 'gemini-3-flash-preview',
         contents: `CONTEXT: ${JSON.stringify(contextData)}\n\nREQUEST: ${prompt}`,
         config: { systemInstruction: `Refinement assistant. STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning. Return updated JSON.
         
