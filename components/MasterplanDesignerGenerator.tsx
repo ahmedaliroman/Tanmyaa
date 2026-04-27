@@ -63,8 +63,8 @@ const ResponsiveSlideContainer: React.FC<{ children: React.ReactNode }> = ({ chi
     );
 };
 
-const MasterplanDesignerGenerator: React.FC<MasterplanDesignerGeneratorProps> = ({ onUpgrade }) => {
-  const { user, profile, loading, signInWithGoogle, deductCredits, refreshProfile } = useAuth();
+const MasterplanDesignerGenerator: React.FC<MasterplanDesignerGeneratorProps> = () => {
+  const { user, profile, loading, signInWithGoogle, refreshProfile } = useAuth();
   const { companyProfile } = useCompanyProfile();
   const [slides, setSlides] = useState<MasterplanSlide[] | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);

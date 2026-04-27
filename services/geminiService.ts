@@ -31,13 +31,13 @@ const getAi = () => {
 
 const getModelForPlan = (plan?: string, taskType: 'basic' | 'complex' = 'complex') => {
     if (plan === 'Business') {
-        return 'gemini-1.5-pro'; // Custom & Fine-Tuned (using Pro for highest quality)
+        return 'gemini-3.1-pro-preview'; // Custom & Fine-Tuned (using Pro for highest quality)
     }
     if (plan === 'Pro') {
-        return 'gemini-1.5-pro'; // Enhanced
+        return 'gemini-3.1-pro-preview'; // Enhanced
     }
     // Trial / Free / Default
-    return taskType === 'complex' ? 'gemini-1.5-pro' : 'gemini-1.5-flash'; 
+    return taskType === 'complex' ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview'; 
 };
 
 const getBrandingInstruction = (plan?: string, branding?: BrandingInfo) => {
@@ -419,8 +419,7 @@ export const generatePresentation = async (
             config: { 
                 systemInstruction, 
                 responseMimeType: 'application/json',
-                tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
+                tools: [{ googleSearch: {} }]
             },
         });
 
@@ -619,8 +618,7 @@ export const generatePolicyReport = async (brief: string, files: File[], company
             config: { 
                 systemInstruction,
                 responseMimeType: 'application/json',
-                tools: [{googleSearch: {}}],
-                thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+                tools: [{googleSearch: {} }],
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
