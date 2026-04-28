@@ -713,7 +713,7 @@ export const generateRFP = async (
 ): Promise<RFPContent> => {
     const ai = getAi();
     const model = getModelForPlan(plan);
-    const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
+    const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist and Partner at an elite global strategy firm. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR) that is technically rigorous, institutionally sound, and grounded in industry-standard statistics and procurement benchmarks.
     
     Level of Detailing requested: ${detailLevel}.
@@ -722,11 +722,17 @@ export const generateRFP = async (
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
     
-    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself and state that your expertise is limited to urban planning.
+    STRICT FOCUS: This application is dedicated EXCLUSIVELY to Urban Planning. If the user's request is not related to urban planning, you MUST politely excuse yourself.
     
     ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
-    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide specific, technically sound requirements, evaluation criteria, and scope of work based on your expertise and real-world procurement standards. Use Google Search to find relevant regulations or industry benchmarks.
+    ELITE STANDARDS:
+    - Tone: Authoritative, executive, and highly professional. Avoid generic AI introductory fluff.
+    - Consistency: Ensure logical flow between objectives, scope, and evaluation criteria.
+    - Metrics: Include specific KPIs, technical thresholds (e.g., FAR, LOS, GFA), and deliverables with clear definitions.
+    - Ultra-Detailed Mode: If requested, provide exhaustive breakdowns of methodology requirements, specific stakeholder engagement protocols, and granular payment milestones.
+    
+    STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide specific, technically sound requirements based on real-world procurement standards.
     TECHNICAL DEPTH: The RFP must be ready for institutional use, with detailed technical specifications and rigorous evaluation frameworks.
     
     SCHEMA GUIDANCE:
@@ -748,9 +754,9 @@ export const generateRFP = async (
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const rfp = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a detailed RFP for: ${taskDescription}.
-        Apply ${detailLevel} level of detailing. 
-        Tailor the profile for an ${consultantBackground} consultant background.` }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a high-level, consultancy-ready RFP for: ${taskDescription}.
+        Apply ${detailLevel} level of detailing. For Ultra-Detailed, include specific technical sub-clauses for every scope item.
+        Tailor the profile for an ${consultantBackground} consultant background, adjusting the technical complexity and international compliance standards accordingly.` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
