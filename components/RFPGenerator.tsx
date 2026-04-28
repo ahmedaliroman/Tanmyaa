@@ -32,43 +32,141 @@ const Section: React.FC<{ number: number; title: string; icon: React.ReactNode; 
 
 const SectionIcon: React.FC = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
 
-
-
 const RFPReportDisplay: React.FC<{ content: RFPContent; reportRef?: React.RefObject<HTMLDivElement | null> }> = ({ content, reportRef }) => {
     return (
         <div ref={reportRef} className="bg-white p-8 md:p-12 rounded-lg shadow-2xl border border-gray-200 text-gray-800">
-            <header className="text-center mb-12 border-b border-gray-200 pb-8">
-                 <div className="flex justify-center items-center mb-4"><TanmyaaLogoPPTX /></div>
-                 <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest">Request for Proposal / Terms of Reference</p>
-                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mt-2 max-w-4xl mx-auto">{content.title}</h1>
+            <header className="text-center mb-16 border-b border-gray-100 pb-12">
+                 <div className="flex justify-center items-center mb-6"><TanmyaaLogoPPTX /></div>
+                 <p className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4">Institutional Grade Report</p>
+                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mt-2 max-w-4xl mx-auto leading-tight">{content.title}</h1>
+                 <div className="mt-8 flex justify-center gap-8 text-[10px] uppercase tracking-widest font-bold text-gray-400">
+                    <span>Draft Version 1.0</span>
+                    <span>•</span>
+                    <span>{new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}</span>
+                 </div>
             </header>
-            <div className="max-w-5xl mx-auto">
-                {(content.sections || []).length > 0 ? (
-                    content.sections.map((section, sectionIndex) => (
-                        <Section key={sectionIndex} number={sectionIndex + 1} title={section.title} icon={<SectionIcon />}>
-                            {(section.content || []).length > 0 ? (
-                                section.content.map((part, partIndex) => {
-                                    if (part.paragraph) {
-                                        return <p key={partIndex} className="mb-4">{part.paragraph}</p>;
-                                    }
-                                    if (Array.isArray(part.list) && part.list.length > 0) {
-                                        return (
-                                            <ul key={partIndex} className="list-disc list-inside space-y-2">
-                                                {part.list.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}
-                                            </ul>
-                                        );
-                                    }
-                                    return null;
-                                })
-                            ) : (
-                                <p className="italic text-gray-500">No content was generated for this section.</p>
-                            )}
-                        </Section>
-                    ))
-                ) : (
-                    <p className="text-center italic text-gray-500 py-8">No sections were generated for this document.</p>
-                )}
+
+            <div className="max-w-4xl mx-auto space-y-16">
+                {/* 1. Executive Summary */}
+                <Section number={1} title="Executive Summary" icon={<SectionIcon />}>
+                    <p className="text-lg leading-relaxed text-gray-600 italic font-medium border-l-4 border-blue-500 pl-6 py-2">
+                        {content.executiveSummary}
+                    </p>
+                    <div className="mt-8">
+                        <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Key Objectives</h4>
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {content.objectives.map((obj, i) => (
+                                <li key={i} className="flex items-start bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                    <span className="w-6 h-6 flex-shrink-0 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-[10px] font-black mr-3 mt-0.5">{i + 1}</span>
+                                    <span className="text-sm text-gray-700 leading-snug">{obj}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </Section>
+
+                {/* 2. Scope of Work */}
+                <Section number={2} title="Technical Scope of Work" icon={<SectionIcon />}>
+                    <p className="mb-8 text-gray-600">{content.scopeOfWork.intro}</p>
+                    <div className="space-y-10">
+                        {content.scopeOfWork.phases.map((phase, i) => (
+                            <div key={i} className="relative group">
+                                <div className="flex items-baseline gap-3 mb-4">
+                                    <span className="text-lg font-black text-blue-600/30 group-hover:text-blue-600 transition-colors uppercase tracking-tighter">Phase {i + 1}</span>
+                                    <h3 className="text-xl font-bold text-gray-900">{phase.title}</h3>
+                                </div>
+                                <p className="text-sm text-gray-500 mb-5 pl-4 border-l border-gray-100 italic">{phase.description}</p>
+                                <ul className="space-y-4 pl-4">
+                                    {phase.tasks.map((task, ti) => (
+                                        <li key={ti} className="flex items-start text-sm text-gray-700 leading-relaxed">
+                                            <span className="text-blue-500 mr-3 mt-1.5">•</span>
+                                            <span>{task}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+
+                {/* 3. Timeframe */}
+                <Section number={3} title="Project Timeline & Deliverables" icon={<SectionIcon />}>
+                    <div className="mb-6 flex items-center justify-between bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">Total Project Duration</span>
+                        <span className="text-lg font-black text-blue-900">{content.timeframe.totalDuration}</span>
+                    </div>
+                    <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50 border-b border-gray-100">
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Weeks</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Activity</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Key Deliverable</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {content.timeframe.milestones.map((m, i) => (
+                                    <tr key={i} className="hover:bg-blue-50/30 transition-colors">
+                                        <td className="px-6 py-4 text-xs font-bold text-blue-600 whitespace-nowrap">{m.weeks}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-700 font-medium">{m.activity}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-500 italic">{m.deliverable}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </Section>
+
+                {/* 4. Evaluation Criteria */}
+                <Section number={4} title="Evaluation Framework" icon={<SectionIcon />}>
+                    <p className="mb-8 text-sm text-gray-500 bg-gray-50 p-4 rounded-lg inline-block font-medium">Evaluation Methodology: <span className="text-blue-600">{content.evaluationCriteria.method}</span></p>
+                    <div className="space-y-4">
+                        {content.evaluationCriteria.criteria.map((c, i) => (
+                            <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-6 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-blue-200 transition-all group">
+                                <div className="flex-grow pr-8">
+                                    <h4 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-1">{c.label}</h4>
+                                    <p className="text-xs text-gray-500 leading-relaxed">{c.description}</p>
+                                </div>
+                                <div className="mt-4 md:mt-0 flex-shrink-0 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl font-black text-lg">
+                                    {c.weight}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+
+                {/* 5. Technical Requirements */}
+                <Section number={5} title="Submission & Compliance" icon={<SectionIcon />}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div>
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Technical Standards</h4>
+                            <ul className="space-y-4">
+                                {content.technicalRequirements.map((req, i) => (
+                                    <li key={i} className="flex items-start">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 mr-3 flex-shrink-0" />
+                                        <span className="text-sm text-gray-700">{req}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Submission Details</h4>
+                            <ul className="space-y-4">
+                                {content.submissionInstructions.map((ins, i) => (
+                                    <li key={i} className="flex items-start">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 mr-3 flex-shrink-0" />
+                                        <span className="text-sm text-gray-600 italic">{ins}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </Section>
             </div>
+            
+            <footer className="mt-20 pt-12 border-t border-gray-100 text-center">
+                <p className="text-[10px] text-gray-400 uppercase tracking-[0.3em] font-medium">&copy; {new Date().getFullYear()} TANMYAA Urban Planning Consultancy. All technical rights reserved. Proprietary Methodology.</p>
+            </footer>
         </div>
     );
 };

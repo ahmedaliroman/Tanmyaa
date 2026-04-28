@@ -739,18 +739,33 @@ export const generateRFP = async (
     
     SCHEMA GUIDANCE:
     {
-        "title": "string",
-        "sections": [
-            {
-                "title": "string",
-                "content": [
-                    {
-                        "paragraph": "string (optional)",
-                        "list": ["string (optional)"]
-                    }
-                ]
-            }
-        ]
+        "title": "Professional Project Title",
+        "executiveSummary": "Strategic overview of the requirement...",
+        "objectives": ["Key objective 1", "Key objective 2"],
+        "scopeOfWork": {
+            "intro": "The Consultant shall execute the following technical components...",
+            "phases": [
+                {
+                    "title": "Phase Title (e.g., Baseline Diagnostic)",
+                    "description": "Short phase objective...",
+                    "tasks": ["Task 1 technical details", "Task 2 technical details"]
+                }
+            ]
+        },
+        "timeframe": {
+            "totalDuration": "X calendar months",
+            "milestones": [
+                { "weeks": "Weeks 1-4", "activity": "Activity name", "deliverable": "Deliverable title" }
+            ]
+        },
+        "evaluationCriteria": {
+            "method": "e.g., QCBS (70% Technical / 30% Financial)",
+            "criteria": [
+                { "label": "Technical Approach", "weight": "35%", "description": "Details about how we evaluate..." }
+            ]
+        },
+        "technicalRequirements": ["Requirement 1", "Requirement 2"],
+        "submissionInstructions": ["Instruction 1", "Instruction 2"]
     }
     
     Your entire output MUST be a single, valid JSON object following the schema above.`;
@@ -775,28 +790,69 @@ export const generateRFP = async (
                     type: Type.OBJECT,
                     properties: {
                         title: { type: Type.STRING },
-                        sections: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    title: { type: Type.STRING },
-                                    content: {
-                                        type: Type.ARRAY,
-                                        items: {
-                                            type: Type.OBJECT,
-                                            properties: {
-                                                paragraph: { type: Type.STRING },
-                                                list: { type: Type.ARRAY, items: { type: Type.STRING } }
-                                            }
-                                        }
+                        executiveSummary: { type: Type.STRING },
+                        objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        scopeOfWork: {
+                            type: Type.OBJECT,
+                            properties: {
+                                intro: { type: Type.STRING },
+                                phases: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            title: { type: Type.STRING },
+                                            description: { type: Type.STRING },
+                                            tasks: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                        },
+                                        required: ["title", "description", "tasks"]
                                     }
-                                },
-                                required: ["title", "content"]
-                            }
-                        }
+                                }
+                            },
+                            required: ["intro", "phases"]
+                        },
+                        timeframe: {
+                            type: Type.OBJECT,
+                            properties: {
+                                totalDuration: { type: Type.STRING },
+                                milestones: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            weeks: { type: Type.STRING },
+                                            activity: { type: Type.STRING },
+                                            deliverable: { type: Type.STRING }
+                                        },
+                                        required: ["weeks", "activity", "deliverable"]
+                                    }
+                                }
+                            },
+                            required: ["totalDuration", "milestones"]
+                        },
+                        evaluationCriteria: {
+                            type: Type.OBJECT,
+                            properties: {
+                                method: { type: Type.STRING },
+                                criteria: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            label: { type: Type.STRING },
+                                            weight: { type: Type.STRING },
+                                            description: { type: Type.STRING }
+                                        },
+                                        required: ["label", "weight", "description"]
+                                    }
+                                }
+                            },
+                            required: ["method", "criteria"]
+                        },
+                        technicalRequirements: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        submissionInstructions: { type: Type.ARRAY, items: { type: Type.STRING } }
                     },
-                    required: ["title", "sections"]
+                    required: ["title", "executiveSummary", "objectives", "scopeOfWork", "timeframe", "evaluationCriteria", "technicalRequirements", "submissionInstructions"]
                 }
             }
         });

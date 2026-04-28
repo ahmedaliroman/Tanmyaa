@@ -477,15 +477,42 @@ export interface PolicyBrief {
     groundingSources?: { uri: string; title: string }[];
 }
 
+export interface RFPScopePhase {
+    title: string;
+    description: string;
+    tasks: string[];
+}
+
+export interface RFPMilestone {
+    weeks: string;
+    activity: string;
+    deliverable: string;
+}
+
+export interface RFPEvaluationCriteria {
+    label: string;
+    weight: string;
+    description: string;
+}
+
 export interface RFPContent {
     title: string;
-    sections: {
-        title: string;
-        content: {
-            paragraph?: string;
-            list?: string[];
-        }[];
-    }[];
+    executiveSummary: string;
+    objectives: string[];
+    scopeOfWork: {
+        intro: string;
+        phases: RFPScopePhase[];
+    };
+    timeframe: {
+        totalDuration: string;
+        milestones: RFPMilestone[];
+    };
+    evaluationCriteria: {
+        method: string;
+        criteria: RFPEvaluationCriteria[];
+    };
+    technicalRequirements: string[];
+    submissionInstructions: string[];
 }
 
 export interface CapacityBuildingModule {

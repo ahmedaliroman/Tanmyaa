@@ -137,25 +137,54 @@ export const exportRFPToDocx = async (rfpContent: RFPContent, logoBase64: string
                     heading: docx.HeadingLevel.HEADING_1,
                     alignment: docx.AlignmentType.CENTER,
                 }),
-                ...rfpContent.sections.flatMap(section => [
-                    new docx.Paragraph({
-                        text: section.title,
-                        heading: docx.HeadingLevel.HEADING_2,
-                    }),
-                    ...section.content.flatMap(part => {
-                        if (part.paragraph) {
-                            return [new docx.Paragraph({ text: part.paragraph, style: "Normal" })];
-                        }
-                        if (part.list && part.list.length > 0) {
-                            return part.list.map(item => new docx.Paragraph({
-                                text: item,
-                                bullet: { level: 0 },
-                                style: "Normal"
-                            }));
-                        }
-                        return [];
-                    })
-                ])
+                new docx.Paragraph({ text: "1. EXECUTIVE SUMMARY", heading: docx.HeadingLevel.HEADING_2 }),
+                new docx.Paragraph({ text: rfpContent.executiveSummary, style: "Quote" }),
+                
+                new docx.Paragraph({ text: "OBJECTIVES", heading: docx.HeadingLevel.HEADING_3 }),
+                ...rfpContent.objectives.map(obj => new docx.Paragraph({ text: obj, bullet: { level: 0 }, style: "Normal" })),
+
+                new docx.Paragraph({ text: "2. TECHNICAL SCOPE OF WORK", heading: docx.HeadingLevel.HEADING_2 }),
+                new docx.Paragraph({ text: rfpContent.scopeOfWork.intro, style: "Normal" }),
+                ...rfpContent.scopeOfWork.phases.flatMap((phase, idx) => [
+                    new docx.Paragraph({ text: `Phase ${idx + 1}: ${phase.title}`, heading: docx.HeadingLevel.HEADING_3 }),
+                    new docx.Paragraph({ text: phase.description, style: "Normal", italic: true }),
+                    ...phase.tasks.map(task => new docx.Paragraph({ text: task, bullet: { level: 0 }, style: "Normal" }))
+                ]),
+
+                new docx.Paragraph({ text: "3. PROJECT TIMELINE & DELIVERABLES", heading: docx.HeadingLevel.HEADING_2 }),
+                new docx.Paragraph({ children: [new docx.TextRun({ text: "Total Duration: ", bold: true }), new docx.TextRun(rfpContent.timeframe.totalDuration)] }),
+                new docx.Table({
+                    width: { size: 100, type: docx.WidthType.PERCENTAGE },
+                    rows: [
+                        new docx.TableRow({
+                            children: [
+                                new docx.TableCell({ children: [new docx.Paragraph({ text: "Weeks", bold: true })] }),
+                                new docx.TableCell({ children: [new docx.Paragraph({ text: "Activity", bold: true })] }),
+                                new docx.TableCell({ children: [new docx.Paragraph({ text: "Deliverable", bold: true })] }),
+                            ],
+                        }),
+                        ...rfpContent.timeframe.milestones.map(m => new docx.TableRow({
+                            children: [
+                                new docx.TableCell({ children: [new docx.Paragraph({ text: m.weeks })] }),
+                                new docx.TableCell({ children: [new docx.Paragraph({ text: m.activity })] }),
+                                new docx.TableCell({ children: [new docx.Paragraph({ text: m.deliverable })] }),
+                            ],
+                        }))
+                    ]
+                }),
+
+                new docx.Paragraph({ text: "4. EVALUATION FRAMEWORK", heading: docx.HeadingLevel.HEADING_2 }),
+                new docx.Paragraph({ children: [new docx.TextRun({ text: "Methodology: ", bold: true }), new docx.TextRun(rfpContent.evaluationCriteria.method)] }),
+                ...rfpContent.evaluationCriteria.criteria.flatMap(c => [
+                    new docx.Paragraph({ text: `${c.label} (${c.weight})`, heading: docx.HeadingLevel.HEADING_3 }),
+                    new docx.Paragraph({ text: c.description, style: "Normal" })
+                ]),
+
+                new docx.Paragraph({ text: "5. TECHNICAL REQUIREMENTS & SUBMISSION", heading: docx.HeadingLevel.HEADING_2 }),
+                new docx.Paragraph({ text: "Technical Standards:", heading: docx.HeadingLevel.HEADING_3 }),
+                ...rfpContent.technicalRequirements.map(req => new docx.Paragraph({ text: req, bullet: { level: 0 }, style: "Normal" })),
+                new docx.Paragraph({ text: "Submission Instructions:", heading: docx.HeadingLevel.HEADING_3 }),
+                ...rfpContent.submissionInstructions.map(ins => new docx.Paragraph({ text: ins, bullet: { level: 0 }, style: "Normal", italic: true }))
             ],
         }],
     });
