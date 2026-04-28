@@ -731,6 +731,7 @@ export const generateRFP = async (
     - Consistency: Ensure logical flow between objectives, scope, and evaluation criteria.
     - Metrics: Include specific KPIs, technical thresholds (e.g., FAR, LOS, GFA), and deliverables with clear definitions.
     - Ultra-Detailed Mode: If requested, provide exhaustive breakdowns of methodology requirements, specific stakeholder engagement protocols, and granular payment milestones.
+    - **TIMEFRAME MANDATE**: Every RFP MUST include a "Project Timeline" or "Timeframe" section. This must logically map out the project duration (e.g., 6-12 months), specific phases (e.g., Mobilization, Baseline Analysis, Strategic Options, Detailed Masterplan, Final Approvals), and realistic deadlines for each deliverable mentioned in the scope.
     
     STRICT PROHIBITION: NEVER use placeholders like "[Insert Data Here]", "TBD", or any bracketed text. Provide specific, technically sound requirements based on real-world procurement standards.
     TECHNICAL DEPTH: The RFP must be ready for institutional use, with detailed technical specifications and rigorous evaluation frameworks.
@@ -756,7 +757,8 @@ export const generateRFP = async (
     const rfp = await withRetry(async () => {
         const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a high-level, consultancy-ready RFP for: ${taskDescription}.
         Apply ${detailLevel} level of detailing. For Ultra-Detailed, include specific technical sub-clauses for every scope item.
-        Tailor the profile for an ${consultantBackground} consultant background, adjusting the technical complexity and international compliance standards accordingly.` }];
+        Tailor the profile for an ${consultantBackground} consultant background, adjusting the technical complexity and international compliance standards accordingly.
+        Include a logical and professional project timeframe with specific milestones and durations for each technical deliverable.` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
