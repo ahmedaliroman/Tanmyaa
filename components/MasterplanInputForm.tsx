@@ -197,181 +197,157 @@ const MasterplanInputForm: React.FC<MasterplanInputFormProps> = ({ initialInfo, 
   const isLastStep = currentStep === steps.length - 1;
 
   return (
-    <div className="bg-black text-white min-h-[600px] flex flex-col justify-between p-8 md:p-16 selection:bg-white selection:text-black">
+    <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/80 rounded-3xl shadow-2xl p-6 md:p-8 min-h-[600px] flex flex-col justify-between">
       {!userEmail ? (
-        <div className="flex-grow flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-12">
-            <h2 className="text-5xl md:text-7xl font-sans font-light tracking-tight leading-[1.1]">
-                Masterplan <span className="font-serif italic font-normal text-blue-400">Synthesis.</span>
+        <div className="flex-grow flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-8">
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">
+                Masterplan <span className="text-blue-400">Synthesis.</span>
             </h2>
             <p className="text-gray-400 text-lg leading-relaxed">
                 Connect your account to access our high-fidelity urban design engine. Generate site-specific subdivisions and frameworks in seconds.
             </p>
             <button
                 onClick={onLogin}
-                className="group relative inline-flex items-center space-x-6 bg-white text-black font-black uppercase tracking-[0.2em] py-5 px-12 rounded-full hover:scale-105 transition-all duration-500 overflow-hidden"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg shadow-blue-900/20 flex items-center space-x-2"
             >
-                <span className="relative z-10 transition-colors group-hover:text-black">Sign in with Google</span>
-                <div className="w-8 h-8 rounded-full border border-black/20 flex items-center justify-center relative z-10">
-                <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.48 10.92v3.28h7.84c-.24 1.84-2.21 5.39-7.84 5.39-4.84 0-8.79-4.01-8.79-8.94s3.95-8.94 8.79-8.94c2.75 0 4.6 1.17 5.66 2.18l2.59-2.5c-1.66-1.55-3.82-2.5-8.25-2.5C5.38 1.18 0 6.56 0 13.18s5.38 12 12.48 12c7.41 0 12.32-5.21 12.32-12.55 0-.84-.09-1.49-.21-2.13l-12.11-.58z"/>
-                </svg>
-                </div>
+                <span>Sign in with Google</span>
             </button>
         </div>
       ) : (
         <>
             {/* Navigation Rail */}
-            <div className="flex items-center space-x-12 mb-20 overflow-x-auto no-scrollbar">
+            <div className="flex items-center justify-center space-x-2 sm:space-x-6 mb-8">
                 {steps.map((step, index) => (
                 <button
                     key={step.id}
                     onClick={() => index <= currentStep && setCurrentStep(index)}
                     disabled={isLoading || index > currentStep}
-                    className={`group relative flex flex-col items-start transition-all duration-500 disabled:opacity-30 flex-shrink-0 ${
-                    index === currentStep ? 'opacity-100' : 'opacity-40 hover:opacity-70'
+                    className={`text-center py-2 px-4 text-sm font-medium transition-colors duration-300 disabled:opacity-50 ${
+                    index === currentStep
+                        ? 'bg-gray-700/80 text-white rounded-lg border border-gray-600/50 shadow-lg'
+                        : 'text-gray-400 hover:text-white'
                     }`}
                 >
-                    <span className="text-[10px] font-medium tracking-[0.3em] uppercase mb-2">0{index + 1}</span>
-                    <span className="text-xs font-bold uppercase tracking-widest">{step.title}</span>
-                    {index === currentStep && (
-                    <motion.div 
-                        layoutId="step-indicator"
-                        className="absolute -bottom-4 left-0 w-8 h-[2px] bg-white text-3xl"
-                    />
-                    )}
+                    {step.title}
                 </button>
                 ))}
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-grow flex flex-col justify-center">
+            <div className="flex-grow flex flex-col justify-center min-h-[300px]">
                 <AnimatePresence mode="wait">
                 <motion.div
                     key={currentStep}
-                    initial={{ opacity: 0, y: 40 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -40 }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
                     className="w-full max-w-5xl mx-auto"
                 >
                     {steps[currentStep].id === 'boundary' ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                        <div className="space-y-8">
-                        <h2 className="text-5xl md:text-7xl font-sans font-light tracking-tight leading-[1.1]">
-                            Context <span className="font-serif italic font-normal text-blue-400">Imagery.</span>
-                        </h2>
-                        <p className="text-gray-400 text-lg leading-relaxed max-w-md">
-                            Upload a high-resolution satellite perspective. Ensure the target area is clearly <span className="text-white font-bold italic">bounded by a red line</span> for AI context extraction.
-                        </p>
-                        <FileUpload files={uploadedFiles} setFiles={handleFileUpload} disabled={isLoading} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                        <div className="space-y-6">
+                            <h2 className="text-3xl font-bold text-white tracking-tight">
+                                Context <span className="text-blue-400 italic">Imagery.</span>
+                            </h2>
+                            <p className="text-gray-400 text-sm leading-relaxed max-w-md">
+                                Upload a high-resolution satellite perspective. Ensure the target area is clearly <span className="text-white font-bold italic">bounded by a red line</span> for AI context extraction.
+                            </p>
+                            <FileUpload files={uploadedFiles} setFiles={handleFileUpload} disabled={isLoading} />
                         </div>
                         {info.satelliteImage && (
                         <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="relative aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-2xl group"
+                            className="relative aspect-video rounded-2xl overflow-hidden border border-gray-700 shadow-xl"
                         >
-                            <img src={info.satelliteImage} alt="Site Preview" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
-                            <div className="absolute bottom-8 left-8">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Geo-Context Reference Verified</span>
+                            <img src={info.satelliteImage} alt="Site Preview" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                            <div className="absolute bottom-4 left-4">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Geo-Context Reference Verified</span>
                             </div>
                         </motion.div>
                         )}
                     </div>
                     ) : steps[currentStep].id === 'program' ? (
-                    <div className="space-y-16">
-                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/10 pb-12">
-                        <h2 className="text-5xl md:text-7xl font-sans font-light tracking-tight leading-[1.1]">
-                            Urban <span className="font-serif italic font-normal text-blue-400">Metabolism.</span>
-                        </h2>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] font-medium tracking-[0.3em] uppercase text-white/40 mb-2">Total Utilization</span>
-                            <div className="flex items-baseline space-x-1">
-                            <span className={`text-6xl font-sans font-light ${totalPercentage === 100 ? 'text-white' : 'text-orange-500'}`}>{totalPercentage}</span>
-                            <span className="text-2xl font-sans font-light text-white/40">%</span>
+                    <div className="space-y-12">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-gray-800">
+                            <h2 className="text-3xl font-bold text-white tracking-tight">
+                                Urban <span className="text-blue-400 italic">Metabolism.</span>
+                            </h2>
+                            <div className="flex flex-col items-end">
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Utilization</span>
+                                <div className="flex items-baseline space-x-1">
+                                    <span className={`text-4xl font-bold ${totalPercentage === 100 ? 'text-white' : 'text-orange-500'}`}>{totalPercentage}</span>
+                                    <span className="text-xl font-medium text-gray-400">%</span>
+                                </div>
                             </div>
-                        </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {(info.landUseBreakdown || []).map((item, idx) => (
-                            <div key={item.label} className="group flex flex-col space-y-6">
-                            <div className="flex justify-between items-end border-b border-white/10 pb-4 group-focus-within:border-white transition-colors duration-500">
-                                <span className="text-[10px] font-medium tracking-[0.2em] uppercase text-white/50">{item.label}</span>
-                                <span className="text-2xl font-sans font-light">{item.percentage}%</span>
-                            </div>
-                            <input 
-                                type="range"
-                                min="0"
-                                max="100"
-                                step="5"
-                                value={item.percentage}
-                                onChange={e => handleLandUseSliderChange(idx, parseInt(e.target.value))}
-                                className="w-full h-[2px] bg-white/10 appearance-none cursor-pointer accent-white transition-all hover:bg-white/20"
-                            />
+                            <div key={item.label} className="bg-black/20 p-4 rounded-xl border border-gray-800">
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{item.label}</span>
+                                    <span className="text-sm font-bold text-white">{item.percentage}%</span>
+                                </div>
+                                <input 
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="5"
+                                    value={item.percentage}
+                                    onChange={e => handleLandUseSliderChange(idx, parseInt(e.target.value))}
+                                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                />
                             </div>
                         ))}
                         </div>
                         {totalPercentage !== 100 && (
-                        <motion.p 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="text-xs text-orange-500 font-bold uppercase tracking-widest text-center"
-                        >
-                            Adjust parameters to reach exactly 100% allocation
-                        </motion.p>
+                            <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest text-center">
+                                Adjust parameters to reach exactly 100% allocation
+                            </p>
                         )}
                     </div>
                     ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-24 gap-y-20">
+                    <div className="bg-black/40 rounded-xl border border-gray-800 overflow-hidden">
                         {steps[currentStep].fields.map(fieldId => {
                         const key = fieldId as keyof MasterplanProjectInfo;
                         const { suggestions, isLoading: isSuggestionsLoading } = suggestionState[fieldId] || { suggestions: [], isLoading: false };
                         
                         return (
-                            <div key={fieldId} className="flex flex-col space-y-6">
-                            <div className="flex items-center justify-between">
-                                <label htmlFor={fieldId} className="text-[10px] font-medium tracking-[0.3em] uppercase text-white/40">
-                                {fieldConfig[fieldId].label}
-                                </label>
-                                <AISuggestionButton
-                                onClick={() => handleGetSuggestions(fieldId)}
-                                isLoading={isSuggestionsLoading}
-                                />
-                            </div>
-                            
-                            <div className="relative group">
+                            <div key={fieldId} className="border-b border-gray-800 last:border-b-0 p-4">
+                                <div className="flex items-center justify-between mb-1">
+                                    <label htmlFor={fieldId} className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                        {fieldConfig[fieldId].label}
+                                    </label>
+                                    <AISuggestionButton
+                                        onClick={() => handleGetSuggestions(fieldId)}
+                                        isLoading={isSuggestionsLoading}
+                                    />
+                                </div>
                                 <textarea
-                                id={fieldId}
-                                value={(info[key as keyof MasterplanProjectInfo] as string) || ''}
-                                onChange={e => handleChange(key, e.target.value)}
-                                placeholder={fieldConfig[fieldId].placeholder}
-                                rows={fieldConfig[fieldId].rows || 1}
-                                className="w-full bg-transparent text-4xl md:text-5xl font-sans font-light text-white placeholder-white/10 transition-all duration-300 resize-none focus:outline-none py-2 border-b border-white/10 focus:border-white"
-                                disabled={isLoading}
+                                    id={fieldId}
+                                    value={(info[key as keyof MasterplanProjectInfo] as string) || ''}
+                                    onChange={e => handleChange(key, e.target.value)}
+                                    placeholder={fieldConfig[fieldId].placeholder}
+                                    rows={fieldConfig[fieldId].rows || 1}
+                                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 resize-none focus:outline-none focus:ring-0 text-xl font-medium"
+                                    disabled={isLoading}
                                 />
-                                
-                                <AnimatePresence>
                                 {suggestions.length > 0 && !isSuggestionsLoading && (
-                                    <motion.div 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-6 flex flex-wrap gap-3"
-                                    >
-                                    {suggestions.map((s, i) => (
-                                        <button
-                                        key={i}
-                                        onClick={() => handleChange(key, s)}
-                                        className="text-[10px] font-medium uppercase tracking-widest text-white/50 border border-white/10 py-2.5 px-6 rounded-full hover:border-white hover:text-white transition-all duration-300 backdrop-blur-sm"
-                                        >
-                                        {s}
-                                        </button>
-                                    ))}
-                                    </motion.div>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {suggestions.map((s, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => handleChange(key, s)}
+                                                className="text-xs bg-gray-700/80 text-gray-200 py-1 px-3 rounded-full hover:bg-gray-600 transition"
+                                            >
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
                                 )}
-                                </AnimatePresence>
-                            </div>
                             </div>
                         );
                         })}
@@ -382,8 +358,8 @@ const MasterplanInputForm: React.FC<MasterplanInputFormProps> = ({ initialInfo, 
             </div>
 
             {/* Footer Navigation */}
-            <div className="mt-20 flex justify-between items-center border-t border-white/5 pt-12">
-                <div className="flex flex-col items-start">
+            <div className="mt-8 flex justify-between items-center pt-6 border-t border-gray-800">
+                <div className="flex flex-col items-start translate-y-1">
                     <span className="text-[10px] font-medium tracking-[0.3em] uppercase text-white/40 mb-1">Intelligence Capacity</span>
                     <div className="flex items-center space-x-2">
                         <span className="text-xl font-sans font-bold text-white">{credits}</span>
@@ -391,30 +367,24 @@ const MasterplanInputForm: React.FC<MasterplanInputFormProps> = ({ initialInfo, 
                     </div>
                 </div>
 
-                <div className="flex items-center space-x-8">
-                    <button 
-                    onClick={handlePrev} 
-                    disabled={currentStep === 0 || isLoading}
-                    className={`flex flex-col group transition-all duration-500 ${currentStep === 0 ? 'pointer-events-none opacity-0' : 'opacity-100 hover:opacity-100'}`}
-                    >
-                    <span className="text-[10px] font-medium tracking-[0.3em] uppercase text-white/40 mb-1 group-hover:text-white transition-colors">Previous</span>
-                    <span className="text-sm font-bold uppercase tracking-widest group-hover:-translate-x-1 transition-transform">Chapter Back</span>
-                    </button>
+                <div className="flex items-center space-x-4">
+                    {currentStep > 0 && (
+                        <button 
+                            onClick={handlePrev} 
+                            disabled={isLoading}
+                            className="text-gray-400 hover:text-white font-medium py-2 px-4 rounded-full transition duration-300"
+                        >
+                            Back
+                        </button>
+                    )}
 
                     <button
-                    onClick={handleNext}
-                    disabled={isLoading || !isCurrentStepValid() || (isLastStep && credits < 20)}
-                    className="group flex flex-col items-end text-right transition-all duration-500 disabled:opacity-20"
+                        onClick={handleNext}
+                        disabled={isLoading || !isCurrentStepValid() || (isLastStep && credits < 20)}
+                        className="bg-gray-700/80 text-gray-200 font-semibold py-2 px-5 rounded-full hover:bg-gray-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition duration-300 border border-gray-600/50 flex items-center space-x-2"
                     >
-                    <span className="text-[10px] font-medium tracking-[0.3em] uppercase text-white/40 mb-1 group-hover:text-white transition-colors">
-                        {isLastStep ? 'Finalize Synthesis' : 'Proceed'}
-                    </span>
-                    <div className="flex items-center space-x-6">
-                        <span className="text-xl md:text-3xl font-sans font-bold uppercase tracking-[0.1em] group-hover:-translate-x-2 transition-transform">
-                        {isLoading && isLastStep ? 'Simulating Design...' : (isLastStep ? `Synthesize (-20IU)` : 'Next Stage')}
-                        </span>
-                        <div className="w-16 h-[1px] bg-white group-hover:w-24 transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
-                    </div>
+                        <span>{isLoading && isLastStep ? 'Simulating Design...' : (isLastStep ? `Synthesize (-20IU)` : 'Next')}</span>
+                        {isLastStep && !isLoading && <div className="w-8 h-[1px] bg-white transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]" />}
                     </button>
                 </div>
             </div>
