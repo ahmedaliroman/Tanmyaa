@@ -181,50 +181,57 @@ const MasterplanDesignerGenerator: React.FC<MasterplanDesignerGeneratorProps> = 
                 <motion.div
                     key={currentIndex}
                     id={`masterplan-slide-${currentIndex}`}
-                    initial={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
-                    animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                    exit={{ opacity: 0, x: -20, filter: 'blur(10px)' }}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full h-full bg-[#08080A] rounded-[40px] shadow-2xl flex flex-col items-center justify-center p-8 relative overflow-hidden"
+                    className="w-full h-full bg-white rounded-3xl shadow-2xl flex flex-col p-12 relative overflow-hidden border border-gray-100"
                 >
-                    {/* Architectural Grid Background */}
-                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-                        style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} 
-                    />
-
+                    {/* Brand Watermark */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 -mr-32 -mt-32 rounded-full blur-3xl opacity-50"></div>
+                    
                     <div className="relative w-full h-full flex flex-col">
-                        <div className="flex justify-between items-start mb-8 z-10">
+                        <div className="flex justify-between items-start mb-8 z-10 border-b border-gray-100 pb-6">
                             <div>
                                 <div className="flex items-center space-x-3 mb-2">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Studio 0{currentIndex + 1}</span>
+                                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Section 0{currentIndex + 1}</span>
                                 </div>
-                                <h2 className="text-4xl font-black text-white uppercase tracking-tighter">{currentSlide.title}</h2>
-                                <p className="text-gray-500 text-xs font-medium uppercase tracking-widest mt-1">{currentSlide.description}</p>
+                                <h2 className="text-3xl font-bold text-gray-900 tracking-tight font-sans">{currentSlide.title}</h2>
+                                <p className="text-blue-600 text-[10px] font-bold uppercase tracking-widest mt-1">Tanmyaa Masterplan Strategy</p>
                             </div>
-                            <div className="text-right">
-                                <span className="text-4xl font-black text-white/5 tracking-tighter uppercase leading-none select-none">M.PLAN</span>
+                            <div className="flex items-center space-x-4">
+                                <div className="h-10 w-px bg-gray-100" />
+                                <div className="text-right">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Project Deck</p>
+                                    <p className="text-xs font-bold text-gray-900 font-sans uppercase">Ref: MPLAN-{Math.floor(Math.random() * 900) + 100}</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex-1 rounded-[32px] overflow-hidden border border-white/10 bg-black/50 relative shadow-inner">
+                        <div className="flex-1 rounded-2xl overflow-hidden shadow-lg border border-gray-100 bg-gray-50 relative group/image">
                             <img 
                                 src={currentSlide.image_url} 
                                 alt={currentSlide.title} 
-                                className="w-full h-full object-cover rounded-[32px]"
+                                className="w-full h-full object-cover rounded-2xl"
                             />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-500" />
                         </div>
 
-                        <div className="mt-8 flex justify-between items-end z-10">
-                            <div className="max-w-md">
-                                <p className="text-gray-400 text-sm leading-relaxed border-l-2 border-blue-500 pr-4 pl-4 py-1 italic">
-                                    {currentSlide.description}
+                        <div className="mt-10 flex justify-between items-end z-10 relative">
+                            <div className="max-w-2xl bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                                <p className="text-gray-700 text-lg leading-relaxed font-serif italic text-pretty">
+                                    &ldquo;{currentSlide.description}&rdquo;
                                 </p>
                             </div>
-                            <div className="flex gap-4">
-                                <button onClick={handleDownloadImage} className="flex items-center space-x-2 bg-white/5 backdrop-blur-xl border border-white/10 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-white hover:bg-white hover:text-black transition-all">
+                            <div className="flex flex-col items-end gap-4">
+                                <div className="flex items-center space-x-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                                    <Layers className="w-3 h-3" />
+                                    <span>Synthetic Simulation Active</span>
+                                </div>
+                                <button onClick={handleDownloadImage} className="flex items-center space-x-3 bg-gray-900 text-white px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg active:scale-95">
                                     <Download className="w-4 h-4" />
-                                    <span>Export Study</span>
+                                    <span>Export Narrative</span>
                                 </button>
                             </div>
                         </div>
