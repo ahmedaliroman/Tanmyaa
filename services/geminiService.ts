@@ -276,8 +276,9 @@ export const generateImage = async (prompt: string, referenceImage?: string, ski
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: { parts }
+            model: 'gemini-2.5-flash-image',
+            contents: { parts },
+            config: { imageConfig: { aspectRatio: "16:9" } }
         });
         for (const part of response.candidates[0].content.parts) {
             if (part.inlineData) {
