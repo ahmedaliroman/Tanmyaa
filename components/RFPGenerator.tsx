@@ -80,15 +80,20 @@ interface RFPGeneratorProps {
 
 const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
   const [taskDescription, setTaskDescription] = useState<string>(() => localStorage.getItem('rfp_task_description') || '');
-  const [pageRange, setPageRange] = useState<string>(() => localStorage.getItem('rfp_page_range') || '5-10');
+  const [detailLevel, setDetailLevel] = useState<string>(() => localStorage.getItem('rfp_detail_level') || 'Standard');
+  const [consultantBackground, setConsultantBackground] = useState<string>(() => localStorage.getItem('rfp_consultant_background') || 'International');
 
   useEffect(() => {
     localStorage.setItem('rfp_task_description', taskDescription);
   }, [taskDescription]);
 
   useEffect(() => {
-    localStorage.setItem('rfp_page_range', pageRange);
-  }, [pageRange]);
+    localStorage.setItem('rfp_detail_level', detailLevel);
+  }, [detailLevel]);
+
+  useEffect(() => {
+    localStorage.setItem('rfp_consultant_background', consultantBackground);
+  }, [consultantBackground]);
 
   const [files, setFiles] = useState<File[]>([]);
   const [generatedContent, setGeneratedContent] = useState<RFPContent | null>(null);
@@ -126,10 +131,6 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
       setError('Please provide a task description.');
       return;
     }
-     if (!pageRange.trim()) {
-      setError('Please specify a page range.');
-      return;
-    }
 
     setIsLoading(true);
     setError(null);
@@ -142,7 +143,7 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
             template: profile.branding_template
         } : undefined;
 
-        const result = await generateRFP(taskDescription, pageRange, files, companyProfile, profile?.plan, branding);
+        const result = await generateRFP(taskDescription, detailLevel, consultantBackground, files, companyProfile, profile?.plan, branding);
         await refreshProfile();
         if (result) {
             setGeneratedContent(result);
@@ -153,7 +154,7 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
     } finally {
         setIsLoading(false);
     }
-  }, [taskDescription, pageRange, files, companyProfile, profile, refreshProfile, onUpgrade]);
+  }, [taskDescription, detailLevel, consultantBackground, files, companyProfile, profile, refreshProfile, onUpgrade]);
   
   const handleDownload = () => {
     if (generatedContent) {
@@ -234,18 +235,38 @@ const RFPGenerator: React.FC<RFPGeneratorProps> = ({ onUpgrade }) => {
                 <FileUpload files={files} setFiles={setFiles} disabled={isLoading} />
             </div>
             
-            <div className="p-4">
-                <label htmlFor="page-range" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Define Page Range</label>
-                 <p className="text-gray-400 text-sm mb-3">Specify the approximate length of the document to control the level of detail.</p>
-                <input
-                    id="page-range"
-                    type="text"
-                    value={pageRange}
-                    onChange={(e) => setPageRange(e.target.value)}
-                    placeholder="e.g., 5-10"
-                    className="w-full bg-transparent text-white placeholder-gray-500 transition duration-200 focus:outline-none focus:ring-0"
-                    disabled={isLoading}
-                />
+            <div className="p-4 border-b border-gray-800">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label htmlFor="detail-level" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Level of Detailing</label>
+                        <p className="text-gray-400 text-[10px] mb-2 uppercase tracking-tight">Define the strategic depth of the output.</p>
+                        <select
+                            id="detail-level"
+                            value={detailLevel}
+                            onChange={(e) => setDetailLevel(e.target.value)}
+                            className="w-full bg-gray-800 text-white rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-gray-700"
+                            disabled={isLoading}
+                        >
+                            <option value="Standard">Standard (Concise & Efficient)</option>
+                            <option value="High">High (Technical & Detailed)</option>
+                            <option value="Ultra-Detailed">Ultra-Detailed (Institutional Grade)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="consultant-background" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Consultant Background</label>
+                        <p className="text-gray-400 text-[10px] mb-2 uppercase tracking-tight">Profile the requirements for specific expertise.</p>
+                        <select
+                            id="consultant-background"
+                            value={consultantBackground}
+                            onChange={(e) => setConsultantBackground(e.target.value)}
+                            className="w-full bg-gray-800 text-white rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-gray-700"
+                            disabled={isLoading}
+                        >
+                            <option value="International">International (Global Standards)</option>
+                            <option value="Local">Local (Regional Sensitivity)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
         

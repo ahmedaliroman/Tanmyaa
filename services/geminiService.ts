@@ -704,7 +704,8 @@ export const generatePolicyReport = async (brief: string, files: File[], company
 
 export const generateRFP = async (
     taskDescription: string, 
-    _pageRange: string, 
+    detailLevel: string, 
+    consultantBackground: string,
     _files: File[],
     companyProfile?: string,
     plan?: string,
@@ -714,6 +715,9 @@ export const generateRFP = async (
     const model = getModelForPlan(plan);
     const systemInstruction = `You are a world-class Procurement and Urban Planning Specialist. 
     Your task is to generate a professional Request for Proposals (RFP) or Terms of Reference (ToR) that is technically rigorous, institutionally sound, and grounded in industry-standard statistics and procurement benchmarks.
+    
+    Level of Detailing requested: ${detailLevel}.
+    Target Consultant Background: ${consultantBackground}.
     
     ${plan === 'Business' ? 'As a Business user, you have access to our most advanced, fine-tuned strategic logic. Provide even deeper technical insights and custom-tailored recommendations.' : ''}
     ${getBrandingInstruction(plan, branding)}
@@ -744,7 +748,9 @@ export const generateRFP = async (
     Your entire output MUST be a single, valid JSON object following the schema above.`;
     
     const rfp = await withRetry(async () => {
-        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a detailed RFP for: ${taskDescription}` }];
+        const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a detailed RFP for: ${taskDescription}.
+        Apply ${detailLevel} level of detailing. 
+        Tailor the profile for an ${consultantBackground} consultant background.` }];
         
         await addBrandingAssetsToParts(parts, plan, branding, 'report');
 
