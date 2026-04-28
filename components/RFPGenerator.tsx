@@ -89,8 +89,29 @@ const RFPReportDisplay: React.FC<{ content: RFPContent; reportRef?: React.RefObj
                     </div>
                 </Section>
 
-                {/* 3. Timeframe */}
-                <Section number={3} title="Project Timeline & Deliverables" icon={<SectionIcon />}>
+                {/* 3. Team Requirements */}
+                <Section number={3} title="Consultancy Team Structure" icon={<SectionIcon />}>
+                    <p className="mb-8 text-gray-700 leading-relaxed font-medium">{content.teamRequirements.structure}</p>
+                    <div className="grid grid-cols-1 gap-6">
+                        {content.teamRequirements.keyPersonnel.map((person, i) => (
+                            <div key={i} className="flex items-center gap-6 p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-colors group">
+                                <div className="w-12 h-12 flex-shrink-0 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black text-xl shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                                    {person.role.charAt(0)}
+                                </div>
+                                <div className="flex-grow">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <h4 className="text-base font-bold text-gray-900">{person.role}</h4>
+                                        <span className="text-[10px] font-black text-blue-600 bg-blue-100 px-3 py-1 rounded-full uppercase tracking-widest">{person.yearsOfExperience}</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 italic">{person.qualifications}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+
+                {/* 4. Timeframe */}
+                <Section number={4} title="Project Timeline & Deliverables" icon={<SectionIcon />}>
                     <div className="mb-6 flex items-center justify-between bg-blue-50 p-4 rounded-xl border border-blue-100">
                         <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">Total Project Duration</span>
                         <span className="text-lg font-black text-blue-900">{content.timeframe.totalDuration}</span>
@@ -117,8 +138,8 @@ const RFPReportDisplay: React.FC<{ content: RFPContent; reportRef?: React.RefObj
                     </div>
                 </Section>
 
-                {/* 4. Evaluation Criteria */}
-                <Section number={4} title="Evaluation Framework" icon={<SectionIcon />}>
+                {/* 5. Evaluation Criteria */}
+                <Section number={5} title="Evaluation Framework" icon={<SectionIcon />}>
                     <p className="mb-8 text-sm text-gray-500 bg-gray-50 p-4 rounded-lg inline-block font-medium">Evaluation Methodology: <span className="text-blue-600">{content.evaluationCriteria.method}</span></p>
                     <div className="space-y-4">
                         {content.evaluationCriteria.criteria.map((c, i) => (
@@ -135,8 +156,46 @@ const RFPReportDisplay: React.FC<{ content: RFPContent; reportRef?: React.RefObj
                     </div>
                 </Section>
 
-                {/* 5. Technical Requirements */}
-                <Section number={5} title="Submission & Compliance" icon={<SectionIcon />}>
+                {/* 6. Financial Framework */}
+                <Section number={6} title="Financial & Payment Framework" icon={<SectionIcon />}>
+                    {content.financialFramework.estimatedBudgetRange && (
+                        <div className="mb-8 bg-rose-50 border border-rose-100 p-6 rounded-2xl">
+                             <h4 className="text-[10px] font-black text-rose-800 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                                Estimated Budget Range
+                             </h4>
+                             <p className="text-2xl font-black text-rose-900">{content.financialFramework.estimatedBudgetRange}</p>
+                        </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div>
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 border-b border-gray-100 pb-2">Payment Milestones</h4>
+                            <ul className="space-y-4">
+                                {content.financialFramework.paymentTerms.map((term, i) => (
+                                    <li key={i} className="flex items-start text-sm text-gray-700">
+                                        <span className="text-blue-600 font-bold mr-3">{i + 1}.</span>
+                                        <span>{term}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 border-b border-gray-100 pb-2">Financial Submission Requirements</h4>
+                            <ul className="space-y-4">
+                                {content.financialFramework.submissionRequirements.map((req, i) => (
+                                    <li key={i} className="flex items-start text-sm text-gray-600 italic">
+                                        <span className="text-gray-300 mr-3">•</span>
+                                        <span>{req}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </Section>
+
+                {/* 7. Technical Requirements */}
+                <Section number={7} title="Submission & Compliance" icon={<SectionIcon />}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                         <div>
                             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Technical Standards</h4>

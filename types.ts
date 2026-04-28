@@ -503,6 +503,14 @@ export interface RFPContent {
         intro: string;
         phases: RFPScopePhase[];
     };
+    teamRequirements: {
+        structure: string;
+        keyPersonnel: {
+            role: string;
+            yearsOfExperience: string;
+            qualifications: string;
+        }[];
+    };
     timeframe: {
         totalDuration: string;
         milestones: RFPMilestone[];
@@ -510,6 +518,11 @@ export interface RFPContent {
     evaluationCriteria: {
         method: string;
         criteria: RFPEvaluationCriteria[];
+    };
+    financialFramework: {
+        estimatedBudgetRange?: string;
+        paymentTerms: string[];
+        submissionRequirements: string[];
     };
     technicalRequirements: string[];
     submissionInstructions: string[];
