@@ -2,11 +2,22 @@ import React from 'react';
 
 interface ErrorMessageProps {
   message: string;
+  onClose?: () => void;
+  autoCloseTime?: number;
 }
 
-const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
+const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, onClose, autoCloseTime = 5000 }) => {
   let displayMessage = message;
   let isQuotaError = false;
+
+  React.useEffect(() => {
+    if (autoCloseTime > 0 && onClose) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, autoCloseTime);
+      return () => clearTimeout(timer);
+    }
+  }, [autoCloseTime, onClose, message]);
 
   try {
     if (typeof message === 'string' && message.trim().startsWith('{')) {
@@ -44,6 +55,14 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
           </p>
           
           <div className="mt-4 flex items-center gap-4">
+            {onClose && (
+              <button 
+                onClick={onClose}
+                className="text-[10px] font-black uppercase tracking-widest text-rose-400 hover:text-white transition-colors"
+              >
+                Dismiss
+              </button>
+            )}
             <button 
               onClick={() => window.location.reload()}
               className="text-[10px] font-black uppercase tracking-widest text-white hover:text-rose-400 transition-colors"

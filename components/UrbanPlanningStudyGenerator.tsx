@@ -947,15 +947,35 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
   }, [slides, currentIndex]);
 
   const handleAddSlide = useCallback(async () => {
-    const prompt = window.prompt("What should the new slide be about? (e.g., 'Add a slide about traffic impact analysis')");
-    if (!prompt || !slides) return;
+    const totalSlides = slides?.length || 0;
+    const positionStr = window.prompt(`At what position should the new slide be added? (1 to ${totalSlides + 1}, default: after current slide ${currentIndex + 1})`, String(currentIndex + 2));
+    
+    if (positionStr === null) return;
+    
+    let position = parseInt(positionStr);
+    if (isNaN(position) || position < 1) position = currentIndex + 2;
+    if (position > totalSlides + 1) position = totalSlides + 1;
+
+    const contentPrompt = window.prompt("What should the new slide be about? (e.g., 'A detailed analysis of pedestrian flow')");
+    if (!contentPrompt || !slides) return;
 
     setIsChatLoading(true);
+    setError(null);
     try {
-        const newSlides = await refinePresentation(slides, `Add a new slide: ${prompt}`, currentIndex, companyProfile);
+        // Construct a very specific instruction for the AI to ensure correct placement
+        const refinementPrompt = `STRUCTURE UPDATE: Insert a NEW slide at position ${position} (Index: ${position - 1}). 
+        The content of the new slide should focus on: ${contentPrompt}. 
+        IMPORTANT: Your returned "slides" array MUST have exactly ${totalSlides + 1} slides. 
+        All other slides must remain identical in content and original relative order.`;
+
+        const { slides: newSlides, chatResponse } = await refinePresentation(slides, refinementPrompt, currentIndex, companyProfile);
+        
+        // Final safety check: if the AI just appended it, or got the order wrong, we might need a manual adjustment if we were doing it clientside, 
+        // but the AI is usually good at this if told "Return the entire state with insertion at index X".
+        
         setSlides(newSlides);
-        setCurrentIndex(newSlides.length - 1); // Go to the newly added slide
-        setChatMessages(prev => [...prev, { sender: 'ai', text: `New slide added: ${prompt}` }]);
+        setCurrentIndex(position - 1); // Go to the newly added slide
+        setChatMessages(prev => [...prev, { sender: 'ai', text: chatResponse || `New slide added at position ${position}: ${contentPrompt}` }]);
     } catch (err) {
         console.error("Failed to add slide:", err);
         setError("Failed to add slide. Please try again.");
@@ -1079,7 +1099,7 @@ const PresentationGenerator: React.FC<PresentationGeneratorProps> = ({ onUpgrade
       
       <div className="mt-8 flex-grow">
         {isLoading && <Loader />}
-        {error && <ErrorMessage message={error} />}
+        {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
 
         {!isLoading && !error && !slides && (
           <GeneratorWelcome 

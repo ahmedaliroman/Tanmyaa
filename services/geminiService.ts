@@ -481,7 +481,7 @@ export const refinePresentation = async (currentSlides: PresentationSlide[], use
     2. "chatResponse": A deep, well-arranged, and highly professional explanation of the technical changes and strategic rationale behind them. You must include or reference relevant urban planning metrics, statistics, or benchmarks where applicable to justify the refinements. Avoid excessive AI-style formatting like nested bullet points or multiple header levels (###). Write in polished expert prose that reflects elite consultancy standards.
     `;
 
-    const slides = await withRetry(async () => {
+    const result = await withRetry(async () => {
         const activeSlide = currentSlides[activeSlideIndex];
         const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `CRITICAL: You are refining an Urban Planning presentation. 
         
@@ -512,27 +512,29 @@ ${JSON.stringify(currentSlides)}` }];
                 tools: [{ googleSearch: {} }]
             },
         });
-        const parsedSlides = parseJsonResponse<PresentationSlide[]>(response, 'Presentation Refinement');
-        const filtered = (parsedSlides || []).filter(s => s && typeof s === 'object' && s.layout);
-        if (filtered.length === 0) throw new Error("No slides generated during refinement.");
+        const refinementResult = parseJsonResponse<{ slides: PresentationSlide[], chatResponse: string }>(response, 'Presentation Refinement');
+        let filteredSlides = (refinementResult.slides || []).filter(s => s && typeof s === 'object' && s.layout);
+        
+        if (filteredSlides.length === 0) throw new Error("No slides generated during refinement.");
         
         // Programmatic enforcement: If the user didn't explicitly ask for structural changes,
         // and the AI returned the same number of slides, ONLY apply the changes to the active slide.
         const isStructuralChange = /(add|create|insert|new)\s+(a\s+)?slide|(delete|remove|drop|erase)\s+(this|the|slide\s+\d+)\s+slide|reorder|move|swap|rearrange/i.test(userRequest);
         
-        if (!isStructuralChange && filtered.length === currentSlides.length) {
+        if (!isStructuralChange && filteredSlides.length === currentSlides.length) {
             const newSlides = [...currentSlides];
-            // We find the slide in the AI's response that matches the active slide's layout or position
-            // Usually, if the AI followed instructions, it's at the same index.
-            newSlides[activeSlideIndex] = filtered[activeSlideIndex];
-            return newSlides;
+            newSlides[activeSlideIndex] = filteredSlides[activeSlideIndex];
+            filteredSlides = newSlides;
         }
         
-        return filtered;
+        return {
+            slides: filteredSlides,
+            chatResponse: refinementResult.chatResponse || "Refinement completed based on your request."
+        };
     });
 
     await deductCredits(5, `Refined Presentation: ${userRequest.substring(0, 50)}...`, undefined, 'REFINEMENT');
-    return slides;
+    return result;
 };
 
 export const generatePolicyReport = async (brief: string, files: File[], companyProfile?: string, plan?: string, branding?: BrandingInfo): Promise<PolicyBrief> => {
@@ -1163,10 +1165,11 @@ export const generateDeepUnderstanding = async (topic: string, context: string, 
     STRICT PROHIBITION: NEVER use placeholders. Provide real data, specific examples, and actionable recommendations.
     
     TEACHER PERSONA:
-    - Tone: Authoritative, analytical, and strategically minded.
-    - Format: Use "Data Nodes" (Sticky Notes) for key strategic pillars.
-    - Content: Every note must be concise, technically rigorous, and "point-to-point".
-    - No Vague Info: Every claim must be backed by a specific metric, location, or urban planning logic.
+    - Tone: Sophisticated, visionary, and elite consultancy-focused. Avoid typical AI introductory phrases like "As an AI..." or "Here is an analysis...". Start directly with the strategic insight.
+    - Vocabulary: Use high-level urban planning terminology (e.g., 'pedestrian permeability', 'transit-oriented development', 'biophilic resilience', 'fiscal sustainability').
+    - Output Style: Write like a partner at an elite firm (e.g., McKinsey or Foster + Partners) rather than a classroom teacher. Use punchy, executive-level language.
+    - No Vague Info: Every claim must be backed by a specific metric, benchmark, or a real-world case study reference.
+    - Strategic Board Philosophy: Every data node is a piece of a high-level puzzle. They shouldn't just be "facts", they should be "insights" that lead to action.
     
     SCHEMA GUIDANCE:
     {
@@ -1231,7 +1234,13 @@ export const refineDeepUnderstanding = async (currentData: UrbanDeepUnderstandin
     
     ${STRICT_CONTENT_MODERATION_INSTRUCTION}
     
-    STRICT PROHIBITION: NEVER use placeholders. Keep all strategic nodes concise and technically rigorous.
+    STRICT PROHIBITION: NEVER use placeholders.
+    
+    TEACHER PERSONA:
+    - Tone: Sophisticated, visionary, and elite consultancy-focused.
+    - Vocabulary: Use high-level urban planning terminology.
+    - Output Style: Write like a partner at an elite firm. Avoid typical AI introductory phrases.
+    - Content: Keep all strategic nodes concise and technically rigorous (max 35 words per node).
     
     Your entire output must be only the valid JSON object, with no other text.
     ${companyProfile ? `\n**COMPANY PERSONA:** ${companyProfile}` : ''}`;
