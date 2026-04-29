@@ -752,12 +752,6 @@ export const generateRFP = async (
                 }
             ]
         },
-        "teamRequirements": {
-            "structure": "Overview of required firm departments/specialties...",
-            "keyPersonnel": [
-                { "role": "Team Leader", "yearsOfExperience": "15+ years", "qualifications": "Masters in Urban Planning, Ph.D. Preferred" }
-            ]
-        },
         "timeframe": {
             "totalDuration": "X calendar months",
             "milestones": [
@@ -770,11 +764,6 @@ export const generateRFP = async (
                 { "label": "Technical Approach", "weight": "35%", "description": "Details about how we evaluate..." }
             ]
         },
-        "financialFramework": {
-            "estimatedBudgetRange": "e.g., $150,000 - $200,000",
-            "paymentTerms": ["10% on Mobilization", "30% on Midterm"],
-            "submissionRequirements": ["Breakdown by task", "Reimbursable expenses caps"]
-        },
         "technicalRequirements": ["Requirement 1", "Requirement 2"],
         "submissionInstructions": ["Instruction 1", "Instruction 2"]
     }
@@ -784,8 +773,6 @@ export const generateRFP = async (
     const rfp = await withRetry(async () => {
         const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [{ text: `Generate a high-level, consultancy-ready RFP for: ${taskDescription}.
         Apply ${detailLevel} level of detailing. For Ultra-Detailed, include specific technical sub-clauses for every scope item, grounded in current and futuristic urban planning regulations.
-        Provide a robust Team Requirement section specifying the core team structure and CV prerequisites for key personnel (Architecture, Planning, Environment, Legal).
-        Include a logical Financial Framework with estimated budget ranges (if applicable in context) and specific submission requirements for financial proposals.
         Ensure comprehensive performance metrics and KPIs are integrated into the scope of work.
         Tailor the profile for an ${consultantBackground} consultant background, adjusting the technical complexity and international/local compliance standards accordingly.
         Include a logical and professional project timeframe with specific milestones and durations for each technical deliverable.` }];
@@ -823,25 +810,6 @@ export const generateRFP = async (
                                 }
                             },
                             required: ["intro", "phases"]
-                        },
-                        teamRequirements: {
-                            type: Type.OBJECT,
-                            properties: {
-                                structure: { type: Type.STRING },
-                                keyPersonnel: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            role: { type: Type.STRING },
-                                            yearsOfExperience: { type: Type.STRING },
-                                            qualifications: { type: Type.STRING }
-                                        },
-                                        required: ["role", "yearsOfExperience", "qualifications"]
-                                    }
-                                }
-                            },
-                            required: ["structure", "keyPersonnel"]
                         },
                         timeframe: {
                             type: Type.OBJECT,
@@ -881,19 +849,10 @@ export const generateRFP = async (
                             },
                             required: ["method", "criteria"]
                         },
-                        financialFramework: {
-                            type: Type.OBJECT,
-                            properties: {
-                                estimatedBudgetRange: { type: Type.STRING },
-                                paymentTerms: { type: Type.ARRAY, items: { type: Type.STRING } },
-                                submissionRequirements: { type: Type.ARRAY, items: { type: Type.STRING } }
-                            },
-                            required: ["paymentTerms", "submissionRequirements"]
-                        },
                         technicalRequirements: { type: Type.ARRAY, items: { type: Type.STRING } },
                         submissionInstructions: { type: Type.ARRAY, items: { type: Type.STRING } }
                     },
-                    required: ["title", "executiveSummary", "objectives", "scopeOfWork", "teamRequirements", "timeframe", "evaluationCriteria", "financialFramework", "technicalRequirements", "submissionInstructions"]
+                    required: ["title", "executiveSummary", "objectives", "scopeOfWork", "timeframe", "evaluationCriteria", "technicalRequirements", "submissionInstructions"]
                 }
             }
         });

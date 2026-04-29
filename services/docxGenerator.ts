@@ -151,20 +151,7 @@ export const exportRFPToDocx = async (rfpContent: RFPContent, logoBase64: string
                     ...phase.tasks.map(task => new docx.Paragraph({ text: task, bullet: { level: 0 }, style: "Normal" }))
                 ]),
 
-                new docx.Paragraph({ text: "3. CONSULTANCY TEAM STRUCTURE", heading: docx.HeadingLevel.HEADING_2 }),
-                new docx.Paragraph({ text: rfpContent.teamRequirements.structure, style: "Normal" }),
-                new docx.Paragraph({ text: "Key Personnel Requirements:", heading: docx.HeadingLevel.HEADING_3 }),
-                ...rfpContent.teamRequirements.keyPersonnel.flatMap(person => [
-                    new docx.Paragraph({ 
-                        children: [
-                            new docx.TextRun({ text: person.role, bold: true }),
-                            new docx.TextRun({ text: ` | ${person.yearsOfExperience}`, italic: true })
-                        ] 
-                    }),
-                    new docx.Paragraph({ text: person.qualifications, bullet: { level: 0 }, style: "Normal" })
-                ]),
-
-                new docx.Paragraph({ text: "4. PROJECT TIMELINE & DELIVERABLES", heading: docx.HeadingLevel.HEADING_2 }),
+                new docx.Paragraph({ text: "3. PROJECT TIMELINE & DELIVERABLES", heading: docx.HeadingLevel.HEADING_2 }),
                 new docx.Paragraph({ children: [new docx.TextRun({ text: "Total Duration: ", bold: true }), new docx.TextRun(rfpContent.timeframe.totalDuration)] }),
                 new docx.Table({
                     width: { size: 100, type: docx.WidthType.PERCENTAGE },
@@ -186,23 +173,14 @@ export const exportRFPToDocx = async (rfpContent: RFPContent, logoBase64: string
                     ]
                 }),
 
-                new docx.Paragraph({ text: "5. EVALUATION FRAMEWORK", heading: docx.HeadingLevel.HEADING_2 }),
+                new docx.Paragraph({ text: "4. EVALUATION FRAMEWORK", heading: docx.HeadingLevel.HEADING_2 }),
                 new docx.Paragraph({ children: [new docx.TextRun({ text: "Methodology: ", bold: true }), new docx.TextRun(rfpContent.evaluationCriteria.method)] }),
                 ...rfpContent.evaluationCriteria.criteria.flatMap(c => [
                     new docx.Paragraph({ text: `${c.label} (${c.weight})`, heading: docx.HeadingLevel.HEADING_3 }),
                     new docx.Paragraph({ text: c.description, style: "Normal" })
                 ]),
 
-                new docx.Paragraph({ text: "6. FINANCIAL & PAYMENT FRAMEWORK", heading: docx.HeadingLevel.HEADING_2 }),
-                ...(rfpContent.financialFramework.estimatedBudgetRange ? [
-                    new docx.Paragraph({ children: [new docx.TextRun({ text: "Estimated Budget Range: ", bold: true }), new docx.TextRun(rfpContent.financialFramework.estimatedBudgetRange)] })
-                ] : []),
-                new docx.Paragraph({ text: "Payment Milestones:", heading: docx.HeadingLevel.HEADING_3 }),
-                ...rfpContent.financialFramework.paymentTerms.map(term => new docx.Paragraph({ text: term, bullet: { level: 0 }, style: "Normal" })),
-                new docx.Paragraph({ text: "Financial Submission Requirements:", heading: docx.HeadingLevel.HEADING_3 }),
-                ...rfpContent.financialFramework.submissionRequirements.map(req => new docx.Paragraph({ text: req, bullet: { level: 0 }, style: "Normal", italic: true })),
-
-                new docx.Paragraph({ text: "7. TECHNICAL REQUIREMENTS & SUBMISSION", heading: docx.HeadingLevel.HEADING_2 }),
+                new docx.Paragraph({ text: "5. TECHNICAL REQUIREMENTS & SUBMISSION", heading: docx.HeadingLevel.HEADING_2 }),
                 new docx.Paragraph({ text: "Technical Standards:", heading: docx.HeadingLevel.HEADING_3 }),
                 ...rfpContent.technicalRequirements.map(req => new docx.Paragraph({ text: req, bullet: { level: 0 }, style: "Normal" })),
                 new docx.Paragraph({ text: "Submission Instructions:", heading: docx.HeadingLevel.HEADING_3 }),
