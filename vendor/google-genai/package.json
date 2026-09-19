@@ -1,0 +1,8 @@
+{
+  "name": "@google/genai",
+  "version": "0.0.0-tanmyaa-openai-compat",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts"
+}
