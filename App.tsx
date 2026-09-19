@@ -18,8 +18,8 @@ import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
-  constructor(props: {children: React.ReactNode}) {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
   }
@@ -42,16 +42,12 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
               <div className="relative">
                 <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse" />
                 <svg className="w-10 h-10 text-blue-400 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.07 0" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.07 0 5 5 0 01-7.07 0z" />
                 </svg>
               </div>
             </div>
-
             <h1 className="text-3xl font-black tracking-tight mb-4 text-white">I&apos;ve hit a small snag</h1>
-            <p className="text-gray-400 text-lg mb-8 leading-relaxed">
-              Something unexpected happened while rendering this view. I&apos;m curious to help you fix it—usually a quick refresh clears things up, but I&apos;ve noted the technical details below.
-            </p>
-
+            <p className="text-gray-400 text-lg mb-8 leading-relaxed">Something unexpected happened while rendering this view. A quick refresh usually clears it up.</p>
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl text-left mb-10 w-full overflow-hidden group hover:bg-white/10 transition-all">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Technical Insight</span>
@@ -61,22 +57,20 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
                 {this.state.error?.message || 'An unspecified rendering error occurred.'}
               </p>
             </div>
-
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button 
+              <button
                 onClick={() => window.location.reload()}
                 className="w-full sm:w-auto bg-white text-black px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95 shadow-xl"
               >
                 Refresh View
               </button>
-              <button 
+              <button
                 onClick={() => this.setState({ hasError: false, error: null })}
-                className="w-full sm:w-auto bg-white/5 backdrop-blur-md border border-white/10 text-white px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95 shadow-xl"
+                className="w-full sm:w-auto bg-white/5 backdrop-blur-md border border-white/10 text-white px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95"
               >
                 Try Again
               </button>
             </div>
-
             <p className="mt-12 text-[10px] text-gray-500 uppercase tracking-[0.3em] font-black">Urban Planning Intelligence System</p>
           </div>
         </div>
@@ -88,9 +82,9 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 }
 
 const AppContent: React.FC<{
-  view: { page: 'home' | 'service' | 'subscription', serviceId: string | null },
-  handleNavigate: (page: 'home' | 'subscription') => void,
-  renderPage: () => React.ReactNode
+  view: { page: 'home' | 'service' | 'subscription'; serviceId: string | null };
+  handleNavigate: (page: 'home' | 'subscription') => void;
+  renderPage: () => React.ReactNode;
 }> = ({ view, handleNavigate, renderPage }) => {
   const { authError } = useAuth();
 
@@ -106,14 +100,12 @@ const AppContent: React.FC<{
             </div>
             <div className="flex-1">
               <h3 className="text-white font-black text-sm uppercase tracking-widest mb-1">Database Sync Issue</h3>
-              <p className="text-gray-300 text-xs leading-relaxed mb-3">
-                I&apos;m having trouble connecting to the database. It looks like the schema might need an update.
-              </p>
+              <p className="text-gray-300 text-xs leading-relaxed mb-3">I&apos;m having trouble connecting to the database. It looks like the schema might need an update.</p>
               <div className="flex items-center gap-3">
                 <div className="bg-black/40 px-2 py-1 rounded-md border border-white/10">
                   <code className="text-[10px] text-blue-400 font-mono">supabase/schema.sql</code>
                 </div>
-                <button 
+                <button
                   onClick={() => window.location.reload()}
                   className="text-[10px] font-black uppercase tracking-widest text-white hover:text-blue-400 transition-colors"
                 >
@@ -125,15 +117,13 @@ const AppContent: React.FC<{
         </div>
       )}
 
-      <Header 
-        onNavigate={handleNavigate} 
-        showHomeButton={view.page !== 'home'} 
+      <Header
+        onNavigate={handleNavigate}
+        showHomeButton={view.page !== 'home'}
       />
       <main className="container mx-auto p-4 md:p-8 relative">
         <div className="max-w-7xl mx-auto">
-          <ErrorBoundary>
-            {renderPage()}
-          </ErrorBoundary>
+          <ErrorBoundary>{renderPage()}</ErrorBoundary>
         </div>
       </main>
       <InstantChat onUpgrade={() => handleNavigate('subscription')} />
@@ -142,7 +132,7 @@ const AppContent: React.FC<{
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<{ page: 'home' | 'service' | 'subscription', serviceId: string | null }>({ page: 'home', serviceId: null });
+  const [view, setView] = useState<{ page: 'home' | 'service' | 'subscription'; serviceId: string | null }>({ page: 'home', serviceId: null });
   const [isPageExiting, setIsPageExiting] = useState(false);
 
   const initialOptions = {
@@ -179,10 +169,7 @@ const App: React.FC = () => {
   };
 
   const renderService = () => {
-    const props = {
-      onUpgrade: () => handleNavigate('subscription'),
-    };
-
+    const props = { onUpgrade: () => handleNavigate('subscription') };
     switch (view.serviceId) {
       case 'urban-planning-study':
         return <PresentationGenerator {...props} />;
